@@ -38,6 +38,11 @@ Copy-Item .env.example .env
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 TELEGRAM_GROUP_CHAT_ID=your_group_chat_id_here
 APP_VERSION=v-local
+BADGUY_FEMALE_MAX=60
+BADGUY_TUBE_PRICE=290
+BADGUY_SET_PRICE=12
+BADGUY_SHUTTLES_PER_TUBE=12
+BADGUY_ROUND_RESULT=true
 ```
 
 3. Inject values into local build file:
@@ -54,6 +59,16 @@ Set these repository secrets:
 
 - `TELEGRAM_BOT_TOKEN`
 - `TELEGRAM_GROUP_CHAT_ID`
+
+Optional repository variables (GitHub Actions Variables):
+
+- `BADGUY_FEMALE_MAX`
+- `BADGUY_TUBE_PRICE`
+- `BADGUY_SET_PRICE`
+- `BADGUY_SHUTTLES_PER_TUBE`
+- `BADGUY_ROUND_RESULT`
+
+If these variables are not set, deploy falls back to in-app defaults: 60, 290, 12, 12, and `true`.
 
 On deploy, workflow will:
 

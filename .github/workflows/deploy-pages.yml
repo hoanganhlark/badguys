@@ -28,11 +28,28 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_GROUP_CHAT_ID: ${{ secrets.TELEGRAM_GROUP_CHAT_ID }}
+          BADGUY_FEMALE_MAX: ${{ vars.BADGUY_FEMALE_MAX || '' }}
+          BADGUY_TUBE_PRICE: ${{ vars.BADGUY_TUBE_PRICE || '' }}
+          BADGUY_SET_PRICE: ${{ vars.BADGUY_SET_PRICE || '' }}
+          BADGUY_SHUTTLES_PER_TUBE: ${{ vars.BADGUY_SHUTTLES_PER_TUBE || '' }}
+          BADGUY_ROUND_RESULT: ${{ vars.BADGUY_ROUND_RESULT || '' }}
         run: |
           VERSION="v$(date -u +%Y.%m.%d).${{ github.run_number }}"
-          sed -i "s|const APP_VERSION = \".*\";|const APP_VERSION = \"$VERSION\";|" index.html
-          sed -i "s|const TELEGRAM_BOT_TOKEN = \".*\";|const TELEGRAM_BOT_TOKEN = \"$TELEGRAM_BOT_TOKEN\";|" index.html
-          sed -i "s|const TELEGRAM_GROUP_CHAT_ID = \".*\";|const TELEGRAM_GROUP_CHAT_ID = \"$TELEGRAM_GROUP_CHAT_ID\";|" index.html
+
+          FEMALE_MAX="${BADGUY_FEMALE_MAX:-60}"
+          TUBE_PRICE="${BADGUY_TUBE_PRICE:-290}"
+          SET_PRICE="${BADGUY_SET_PRICE:-12}"
+          SHUTTLES_PER_TUBE="${BADGUY_SHUTTLES_PER_TUBE:-12}"
+          ROUND_RESULT="${BADGUY_ROUND_RESULT:-true}"
+
+          sed -i "s|appVersion: \".*\"|appVersion: \"$VERSION\"|" index.html
+          sed -i "s|telegramBotToken: \".*\"|telegramBotToken: \"$TELEGRAM_BOT_TOKEN\"|" index.html
+          sed -i "s|telegramGroupChatId: \".*\"|telegramGroupChatId: \"$TELEGRAM_GROUP_CHAT_ID\"|" index.html
+          sed -i "s|femaleMax: \".*\"|femaleMax: \"$FEMALE_MAX\"|" index.html
+          sed -i "s|tubePrice: \".*\"|tubePrice: \"$TUBE_PRICE\"|" index.html
+          sed -i "s|setPrice: \".*\"|setPrice: \"$SET_PRICE\"|" index.html
+          sed -i "s|shuttlesPerTube: \".*\"|shuttlesPerTube: \"$SHUTTLES_PER_TUBE\"|" index.html
+          sed -i "s|roundResult: \".*\"|roundResult: \"$ROUND_RESULT\"|" index.html
           echo "Deployment version: $VERSION"
 
       - name: Setup Pages
@@ -53,11 +70,11 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_GROUP_CHAT_ID: ${{ secrets.TELEGRAM_GROUP_CHAT_ID }}
         run: |
-          VERSION=$(grep -oP 'const APP_VERSION = "\K[^"]+' index.html || echo "")
+          VERSION=$(grep -oP 'appVersion: "\K[^"]+' index.html || echo "")
           if [ -z "$VERSION" ]; then
             VERSION="unknown"
           fi
-          MSG="BadGuys app bumped to v$VERSION 🚀"
+          MSG="BadGuys app bumped to $VERSION 🚀"
           if [ -n "$MSG" ]; then
             curl -s -X POST https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage \
               -d chat_id=$TELEGRAM_GROUP_CHAT_ID \

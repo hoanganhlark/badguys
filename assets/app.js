@@ -5,12 +5,28 @@ const TELEGRAM_GROUP_CHAT_ID =
   ENV.telegramGroupChatId || "__TELEGRAM_GROUP_CHAT_ID__";
 const APP_VERSION = ENV.appVersion || "v0.0.0";
 const VISIT_SESSION_KEY = "badguyVisitNotified";
+
+function getEnvNumber(value, fallback) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function getEnvBoolean(value, fallback) {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (["true", "1", "yes", "on"].includes(normalized)) return true;
+    if (["false", "0", "no", "off"].includes(normalized)) return false;
+  }
+  return fallback;
+}
+
 const DEFAULT_CONFIG = {
-  femaleMax: 60,
-  tubePrice: 290,
-  setPrice: 12,
-  shuttlesPerTube: 12,
-  roundResult: true,
+  femaleMax: getEnvNumber(ENV.femaleMax, 60),
+  tubePrice: getEnvNumber(ENV.tubePrice, 290),
+  setPrice: getEnvNumber(ENV.setPrice, 12),
+  shuttlesPerTube: getEnvNumber(ENV.shuttlesPerTube, 12),
+  roundResult: getEnvBoolean(ENV.roundResult, true),
 };
 
 let config = { ...DEFAULT_CONFIG };
