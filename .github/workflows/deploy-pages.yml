@@ -95,7 +95,7 @@ jobs:
             VERSION="unknown"
           fi
           if [ -n "$DEPLOYED_URL" ]; then
-            MSG="BadGuys app bumped to $VERSION 🚀\nURL: $DEPLOYED_URL"
+            MSG=$(printf 'BadGuys app bumped to %s 🚀\nURL: %s' "$VERSION" "$DEPLOYED_URL")
           else
             MSG="BadGuys app bumped to $VERSION 🚀"
           fi
