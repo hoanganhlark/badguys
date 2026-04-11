@@ -72,7 +72,8 @@
       }
       .sidebar-panel {
         background: #ffffff;
-        border-left: 1px solid #f0f0f0;
+        border-right: 1px solid #f0f0f0;
+        box-shadow: 12px 0 30px rgba(15, 23, 42, 0.08);
       }
     </style>
   </head>
@@ -246,73 +247,87 @@
       ></div>
       <aside
         id="configPanel"
-        class="hidden fixed left-0 top-0 h-full w-full max-w-sm sidebar-panel z-50 p-6"
+        class="hidden fixed left-0 top-0 h-full w-full max-w-sm sidebar-panel z-50 p-6 overflow-y-auto"
       >
-        <div class="flex items-center justify-between mb-6">
-          <h3
-            class="text-sm font-semibold text-slate-600 uppercase tracking-wider"
-          >
-            Cấu hình
-          </h3>
-          <button
-            onclick="toggleConfigPanel(false)"
-            class="text-slate-400 hover:text-slate-700 text-xl leading-none"
-          >
-            &times;
-          </button>
-        </div>
+        <div class="min-h-full flex flex-col">
+          <div class="flex items-center justify-between mb-6">
+            <h3
+              class="text-sm font-semibold text-slate-600 uppercase tracking-wider"
+            >
+              Cấu hình
+            </h3>
+            <button
+              onclick="toggleConfigPanel(false)"
+              class="text-slate-400 hover:text-slate-700 text-xl leading-none"
+            >
+              &times;
+            </button>
+          </div>
 
-        <div class="space-y-4">
-          <div>
-            <label for="cfgFemaleMax" class="block text-xs text-slate-500 mb-2"
-              >Giá cố định cho nữ (k / buổi)</label
-            >
-            <input
-              type="number"
-              id="cfgFemaleMax"
-              class="input-minimal px-4 py-3 text-sm font-medium w-full"
-              value="60"
-              min="0"
-              oninput="updateConfig()"
-            />
+          <div class="space-y-4">
+            <div>
+              <label
+                for="cfgFemaleMax"
+                class="block text-xs text-slate-500 mb-2"
+                >Giá cố định cho nữ (k / buổi)</label
+              >
+              <input
+                type="number"
+                id="cfgFemaleMax"
+                class="input-minimal px-4 py-3 text-sm font-medium w-full"
+                value="60"
+                min="0"
+                oninput="updateConfig()"
+              />
+            </div>
+            <div>
+              <label
+                for="cfgTubePrice"
+                class="block text-xs text-slate-500 mb-2"
+                >Giá 1 ống cầu (12 trái) (k / ống)</label
+              >
+              <input
+                type="number"
+                id="cfgTubePrice"
+                class="input-minimal px-4 py-3 text-sm font-medium w-full"
+                value="290"
+                min="0"
+                oninput="updateConfig()"
+              />
+            </div>
+            <div>
+              <label for="cfgSetPrice" class="block text-xs text-slate-500 mb-2"
+                >Giá đánh theo set (k / set)</label
+              >
+              <input
+                type="number"
+                id="cfgSetPrice"
+                class="input-minimal px-4 py-3 text-sm font-medium w-full"
+                value="12"
+                min="0"
+                oninput="updateConfig()"
+              />
+            </div>
           </div>
-          <div>
-            <label for="cfgTubePrice" class="block text-xs text-slate-500 mb-2"
-              >Giá 1 ống cầu (12 trái) (k / ống)</label
-            >
-            <input
-              type="number"
-              id="cfgTubePrice"
-              class="input-minimal px-4 py-3 text-sm font-medium w-full"
-              value="290"
-              min="0"
-              oninput="updateConfig()"
-            />
-          </div>
-          <div>
-            <label for="cfgSetPrice" class="block text-xs text-slate-500 mb-2"
-              >Giá đánh theo set (k / set)</label
-            >
-            <input
-              type="number"
-              id="cfgSetPrice"
-              class="input-minimal px-4 py-3 text-sm font-medium w-full"
-              value="12"
-              min="0"
-              oninput="updateConfig()"
-            />
-          </div>
-        </div>
 
-        <p class="text-xs text-slate-400 mt-6 leading-relaxed">
-          Trường "Số cầu" ngoài màn hình chính sẽ tự quy đổi ra tiền cầu theo
-          giá ống hiện tại.
-        </p>
+          <p class="text-xs text-slate-400 mt-6 leading-relaxed">
+            Trường "Số cầu" ngoài màn hình chính sẽ tự quy đổi ra tiền cầu theo
+            giá ống hiện tại.
+          </p>
+
+          <p
+            id="appVersionDisplay"
+            class="mt-auto pt-8 text-[11px] text-slate-300 tracking-wide"
+          >
+            v0.0.0
+          </p>
+        </div>
       </aside>
     </div>
 
     <script>
       let players = [];
+      const APP_VERSION = "v1.0.0";
       const DEFAULT_CONFIG = {
         femaleMax: 60,
         tubePrice: 290,

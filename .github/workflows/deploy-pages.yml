@@ -24,6 +24,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Inject deployment version
+        run: |
+          VERSION="v$(date -u +%Y.%m.%d).${{ github.run_number }}"
+          sed -i "s|const APP_VERSION = \".*\";|const APP_VERSION = \"$VERSION\";|" index.html
+          echo "Deployment version: $VERSION"
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
