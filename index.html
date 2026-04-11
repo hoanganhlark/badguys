@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BadGuys Badminton - Minimalist</title>
+    <title>BadGuys Badminton - Set Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -45,6 +45,11 @@
             color: #991b1b;
             border: 1px solid #fee2e2;
         }
+        .tag-set {
+            background-color: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #dbeafe;
+        }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(4px); }
             to { opacity: 1; transform: translateY(0); }
@@ -78,7 +83,7 @@
                 <span id="playerCounter" class="text-xs font-medium text-slate-400">0 người</span>
             </div>
             
-            <textarea id="bulkInput" rows="3" placeholder="Nhập tên (thêm 'n' cho nữ)..." class="input-minimal w-full px-4 py-3 text-sm mb-4 resize-none" oninput="processBulkInput()"></textarea>
+            <textarea id="bulkInput" rows="4" placeholder="Nhập tên...&#10;Thêm 'n' cho nữ, '2s' cho 2 set..." class="input-minimal w-full px-4 py-3 text-sm mb-4 resize-none" oninput="processBulkInput()"></textarea>
             
             <div id="playerList" class="flex flex-wrap gap-2 min-h-[20px]">
                 <!-- Tags injected here -->
@@ -94,15 +99,15 @@
                         <h3 id="billTotal" class="text-3xl font-bold">0k</h3>
                     </div>
                     <div class="text-right">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Cố định Nữ</p>
-                        <p class="text-lg font-semibold text-red-700">60k</p>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Mỗi set</p>
+                        <p class="text-lg font-semibold text-blue-700">12k</p>
                     </div>
                 </div>
 
                 <div class="space-y-3 pt-4 border-t border-slate-50">
                     <div class="flex justify-between text-sm">
-                        <span class="text-slate-500">Mỗi Nam phải đóng:</span>
-                        <span id="maleFeeDisplay" class="font-bold">0k</span>
+                        <span class="text-slate-500">Mỗi Nam đóng:</span>
+                        <span id="maleFeeDisplay" class="font-bold text-lg">0k</span>
                     </div>
                 </div>
             </div>
@@ -114,8 +119,8 @@
 
         <!-- Footer Actions -->
         <div class="flex justify-center gap-8">
-            <button id="btnReset" onclick="handleReset()" class="text-xs font-medium text-slate-400 hover:text-red-500 transition-colors">
-                LÀM MỚI DỮ LIỆU
+            <button id="btnReset" onclick="handleReset()" class="text-xs font-medium text-slate-400 hover:text-red-500 transition-colors uppercase">
+                Làm mới dữ liệu
             </button>
         </div>
 
@@ -128,6 +133,7 @@
     <script>
         let players = [];
         const FEMALE_MAX = 60;
+        const PRICE_PER_SET = 12;
         let resetTimer = null;
 
         function processBulkInput() {
@@ -136,17 +142,27 @@
             const newPlayers = [];
 
             lines.forEach(line => {
-                let name = line.trim();
-                if (!name) return;
+                let rawName = line.trim();
+                if (!rawName) return;
 
                 let isFemale = false;
-                if (name.toLowerCase().endsWith(' n')) {
+                let sets = 0;
+
+                // Check for female ' n' suffix
+                if (rawName.toLowerCase().endsWith(' n')) {
                     isFemale = true;
-                    name = name.substring(0, name.length - 2).trim();
+                    rawName = rawName.substring(0, rawName.length - 2).trim();
                 }
 
-                if (name && !newPlayers.find(p => p.name.toLowerCase() === name.toLowerCase())) {
-                    newPlayers.push({ name: name, isFemale: isFemale });
+                // Check for set ' 2s' suffix
+                const setMatch = rawName.toLowerCase().match(/\s(\d+)s$/);
+                if (setMatch) {
+                    sets = parseInt(setMatch[1]);
+                    rawName = rawName.replace(setMatch[0], '').trim();
+                }
+
+                if (rawName) {
+                    newPlayers.push({ name: rawName, isFemale: isFemale, sets: sets });
                 }
             });
 
@@ -156,7 +172,16 @@
         }
 
         function toggleGender(index) {
-            players[index].isFemale = !players[index].isFemale;
+            // Cycle through: Male -> Female -> Set 1s -> Male
+            const p = players[index];
+            if (!p.isFemale && p.sets === 0) {
+                p.isFemale = true;
+            } else if (p.isFemale) {
+                p.isFemale = false;
+                p.sets = 1;
+            } else {
+                p.sets = 0;
+            }
             updateTextAreaFromPlayers();
             renderPlayers();
             calculate();
@@ -172,7 +197,12 @@
 
         function updateTextAreaFromPlayers() {
             const inputEl = document.getElementById('bulkInput');
-            inputEl.value = players.map(p => p.name + (p.isFemale ? ' n' : '')).join('\n');
+            inputEl.value = players.map(p => {
+                let suffix = '';
+                if (p.sets > 0) suffix += ` ${p.sets}s`;
+                if (p.isFemale) suffix += ' n';
+                return p.name + suffix;
+            }).join('\n');
         }
 
         function renderPlayers() {
@@ -187,12 +217,22 @@
 
             players.forEach((player, index) => {
                 const tag = document.createElement('div');
-                const typeClass = player.isFemale ? 'tag-female' : 'tag-male';
+                let typeClass = 'tag-male';
+                let label = player.name;
+                
+                if (player.sets > 0) {
+                    typeClass = 'tag-set';
+                    label += ` (${player.sets}s)`;
+                } else if (player.isFemale) {
+                    typeClass = 'tag-female';
+                    label += ' (n)';
+                }
+
                 tag.className = `tag ${typeClass} px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center animate-fade`;
                 tag.onclick = () => toggleGender(index);
                 tag.innerHTML = `
                     <span class="mr-1.5 opacity-40">#</span>
-                    <span>${player.name}</span>
+                    <span>${label}</span>
                     <button onclick="removePlayer(${index}, event)" class="ml-2 opacity-40 hover:opacity-100">&times;</button>
                 `;
                 list.appendChild(tag);
@@ -200,7 +240,7 @@
             counter.innerText = `${players.length} người`;
         }
 
-        let lastResult = { f: 0, m: 0, t: 0 };
+        let lastResult = { fFee: 0, mFee: 0, total: 0, setTotal: 0, setPlayersCount: 0 };
 
         function calculate() {
             const court = parseFloat(document.getElementById('courtFee').value) || 0;
@@ -212,46 +252,89 @@
                 return;
             }
 
-            const females = players.filter(p => p.isFemale);
-            const males = players.filter(p => !p.isFemale);
-            const avg = total / players.length;
+            const setPlayers = players.filter(p => p.sets > 0);
+            const nonSetPlayers = players.filter(p => p.sets === 0);
+            const females = nonSetPlayers.filter(p => p.isFemale);
+            const males = nonSetPlayers.filter(p => !p.isFemale);
 
+            // Calculate revenue from set players
+            let totalSetRevenue = 0;
+            setPlayers.forEach(p => {
+                totalSetRevenue += (p.sets * PRICE_PER_SET);
+            });
+
+            const remainingTotal = total - totalSetRevenue;
             let fFee = 0, mFee = 0;
 
-            if (avg <= FEMALE_MAX || males.length === 0) {
-                fFee = Math.ceil(avg);
-                mFee = fFee;
-            } else {
-                fFee = FEMALE_MAX;
-                mFee = Math.ceil((total - (fFee * females.length)) / males.length);
+            if (nonSetPlayers.length > 0) {
+                const avg = remainingTotal / nonSetPlayers.length;
+                if (avg <= FEMALE_MAX || males.length === 0) {
+                    fFee = Math.ceil(avg);
+                    mFee = fFee;
+                } else {
+                    fFee = FEMALE_MAX;
+                    mFee = Math.ceil((remainingTotal - (fFee * females.length)) / males.length);
+                }
             }
 
-            lastResult = { f: fFee, m: mFee, t: total };
+            lastResult = { 
+                fFee: fFee, 
+                mFee: mFee, 
+                total: total, 
+                setTotal: totalSetRevenue,
+                setPlayersCount: setPlayers.length,
+                femalesCount: females.length,
+                malesCount: males.length
+            };
+
             document.getElementById('billTotal').innerText = total + 'k';
             document.getElementById('maleFeeDisplay').innerText = mFee + 'k';
             document.getElementById('resultCard').classList.remove('hidden');
         }
 
         function copySummary() {
-            const { f, m, t } = lastResult;
+            const { fFee, mFee, total, setTotal, setPlayersCount, femalesCount, malesCount } = lastResult;
             const court = parseFloat(document.getElementById('courtFee').value) || 0;
             const shuttle = parseFloat(document.getElementById('shuttleFee').value) || 0;
-            const males = players.filter(p => !p.isFemale);
-            const females = players.filter(p => p.isFemale);
             
-            let text = `NAY CHƠI ${m}K / NGƯỜI\n\n`;
-            text += `${males.length} người chia đều + ${females.length} nữ ${f * females.length}K\n`;
-            text += `${court} tiền sân + ${shuttle} tiền cầu = ${t}K tổng cộng\n\n`;
+            const setPlayers = players.filter(p => p.sets > 0);
+            const nonSetPlayers = players.filter(p => p.sets === 0);
+            const males = nonSetPlayers.filter(p => !p.isFemale);
+            const females = nonSetPlayers.filter(p => p.isFemale);
+            
+            let text = `NAY CHƠI ${mFee}K / NGƯỜI\n\n`;
+            
+            // Stats section
+            if (setPlayers.length > 0) {
+                // Group set players by name for specific detail
+                setPlayers.forEach(p => {
+                    text += `- ${p.name} ${p.sets * PRICE_PER_SET}K (${p.sets} set)\n`;
+                });
+            }
+            if (females.length > 0) {
+                text += `- ${femalesCount} nữ ${fFee * femalesCount}K\n`;
+            }
+            if (males.length > 0) {
+                text += `- ${malesCount} người chia đều\n`;
+            }
+            
+            text += `\n${court} tiền sân + ${shuttle} tiền cầu = ${total}K tổng cộng\n\n`;
             text += `Players:\n\n`;
             
             let count = 1;
+            // Males first
             males.forEach(p => {
                 text += `${count}. ${p.name}\n`;
                 count++;
             });
-            
+            // Females
             females.forEach(p => {
-                text += `${count}. ${p.name} ${f}K\n`;
+                text += `${count}. ${p.name} ${fFee}K\n`;
+                count++;
+            });
+            // Sets
+            setPlayers.forEach(p => {
+                text += `${count}. ${p.name} ${p.sets * PRICE_PER_SET}K (${p.sets} set)\n`;
                 count++;
             });
 
@@ -262,7 +345,7 @@
             document.execCommand('copy');
             document.body.removeChild(el);
 
-            showToast("Đã sao chép vào bộ nhớ tạm! ✨");
+            showToast("Đã sao chép bảng kê! ✨");
         }
 
         function handleReset() {
