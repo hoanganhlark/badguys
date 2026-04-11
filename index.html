@@ -173,15 +173,33 @@
               </p>
               <h3 id="billTotal" class="text-3xl font-bold">0k</h3>
             </div>
-            <div class="text-right">
-              <p
-                class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1"
-              >
-                Mỗi set
-              </p>
-              <p id="setPriceDisplay" class="text-lg font-semibold text-blue-700">
-                12k
-              </p>
+            <div class="flex items-end gap-6 text-right">
+              <div>
+                <p
+                  class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1"
+                >
+                  Nữ
+                </p>
+                <p
+                  id="femalePriceDisplay"
+                  class="text-lg font-semibold text-rose-700"
+                >
+                  60k
+                </p>
+              </div>
+              <div>
+                <p
+                  class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1"
+                >
+                  Mỗi set
+                </p>
+                <p
+                  id="setPriceDisplay"
+                  class="text-lg font-semibold text-blue-700"
+                >
+                  12k
+                </p>
+              </div>
             </div>
           </div>
 
@@ -231,7 +249,9 @@
         class="hidden fixed left-0 top-0 h-full w-full max-w-sm sidebar-panel z-50 p-6"
       >
         <div class="flex items-center justify-between mb-6">
-          <h3 class="text-sm font-semibold text-slate-600 uppercase tracking-wider">
+          <h3
+            class="text-sm font-semibold text-slate-600 uppercase tracking-wider"
+          >
             Cấu hình
           </h3>
           <button
@@ -285,8 +305,8 @@
         </div>
 
         <p class="text-xs text-slate-400 mt-6 leading-relaxed">
-          Trường "Số cầu" ngoài màn hình chính sẽ tự quy đổi ra tiền cầu theo giá
-          ống hiện tại.
+          Trường "Số cầu" ngoài màn hình chính sẽ tự quy đổi ra tiền cầu theo
+          giá ống hiện tại.
         </p>
       </aside>
     </div>
@@ -304,7 +324,9 @@
 
       function formatK(value) {
         const rounded = Math.round(value * 10) / 10;
-        return Number.isInteger(rounded) ? `${rounded}k` : `${rounded.toFixed(1)}k`;
+        return Number.isInteger(rounded)
+          ? `${rounded}k`
+          : `${rounded.toFixed(1)}k`;
       }
 
       function toggleConfigPanel(show) {
@@ -338,7 +360,12 @@
         document.getElementById("cfgFemaleMax").value = config.femaleMax;
         document.getElementById("cfgTubePrice").value = config.tubePrice;
         document.getElementById("cfgSetPrice").value = config.setPrice;
-        document.getElementById("setPriceDisplay").innerText = formatK(config.setPrice);
+        document.getElementById("setPriceDisplay").innerText = formatK(
+          config.setPrice,
+        );
+        document.getElementById("femalePriceDisplay").innerText = formatK(
+          config.femaleMax,
+        );
       }
 
       function updateConfig() {
@@ -557,7 +584,7 @@
             (sum, p) => sum + p.sets * config.setPrice,
             0,
           );
-          summaryParts.push(`đánh ít ${totalSetMoney}K`);
+          summaryParts.push(`${setPlayers.length} đánh ít ${totalSetMoney}K`);
         }
 
         text += summaryParts.join(" + ") + "\n";
