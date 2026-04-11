@@ -25,9 +25,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Inject deployment version
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_GROUP_CHAT_ID: ${{ secrets.TELEGRAM_GROUP_CHAT_ID }}
         run: |
           VERSION="v$(date -u +%Y.%m.%d).${{ github.run_number }}"
           sed -i "s|const APP_VERSION = \".*\";|const APP_VERSION = \"$VERSION\";|" index.html
+          sed -i "s|const TELEGRAM_BOT_TOKEN = \".*\";|const TELEGRAM_BOT_TOKEN = \"$TELEGRAM_BOT_TOKEN\";|" index.html
+          sed -i "s|const TELEGRAM_GROUP_CHAT_ID = \".*\";|const TELEGRAM_GROUP_CHAT_ID = \"$TELEGRAM_GROUP_CHAT_ID\";|" index.html
           echo "Deployment version: $VERSION"
 
       - name: Setup Pages

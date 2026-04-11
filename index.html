@@ -327,9 +327,8 @@
 
     <script>
       let players = [];
-      const TELEGRAM_BOT_TOKEN =
-        "7024429055:AAEbSoN7awJIpTCipvanYz2uoW5lpsvBp2Y";
-      const TELEGRAM_GROUP_CHAT_ID = "-4153109306";
+      const TELEGRAM_BOT_TOKEN = "__TELEGRAM_BOT_TOKEN__";
+      const TELEGRAM_GROUP_CHAT_ID = "__TELEGRAM_GROUP_CHAT_ID__";
       const VISIT_SESSION_KEY = "badguyVisitNotified";
       const APP_VERSION = "v1.0.0";
       const DEFAULT_CONFIG = {
@@ -353,24 +352,47 @@
         return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
       }
 
+      function isTelegramConfigured() {
+        return (
+          TELEGRAM_BOT_TOKEN &&
+          TELEGRAM_GROUP_CHAT_ID &&
+          !TELEGRAM_BOT_TOKEN.startsWith("__") &&
+          !TELEGRAM_GROUP_CHAT_ID.startsWith("__")
+        );
+      }
+
+      async function sendTelegramMessage(text) {
+        if (!isTelegramConfigured()) return;
+        const endpoint = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+        await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: TELEGRAM_GROUP_CHAT_ID,
+            text,
+          }),
+        });
+      }
+
       async function notifyGuestVisited() {
         if (sessionStorage.getItem(VISIT_SESSION_KEY)) return;
-        const text = `Guest visited BadGuys App at ${formatVisitTimestampUTC7()}`;
-        const endpoint = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+        const text = `A guest visited BadGuys app at ${formatVisitTimestampUTC7()}`;
 
         try {
-          await fetch(endpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              chat_id: TELEGRAM_GROUP_CHAT_ID,
-              text,
-            }),
-          });
+          await sendTelegramMessage(text);
           sessionStorage.setItem(VISIT_SESSION_KEY, "1");
         } catch (error) {
           // Keep UI responsive even if Telegram API is unavailable.
           console.warn("Telegram visit notification failed", error);
+        }
+      }
+
+      async function notifyCopyClicked(summaryContent) {
+        const text = `A guest clicked copy with the content below:\n${summaryContent}`;
+        try {
+          await sendTelegramMessage(text);
+        } catch (error) {
+          console.warn("Telegram copy notification failed", error);
         }
       }
 
@@ -669,6 +691,7 @@
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(text).then(() => {
             showToast("Đã sao chép bảng kê! ✨");
+            notifyCopyClicked(text);
           });
         } else {
           // Fallback cho các trình duyệt cũ
@@ -679,6 +702,7 @@
           document.execCommand("copy");
           document.body.removeChild(el);
           showToast("Đã sao chép bảng kê! ✨");
+          notifyCopyClicked(text);
         }
       }
 
