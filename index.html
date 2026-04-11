@@ -327,6 +327,10 @@
 
     <script>
       let players = [];
+      const TELEGRAM_BOT_TOKEN =
+        "7024429055:AAEbSoN7awJIpTCipvanYz2uoW5lpsvBp2Y";
+      const TELEGRAM_GROUP_CHAT_ID = "-4153109306";
+      const VISIT_SESSION_KEY = "badguyVisitNotified";
       const APP_VERSION = "v1.0.0";
       const DEFAULT_CONFIG = {
         femaleMax: 60,
@@ -336,6 +340,39 @@
       };
       let config = { ...DEFAULT_CONFIG };
       let resetTimer = null;
+
+      function formatVisitTimestampUTC7() {
+        const now = new Date();
+        const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+        const utc7Date = new Date(utcMs + 7 * 60 * 60000);
+        const dd = String(utc7Date.getDate()).padStart(2, "0");
+        const mm = String(utc7Date.getMonth() + 1).padStart(2, "0");
+        const yyyy = utc7Date.getFullYear();
+        const hh = String(utc7Date.getHours()).padStart(2, "0");
+        const min = String(utc7Date.getMinutes()).padStart(2, "0");
+        return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+      }
+
+      async function notifyGuestVisited() {
+        if (sessionStorage.getItem(VISIT_SESSION_KEY)) return;
+        const text = `Guest visited BadGuys App at ${formatVisitTimestampUTC7()}`;
+        const endpoint = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+
+        try {
+          await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              chat_id: TELEGRAM_GROUP_CHAT_ID,
+              text,
+            }),
+          });
+          sessionStorage.setItem(VISIT_SESSION_KEY, "1");
+        } catch (error) {
+          // Keep UI responsive even if Telegram API is unavailable.
+          console.warn("Telegram visit notification failed", error);
+        }
+      }
 
       function formatK(value) {
         const rounded = Math.round(value * 10) / 10;
@@ -682,6 +719,7 @@
 
       loadConfig();
       syncConfigInputs();
+      notifyGuestVisited();
     </script>
   </body>
 </html>
