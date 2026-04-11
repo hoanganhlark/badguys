@@ -3,149 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BadGuys Badminton - Pro Calc</title>
+    <title>BadGuys Badminton - Minimalist</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            font-family: 'Inter', sans-serif;
+            background-color: #fafafa;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: #1a1a1a;
             min-height: 100vh;
         }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            border-radius: 1.5rem;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-        }
-        .input-focus:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-        .player-tag {
+        .card {
+            background: #ffffff;
+            border: 1px solid #f0f0f0;
+            border-radius: 1rem;
             transition: all 0.2s ease;
         }
-        .player-tag:active {
-            scale: 0.95;
+        .input-minimal {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
         }
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(10px); }
+        .input-minimal:focus {
+            outline: none;
+            border-color: #1a1a1a;
+            background-color: #fff;
+        }
+        .tag {
+            transition: all 0.2s ease;
+            cursor: pointer;
+            user-select: none;
+        }
+        .tag-male {
+            background-color: #f3f4f6;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+        }
+        .tag-female {
+            background-color: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fee2e2;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .animate-slide {
-            animation: slideIn 0.3s ease forwards;
-        }
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 10px;
+        .animate-fade {
+            animation: fadeIn 0.3s ease-out forwards;
         }
     </style>
 </head>
-<body class="p-4 md:p-10">
-    <div class="max-w-xl mx-auto">
-        <!-- Brand Header -->
-        <div class="flex items-center justify-between mb-8 px-2">
-            <div>
-                <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">BadGuys<span class="text-blue-600">.</span></h1>
-                <p class="text-slate-500 text-sm font-medium">Badminton Cost Manager</p>
-            </div>
-            <div class="bg-blue-600 p-3 rounded-2xl shadow-lg shadow-blue-200">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15.6 11.6L22 7l-4.64-1.16L16.2 1.2 11.6 7.6 15.6 11.6z"/><path d="m7 14 1.9 1.9"/><path d="M5 21l.2-.2"/><path d="M13 13c-4.4 4.4-8 4.5-12 8l4-12c3.5-4 3.6-7.6 8-12"/><circle cx="18" cy="18" r="3"/></svg>
-            </div>
-        </div>
+<body class="p-5 md:p-12">
+    <div class="max-w-md mx-auto">
+        <!-- Minimal Header -->
+        <header class="mb-12 text-center">
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">BadGuys<span class="text-slate-400">.</span></h1>
+            <p class="text-slate-400 text-xs uppercase tracking-widest mt-1">Cost Management</p>
+        </header>
 
-        <!-- Section 1: Money Input -->
-        <div class="glass-card p-6 mb-6">
-            <div class="flex items-center gap-2 mb-5">
-                <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
-                </div>
-                <h2 class="text-lg font-bold text-slate-700">Chi phí buổi tập (k)</h2>
+        <!-- Section 1: Expenses -->
+        <section class="mb-8">
+            <h2 class="text-sm font-semibold text-slate-500 mb-4 px-1 uppercase tracking-wider">Chi phí (k)</h2>
+            <div class="grid grid-cols-2 gap-3">
+                <input type="number" id="courtFee" placeholder="Tiền sân" class="input-minimal px-4 py-3 text-sm font-medium w-full" oninput="calculate()">
+                <input type="number" id="shuttleFee" placeholder="Tiền cầu" class="input-minimal px-4 py-3 text-sm font-medium w-full" oninput="calculate()">
             </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-1.5">
-                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Tiền sân</label>
-                    <input type="number" id="courtFee" placeholder="0" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg font-semibold text-slate-700 input-focus transition-all" oninput="calculate()">
-                </div>
-                <div class="space-y-1.5">
-                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Tiền cầu</label>
-                    <input type="number" id="shuttleFee" placeholder="0" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg font-semibold text-slate-700 input-focus transition-all" oninput="calculate()">
-                </div>
-            </div>
-        </div>
+        </section>
 
-        <!-- Section 2: Player Management (Bulk Input) -->
-        <div class="glass-card p-6 mb-6">
-            <div class="flex items-center justify-between mb-5">
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    </div>
-                    <h2 class="text-lg font-bold text-slate-700">Nhập danh sách nhanh</h2>
-                </div>
-                <span id="playerCounter" class="bg-slate-100 text-slate-600 text-xs font-bold px-2.5 py-1 rounded-full uppercase">0 Người</span>
+        <!-- Section 2: Players -->
+        <section class="mb-8">
+            <div class="flex justify-between items-center mb-4 px-1">
+                <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Danh sách</h2>
+                <span id="playerCounter" class="text-xs font-medium text-slate-400">0 người</span>
             </div>
             
-            <div class="space-y-4 mb-6">
-                <textarea id="bulkInput" rows="4" placeholder="Nhập danh sách, mỗi người 1 dòng&#10;Ví dụ:&#10;An&#10;Phượng n (n là Nữ)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 input-focus transition-all resize-none" oninput="processBulkInput()"></textarea>
-            </div>
+            <textarea id="bulkInput" rows="3" placeholder="Nhập tên (thêm 'n' cho nữ)..." class="input-minimal w-full px-4 py-3 text-sm mb-4 resize-none" oninput="processBulkInput()"></textarea>
             
-            <div id="playerList" class="flex flex-wrap gap-2 min-h-[40px]">
-                <p id="emptyMsg" class="text-slate-400 text-sm italic w-full text-center py-4">Chưa có ai trong danh sách...</p>
+            <div id="playerList" class="flex flex-wrap gap-2 min-h-[20px]">
+                <!-- Tags injected here -->
             </div>
-            <p class="text-[10px] text-slate-400 mt-4 italic">* Thêm " n" sau tên để tự động nhận diện là Nữ. Click vào tên để đổi giới tính.</p>
-        </div>
+        </section>
 
-        <!-- Section 3: Result Summary -->
-        <div id="resultCard" class="glass-card p-6 mb-8 hidden border-t-4 border-t-blue-500 animate-slide">
-            <div class="text-center mb-6">
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Chi tiết thanh toán</p>
-                <h3 id="billTotal" class="text-4xl font-black text-slate-800 tracking-tight">0k</h3>
-            </div>
-            
-            <div class="space-y-4 border-t border-b border-dashed border-slate-200 py-6 my-6">
-                <div class="flex justify-between items-center px-2">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center">👩</div>
-                        <div>
-                            <p class="text-sm font-bold text-slate-700">Nữ</p>
-                            <p class="text-[10px] font-medium text-slate-400 uppercase">Cố định 60k</p>
-                        </div>
+        <!-- Section 3: Summary -->
+        <section id="resultCard" class="hidden animate-fade mb-10">
+            <div class="card p-6 mb-4">
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Tổng cộng</p>
+                        <h3 id="billTotal" class="text-3xl font-bold">0k</h3>
                     </div>
-                    <span id="femaleFeeDisplay" class="text-lg font-bold text-pink-600">0k</span>
+                    <div class="text-right">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Cố định Nữ</p>
+                        <p class="text-lg font-semibold text-red-700">60k</p>
+                    </div>
                 </div>
-                <div class="flex justify-between items-center px-2">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">👨</div>
-                        <div>
-                            <p class="text-sm font-bold text-slate-700">Nam</p>
-                            <p class="text-[10px] font-medium text-slate-400 uppercase">Chia đều phần lại</p>
-                        </div>
+
+                <div class="space-y-3 pt-4 border-t border-slate-50">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-500">Mỗi Nam phải đóng:</span>
+                        <span id="maleFeeDisplay" class="font-bold">0k</span>
                     </div>
-                    <span id="maleFeeDisplay" class="text-lg font-bold text-blue-600">0k</span>
                 </div>
             </div>
 
-            <button onclick="copySummary()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-3 shadow-lg shadow-blue-100 active:scale-95">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                Copy Theo Mẫu Nhóm
+            <button onclick="copySummary()" class="w-full bg-slate-900 text-white py-4 rounded-xl text-sm font-semibold hover:bg-black transition-all active:scale-[0.98]">
+                Sao chép bảng kê
+            </button>
+        </section>
+
+        <!-- Footer Actions -->
+        <div class="flex justify-center gap-8">
+            <button id="btnReset" onclick="handleReset()" class="text-xs font-medium text-slate-400 hover:text-red-500 transition-colors">
+                LÀM MỚI DỮ LIỆU
             </button>
         </div>
 
-        <!-- Global Actions -->
-        <div class="flex gap-4 px-2">
-            <button onclick="calculate()" class="flex-[2] bg-slate-800 text-white py-4 rounded-2xl font-bold hover:bg-black shadow-xl shadow-slate-200 transition-all active:scale-95">TÍNH TOÁN</button>
-            <button id="btnReset" onclick="handleReset()" class="flex-1 bg-white text-slate-400 py-4 rounded-2xl font-bold hover:text-red-500 border border-slate-100 transition-all active:scale-95">ĐẶT LẠI</button>
-        </div>
-
-        <!-- Toast Notification -->
-        <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-sm px-6 py-3 rounded-2xl shadow-2xl opacity-0 transition-all duration-300 transform translate-y-5 pointer-events-none z-50">
-            Đã copy tóm tắt vào bộ nhớ tạm! 🚀
+        <!-- Notification -->
+        <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[13px] px-5 py-3 rounded-full shadow-xl opacity-0 transition-all duration-300 pointer-events-none">
+            Đã sao chép!
         </div>
     </div>
 
@@ -196,35 +172,32 @@
 
         function updateTextAreaFromPlayers() {
             const inputEl = document.getElementById('bulkInput');
-            inputEl.value = players.map(p => p.name + (p.isFemale ? ' N' : '')).join('\n');
+            inputEl.value = players.map(p => p.name + (p.isFemale ? ' n' : '')).join('\n');
         }
 
         function renderPlayers() {
             const list = document.getElementById('playerList');
             const counter = document.getElementById('playerCounter');
-            
             list.innerHTML = '';
             
             if (players.length === 0) {
-                list.innerHTML = `<p id="emptyMsg" class="text-slate-400 text-sm italic w-full text-center py-4">Chưa có ai trong danh sách...</p>`;
-                counter.innerText = '0 Người';
+                counter.innerText = '0 người';
                 return;
             }
 
             players.forEach((player, index) => {
                 const tag = document.createElement('div');
-                const genderClass = player.isFemale ? 'bg-pink-50 border-pink-200 text-pink-700' : 'bg-blue-50 border-blue-200 text-blue-700';
-                tag.className = `player-tag animate-slide flex items-center px-4 py-2.5 rounded-xl text-sm font-semibold border cursor-pointer select-none ${genderClass}`;
+                const typeClass = player.isFemale ? 'tag-female' : 'tag-male';
+                tag.className = `tag ${typeClass} px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center animate-fade`;
                 tag.onclick = () => toggleGender(index);
                 tag.innerHTML = `
-                    <span class="mr-2">${player.isFemale ? '👩' : '👨'}</span>
+                    <span class="mr-1.5 opacity-40">#</span>
                     <span>${player.name}</span>
-                    <button onclick="removePlayer(${index}, event)" class="ml-2.5 hover:text-red-500 text-lg leading-none">&times;</button>
+                    <button onclick="removePlayer(${index}, event)" class="ml-2 opacity-40 hover:opacity-100">&times;</button>
                 `;
                 list.appendChild(tag);
             });
-            
-            counter.innerText = `${players.length} Người`;
+            counter.innerText = `${players.length} người`;
         }
 
         let lastResult = { f: 0, m: 0, t: 0 };
@@ -234,7 +207,7 @@
             const shuttle = parseFloat(document.getElementById('shuttleFee').value) || 0;
             const total = court + shuttle;
             
-            if (players.length === 0) {
+            if (players.length === 0 || total === 0) {
                 document.getElementById('resultCard').classList.add('hidden');
                 return;
             }
@@ -255,7 +228,6 @@
 
             lastResult = { f: fFee, m: mFee, t: total };
             document.getElementById('billTotal').innerText = total + 'k';
-            document.getElementById('femaleFeeDisplay').innerText = fFee + 'k';
             document.getElementById('maleFeeDisplay').innerText = mFee + 'k';
             document.getElementById('resultCard').classList.remove('hidden');
         }
@@ -264,24 +236,20 @@
             const { f, m, t } = lastResult;
             const court = parseFloat(document.getElementById('courtFee').value) || 0;
             const shuttle = parseFloat(document.getElementById('shuttleFee').value) || 0;
-            
             const males = players.filter(p => !p.isFemale);
             const females = players.filter(p => p.isFemale);
             
-            let text = ``;
-            text += `NAY CHƠI ${m}K / NGƯỜI\n\n`;
+            let text = `NAY CHƠI ${m}K / NGƯỜI\n\n`;
             text += `${males.length} người chia đều + ${females.length} nữ ${f * females.length}K\n`;
             text += `${court} tiền sân + ${shuttle} tiền cầu = ${t}K tổng cộng\n\n`;
             text += `Players:\n\n`;
             
-            // In danh sách Nam trước
             let count = 1;
             males.forEach(p => {
                 text += `${count}. ${p.name}\n`;
                 count++;
             });
             
-            // In danh sách Nữ sau cùng mức phí 60K
             females.forEach(p => {
                 text += `${count}. ${p.name} ${f}K\n`;
                 count++;
@@ -294,40 +262,29 @@
             document.execCommand('copy');
             document.body.removeChild(el);
 
-            showToast("Đã copy tóm tắt vào bộ nhớ tạm! 🚀");
+            showToast("Đã sao chép vào bộ nhớ tạm! ✨");
         }
 
         function handleReset() {
             const btn = document.getElementById('btnReset');
-            
             if (resetTimer) {
-                // Thực hiện reset thực sự
                 clearTimeout(resetTimer);
                 resetTimer = null;
-                
                 document.getElementById('courtFee').value = '';
                 document.getElementById('shuttleFee').value = '';
                 document.getElementById('bulkInput').value = '';
                 players = [];
-                
                 renderPlayers();
                 document.getElementById('resultCard').classList.add('hidden');
-                
-                btn.innerText = "ĐẶT LẠI";
-                btn.classList.remove('text-red-600', 'border-red-200', 'bg-red-50');
-                btn.classList.add('text-slate-400', 'border-slate-100', 'bg-white');
-                
-                showToast("Đã đặt lại toàn bộ dữ liệu! ✨");
+                btn.innerText = "LÀM MỚI DỮ LIỆU";
+                btn.classList.replace('text-red-600', 'text-slate-400');
+                showToast("Dữ liệu đã được xóa.");
             } else {
-                // Bước chuẩn bị (Double click protection)
-                btn.innerText = "XÁC NHẬN?";
-                btn.classList.remove('text-slate-400', 'border-slate-100', 'bg-white');
-                btn.classList.add('text-red-600', 'border-red-200', 'bg-red-50');
-                
+                btn.innerText = "XÁC NHẬN XÓA?";
+                btn.classList.replace('text-slate-400', 'text-red-600');
                 resetTimer = setTimeout(() => {
-                    btn.innerText = "ĐẶT LẠI";
-                    btn.classList.remove('text-red-600', 'border-red-200', 'bg-red-50');
-                    btn.classList.add('text-slate-400', 'border-slate-100', 'bg-white');
+                    btn.innerText = "LÀM MỚI DỮ LIỆU";
+                    btn.classList.replace('text-red-600', 'text-slate-400');
                     resetTimer = null;
                 }, 2000);
             }
@@ -336,12 +293,11 @@
         function showToast(msg) {
             const toast = document.getElementById('toast');
             toast.innerText = msg;
-            toast.classList.remove('opacity-0', 'translate-y-5');
-            toast.classList.add('opacity-100', 'translate-y-0');
+            toast.classList.remove('opacity-0');
+            toast.classList.add('opacity-100');
             setTimeout(() => {
-                toast.classList.add('opacity-0', 'translate-y-5');
-                toast.classList.remove('opacity-100', 'translate-y-0');
-            }, 2500);
+                toast.classList.replace('opacity-100', 'opacity-0');
+            }, 2000);
         }
     </script>
 </body>
