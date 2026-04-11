@@ -38,22 +38,37 @@ jobs:
         run: |
           VERSION="v$(date -u +%Y.%m.%d).${{ github.run_number }}"
 
-          FEMALE_MAX="${BADGUY_FEMALE_MAX:-60}"
-          TUBE_PRICE="${BADGUY_TUBE_PRICE:-290}"
-          SET_PRICE="${BADGUY_SET_PRICE:-12}"
-          SHUTTLES_PER_TUBE="${BADGUY_SHUTTLES_PER_TUBE:-12}"
-          ROUND_RESULT="${BADGUY_ROUND_RESULT:-true}"
+          export VERSION
+          python - <<'PY'
+          import os
+          import pathlib
+          import re
 
-          sed -i "s|appVersion: \".*\"|appVersion: \"$VERSION\"|" index.html
-          sed -i "s|telegramBotToken: \".*\"|telegramBotToken: \"$TELEGRAM_BOT_TOKEN\"|" index.html
-          sed -i "s|telegramGroupChatId: \".*\"|telegramGroupChatId: \"$TELEGRAM_GROUP_CHAT_ID\"|" index.html
-          sed -i "s|firebaseApiKey: \".*\"|firebaseApiKey: \"$FIREBASE_API_KEY\"|" index.html
-          sed -i "s|firebaseProjectId: \".*\"|firebaseProjectId: \"$FIREBASE_PROJECT_ID\"|" index.html
-          sed -i "s|femaleMax: \".*\"|femaleMax: \"$FEMALE_MAX\"|" index.html
-          sed -i "s|tubePrice: \".*\"|tubePrice: \"$TUBE_PRICE\"|" index.html
-          sed -i "s|setPrice: \".*\"|setPrice: \"$SET_PRICE\"|" index.html
-          sed -i "s|shuttlesPerTube: \".*\"|shuttlesPerTube: \"$SHUTTLES_PER_TUBE\"|" index.html
-          sed -i "s|roundResult: \".*\"|roundResult: \"$ROUND_RESULT\"|" index.html
+          file_path = pathlib.Path("index.html")
+          content = file_path.read_text(encoding="utf-8")
+
+          replacements = {
+              "appVersion": os.environ.get("VERSION", ""),
+              "telegramBotToken": os.environ.get("TELEGRAM_BOT_TOKEN", ""),
+              "telegramGroupChatId": os.environ.get("TELEGRAM_GROUP_CHAT_ID", ""),
+              "firebaseApiKey": os.environ.get("FIREBASE_API_KEY", ""),
+              "firebaseProjectId": os.environ.get("FIREBASE_PROJECT_ID", ""),
+              "femaleMax": os.environ.get("BADGUY_FEMALE_MAX") or "60",
+              "tubePrice": os.environ.get("BADGUY_TUBE_PRICE") or "290",
+              "setPrice": os.environ.get("BADGUY_SET_PRICE") or "12",
+              "shuttlesPerTube": os.environ.get("BADGUY_SHUTTLES_PER_TUBE") or "12",
+              "roundResult": os.environ.get("BADGUY_ROUND_RESULT") or "true",
+          }
+
+          for key, value in replacements.items():
+              pattern = re.compile(rf'({re.escape(key)}:\s*")[^"]*(")')
+              content, count = pattern.subn(lambda m: f'{m.group(1)}{value}{m.group(2)}', content, count=1)
+              if count == 0:
+                  raise RuntimeError(f"Could not locate key '{key}' in index.html for replacement")
+
+          file_path.write_text(content, encoding="utf-8")
+          PY
+
           echo "Deployment version: $VERSION"
 
       - name: Setup Pages
