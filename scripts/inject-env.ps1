@@ -15,7 +15,7 @@ if (!(Test-Path $InputFile)) {
 }
 
 $envMap = @{}
-Get-Content $EnvFile | ForEach-Object {
+Get-Content $EnvFile -Encoding UTF8 | ForEach-Object {
     $line = $_.Trim()
     if (-not $line -or $line.StartsWith("#")) { return }
     $idx = $line.IndexOf("=")
@@ -25,7 +25,7 @@ Get-Content $EnvFile | ForEach-Object {
     $envMap[$key] = $val
 }
 
-$content = Get-Content $InputFile -Raw
+$content = Get-Content $InputFile -Raw -Encoding UTF8
 
 function Escape-DoubleQuote {
     param([string]$value)
