@@ -104,6 +104,111 @@ function formatSummaryPrice(value) {
   return Number.isInteger(rounded) ? `${rounded}K` : `${rounded.toFixed(1)}K`;
 }
 
+function formatSessionDateLabel(session) {
+  if (session.dateKey) {
+    const [yyyy, mm, dd] = String(session.dateKey).split("-");
+    if (yyyy && mm && dd) return `${dd}/${mm}/${yyyy}`;
+  }
+
+  if (session.clientUpdatedAt) {
+    const d = new Date(session.clientUpdatedAt);
+    if (!Number.isNaN(d.getTime())) {
+      return d.toLocaleDateString("vi-VN");
+    }
+  }
+
+  return "Không rõ ngày";
+}
+
+function buildSessionCardHtml(session) {
+  const dateLabel = formatSessionDateLabel(session);
+  const total = formatK(session.total || 0);
+  const maleFee = formatK(session.maleFee || 0);
+  const femaleFee = formatK(session.femaleFee || 0);
+  const malesCount = session.malesCount || 0;
+  const femalesCount = session.femalesCount || 0;
+  const setPlayersCount = session.setPlayersCount || 0;
+  const summaryText = String(session.summaryText || "").trim();
+
+  let summaryHtml = "";
+  if (summaryText) {
+    summaryHtml = `<pre class="mt-3 text-xs bg-slate-50 border border-slate-100 rounded-lg p-3 text-slate-600 whitespace-pre-wrap break-words">${summaryText.replace(/</g, "&lt;")}</pre>`;
+  }
+
+  return `
+    <article class="border border-slate-200 rounded-xl p-4 bg-white">
+      <div class="flex items-center justify-between mb-2">
+        <h5 class="text-sm font-semibold text-slate-800">Buổi ${dateLabel}</h5>
+        <span class="text-xs text-slate-500">Tổng: ${total}</span>
+      </div>
+      <p class="text-xs text-slate-500">
+        Nam: ${malesCount} người (${maleFee}/người) | Nữ: ${femalesCount} người (${femaleFee}/người) | Đánh set: ${setPlayersCount} người
+      </p>
+      ${summaryHtml}
+    </article>
+  `;
+}
+
+function showSessionsState(message) {
+  const state = document.getElementById("sessionsState");
+  const list = document.getElementById("sessionsList");
+  state.innerText = message;
+  state.classList.remove("hidden");
+  list.classList.add("hidden");
+}
+
+function showSessionsList(sessions) {
+  const state = document.getElementById("sessionsState");
+  const list = document.getElementById("sessionsList");
+
+  if (!sessions.length) {
+    showSessionsState("Chưa có dữ liệu phiên nào.");
+    return;
+  }
+
+  list.innerHTML = sessions
+    .map((session) => buildSessionCardHtml(session))
+    .join("");
+  state.classList.add("hidden");
+  list.classList.remove("hidden");
+}
+
+async function loadLastSessions() {
+  showSessionsState("Đang tải dữ liệu...");
+
+  try {
+    if (!window.badguyDb || !window.badguyDb.getRecentSessions) {
+      if (window.badguyDbReady === false) {
+        showSessionsState(
+          "Firebase chưa khởi tạo được. Kiểm tra kết nối mạng hoặc cấu hình Firestore.",
+        );
+      } else {
+        showSessionsState("Firebase chưa sẵn sàng. Vui lòng thử lại sau.");
+      }
+      return;
+    }
+
+    const sessions = await window.badguyDb.getRecentSessions(20);
+    showSessionsList(sessions);
+  } catch (error) {
+    console.warn("Load recent sessions failed", error);
+    showSessionsState(
+      "Không thể tải lịch sử. Kiểm tra quyền Firestore và thử lại.",
+    );
+  }
+}
+
+function openSessionsModal() {
+  const modal = document.getElementById("sessionsModal");
+  modal.classList.remove("hidden");
+  loadLastSessions();
+}
+
+function closeSessionsModal() {
+  const modal = document.getElementById("sessionsModal");
+  modal.classList.add("hidden");
+}
+
 function toggleConfigPanel(show) {
   const panel = document.getElementById("configPanel");
   const backdrop = document.getElementById("configBackdrop");
@@ -382,10 +487,36 @@ function copySummary() {
     count += 1;
   });
 
+  const payload = {
+    summaryText: text,
+    courtFee: court,
+    shuttleCount,
+    shuttleFee: shuttle,
+    total,
+    maleFee: mFee,
+    femaleFee: fFee,
+    malesCount,
+    femalesCount,
+    setPlayersCount: setPlayers.length,
+    players: players.map((p) => ({
+      name: p.name,
+      isFemale: !!p.isFemale,
+      sets: p.sets || 0,
+    })),
+  };
+
+  const saveDailySession = () => {
+    if (!window.badguyDb || !window.badguyDb.saveDailySummary) return;
+    window.badguyDb.saveDailySummary(payload).catch((error) => {
+      console.warn("Save daily session failed", error);
+    });
+  };
+
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(() => {
       showToast("Đã sao chép bảng kê! ✨");
       notifyCopyClicked(text);
+      saveDailySession();
     });
   } else {
     const el = document.createElement("textarea");
@@ -396,6 +527,7 @@ function copySummary() {
     document.body.removeChild(el);
     showToast("Đã sao chép bảng kê! ✨");
     notifyCopyClicked(text);
+    saveDailySession();
   }
 }
 
@@ -456,5 +588,7 @@ window.copySummary = copySummary;
 window.handleReset = handleReset;
 window.removePlayer = removePlayer;
 window.toggleGender = toggleGender;
+window.openSessionsModal = openSessionsModal;
+window.closeSessionsModal = closeSessionsModal;
 
 document.addEventListener("DOMContentLoaded", init);
