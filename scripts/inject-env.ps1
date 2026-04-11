@@ -46,6 +46,20 @@ if ($envMap.ContainsKey("TELEGRAM_GROUP_CHAT_ID")) {
     }
 }
 
+if ($envMap.ContainsKey("FIREBASE_API_KEY")) {
+    $firebaseApiKey = ConvertTo-EscapedDoubleQuote $envMap["FIREBASE_API_KEY"]
+    if ($content -match 'firebaseApiKey:\s*".*?"') {
+        $content = $content -replace 'firebaseApiKey:\s*".*?"', "firebaseApiKey: `"$firebaseApiKey`""
+    }
+}
+
+if ($envMap.ContainsKey("FIREBASE_PROJECT_ID")) {
+    $firebaseProjectId = ConvertTo-EscapedDoubleQuote $envMap["FIREBASE_PROJECT_ID"]
+    if ($content -match 'firebaseProjectId:\s*".*?"') {
+        $content = $content -replace 'firebaseProjectId:\s*".*?"', "firebaseProjectId: `"$firebaseProjectId`""
+    }
+}
+
 if ($envMap.ContainsKey("APP_VERSION")) {
     $version = ConvertTo-EscapedDoubleQuote $envMap["APP_VERSION"]
     if ($content -match 'appVersion:\s*".*?"') {

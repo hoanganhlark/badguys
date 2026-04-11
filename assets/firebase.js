@@ -1,9 +1,19 @@
 (function initBadguyFirebase() {
+  const ENV = window.BADGUY_ENV || {};
+  const FIREBASE_API_KEY = ENV.firebaseApiKey || "__FIREBASE_API_KEY__";
+  const FIREBASE_PROJECT_ID =
+    ENV.firebaseProjectId || "__FIREBASE_PROJECT_ID__";
+
+  const hasFirebaseApiKey =
+    FIREBASE_API_KEY && !String(FIREBASE_API_KEY).startsWith("__");
+  const hasFirebaseProjectId =
+    FIREBASE_PROJECT_ID && !String(FIREBASE_PROJECT_ID).startsWith("__");
+
   const firebaseConfig = {
-    apiKey: "AIzaSyBo5lzQGvEs34fVxy6nqo4NuFINhwegE_0",
-    authDomain: "badguys-app.firebaseapp.com",
-    projectId: "badguys-app",
-    storageBucket: "badguys-app.firebasestorage.app",
+    apiKey: FIREBASE_API_KEY,
+    authDomain: `${FIREBASE_PROJECT_ID}.firebaseapp.com`,
+    projectId: FIREBASE_PROJECT_ID,
+    storageBucket: `${FIREBASE_PROJECT_ID}.firebasestorage.app`,
     messagingSenderId: "827626639989",
     appId: "1:827626639989:web:432cc64bc40b990c0e5e3c",
     measurementId: "G-VZL5Q3J2F2",
@@ -12,6 +22,12 @@
   try {
     if (!window.firebase) {
       console.warn("Firebase SDK chưa tải xong.");
+      window.badguyDbReady = false;
+      return;
+    }
+
+    if (!hasFirebaseApiKey || !hasFirebaseProjectId) {
+      console.warn("Thiếu FIREBASE_API_KEY hoặc FIREBASE_PROJECT_ID.");
       window.badguyDbReady = false;
       return;
     }

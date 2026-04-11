@@ -37,6 +37,8 @@ Copy-Item .env.example .env
 ```env
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 TELEGRAM_GROUP_CHAT_ID=your_group_chat_id_here
+FIREBASE_API_KEY=your_firebase_api_key_here
+FIREBASE_PROJECT_ID=your_firebase_project_id_here
 APP_VERSION=v-local
 BADGUY_FEMALE_MAX=60
 BADGUY_TUBE_PRICE=290
@@ -59,6 +61,8 @@ Set these repository secrets:
 
 - `TELEGRAM_BOT_TOKEN`
 - `TELEGRAM_GROUP_CHAT_ID`
+- `FIREBASE_API_KEY`
+- `FIREBASE_PROJECT_ID`
 
 Optional repository variables (GitHub Actions Variables):
 
@@ -74,6 +78,7 @@ On deploy, workflow will:
 
 - Auto-generate app version: `vYYYY.MM.DD.RUN_NUMBER`
 - Inject version + Telegram values into deployed artifact
+- Inject Firebase API key + project ID into deployed artifact
 
 ## Notes
 

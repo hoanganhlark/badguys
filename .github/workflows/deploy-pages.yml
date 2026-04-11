@@ -28,6 +28,8 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_GROUP_CHAT_ID: ${{ secrets.TELEGRAM_GROUP_CHAT_ID }}
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
           BADGUY_FEMALE_MAX: ${{ vars.BADGUY_FEMALE_MAX || '' }}
           BADGUY_TUBE_PRICE: ${{ vars.BADGUY_TUBE_PRICE || '' }}
           BADGUY_SET_PRICE: ${{ vars.BADGUY_SET_PRICE || '' }}
@@ -45,6 +47,8 @@ jobs:
           sed -i "s|appVersion: \".*\"|appVersion: \"$VERSION\"|" index.html
           sed -i "s|telegramBotToken: \".*\"|telegramBotToken: \"$TELEGRAM_BOT_TOKEN\"|" index.html
           sed -i "s|telegramGroupChatId: \".*\"|telegramGroupChatId: \"$TELEGRAM_GROUP_CHAT_ID\"|" index.html
+          sed -i "s|firebaseApiKey: \".*\"|firebaseApiKey: \"$FIREBASE_API_KEY\"|" index.html
+          sed -i "s|firebaseProjectId: \".*\"|firebaseProjectId: \"$FIREBASE_PROJECT_ID\"|" index.html
           sed -i "s|femaleMax: \".*\"|femaleMax: \"$FEMALE_MAX\"|" index.html
           sed -i "s|tubePrice: \".*\"|tubePrice: \"$TUBE_PRICE\"|" index.html
           sed -i "s|setPrice: \".*\"|setPrice: \"$SET_PRICE\"|" index.html
