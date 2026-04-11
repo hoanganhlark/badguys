@@ -92,17 +92,13 @@
             </div>
             
             <div class="space-y-4 mb-6">
-                <textarea id="bulkInput" rows="4" placeholder="Nhập danh sách, mỗi người 1 dòng&#10;Ví dụ:&#10;Bi&#10;An N (N là Nữ)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 input-focus transition-all resize-none"></textarea>
-                <button onclick="processBulkInput()" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold hover:bg-black transition-all shadow-md active:scale-95 flex items-center justify-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
-                    Cập nhật danh sách
-                </button>
+                <textarea id="bulkInput" rows="4" placeholder="Nhập danh sách, mỗi người 1 dòng&#10;Ví dụ:&#10;An&#10;Phượng n (n là Nữ)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 input-focus transition-all resize-none" oninput="processBulkInput()"></textarea>
             </div>
             
             <div id="playerList" class="flex flex-wrap gap-2 min-h-[40px]">
                 <p id="emptyMsg" class="text-slate-400 text-sm italic w-full text-center py-4">Chưa có ai trong danh sách...</p>
             </div>
-            <p class="text-[10px] text-slate-400 mt-4 italic">* Thêm " N" sau tên để tự động nhận diện là Nữ. Click vào tên để đổi giới tính.</p>
+            <p class="text-[10px] text-slate-400 mt-4 italic">* Thêm " n" sau tên để tự động nhận diện là Nữ. Click vào tên để đổi giới tính.</p>
         </div>
 
         <!-- Section 3: Result Summary -->
@@ -117,8 +113,8 @@
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center">👩</div>
                         <div>
-                            <p class="text-sm font-bold text-slate-700">Phái Nữ</p>
-                            <p class="text-[10px] font-medium text-slate-400 uppercase">Max 60k</p>
+                            <p class="text-sm font-bold text-slate-700">Nữ</p>
+                            <p class="text-[10px] font-medium text-slate-400 uppercase">Cố định 60k</p>
                         </div>
                     </div>
                     <span id="femaleFeeDisplay" class="text-lg font-bold text-pink-600">0k</span>
@@ -127,8 +123,8 @@
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">👨</div>
                         <div>
-                            <p class="text-sm font-bold text-slate-700">Phái Nam</p>
-                            <p class="text-[10px] font-medium text-slate-400 uppercase">Chia sẻ gánh nặng</p>
+                            <p class="text-sm font-bold text-slate-700">Nam</p>
+                            <p class="text-[10px] font-medium text-slate-400 uppercase">Chia đều phần lại</p>
                         </div>
                     </div>
                     <span id="maleFeeDisplay" class="text-lg font-bold text-blue-600">0k</span>
@@ -137,25 +133,26 @@
 
             <button onclick="copySummary()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-3 shadow-lg shadow-blue-100 active:scale-95">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                Copy Bill Gửi Nhóm
+                Copy Theo Mẫu Nhóm
             </button>
         </div>
 
         <!-- Global Actions -->
         <div class="flex gap-4 px-2">
             <button onclick="calculate()" class="flex-[2] bg-slate-800 text-white py-4 rounded-2xl font-bold hover:bg-black shadow-xl shadow-slate-200 transition-all active:scale-95">TÍNH TOÁN</button>
-            <button onclick="resetAll()" class="flex-1 bg-white text-slate-400 py-4 rounded-2xl font-bold hover:text-red-500 border border-slate-100 transition-all active:scale-95">LÀM MỚI</button>
+            <button id="btnReset" onclick="handleReset()" class="flex-1 bg-white text-slate-400 py-4 rounded-2xl font-bold hover:text-red-500 border border-slate-100 transition-all active:scale-95">ĐẶT LẠI</button>
         </div>
 
         <!-- Toast Notification -->
         <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-sm px-6 py-3 rounded-2xl shadow-2xl opacity-0 transition-all duration-300 transform translate-y-5 pointer-events-none z-50">
-            Đã copy bill vào bộ nhớ tạm! 🚀
+            Đã copy tóm tắt vào bộ nhớ tạm! 🚀
         </div>
     </div>
 
     <script>
         let players = [];
         const FEMALE_MAX = 60;
+        let resetTimer = null;
 
         function processBulkInput() {
             const inputEl = document.getElementById('bulkInput');
@@ -167,10 +164,8 @@
                 if (!name) return;
 
                 let isFemale = false;
-                // Regex kiểm tra xem tên có kết thúc bằng cách khoảng và chữ N (không phân biệt hoa thường)
                 if (name.toLowerCase().endsWith(' n')) {
                     isFemale = true;
-                    // Xóa phần " N" ở cuối tên để hiển thị cho đẹp
                     name = name.substring(0, name.length - 2).trim();
                 }
 
@@ -179,15 +174,14 @@
                 }
             });
 
-            if (newPlayers.length > 0) {
-                players = newPlayers;
-                renderPlayers();
-                calculate();
-            }
+            players = newPlayers;
+            renderPlayers();
+            calculate();
         }
 
         function toggleGender(index) {
             players[index].isFemale = !players[index].isFemale;
+            updateTextAreaFromPlayers();
             renderPlayers();
             calculate();
         }
@@ -195,7 +189,6 @@
         function removePlayer(index, event) {
             event.stopPropagation();
             players.splice(index, 1);
-            // Cập nhật lại textarea để đồng bộ
             updateTextAreaFromPlayers();
             renderPlayers();
             calculate();
@@ -209,7 +202,6 @@
         function renderPlayers() {
             const list = document.getElementById('playerList');
             const counter = document.getElementById('playerCounter');
-            const emptyMsg = document.getElementById('emptyMsg');
             
             list.innerHTML = '';
             
@@ -272,21 +264,28 @@
             const { f, m, t } = lastResult;
             const court = parseFloat(document.getElementById('courtFee').value) || 0;
             const shuttle = parseFloat(document.getElementById('shuttleFee').value) || 0;
-            const fNames = players.filter(p => p.isFemale).map(p => p.name);
-            const mNames = players.filter(p => !p.isFemale).map(p => p.name);
-            const date = new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'numeric' });
-
-            let text = `🏸 *BADGUYS BADMINTON BILL*\n`;
-            text += `📅 ${date}\n`;
-            text += `━━━━━━━━━━━━━━━━━━━━━━\n`;
-            text += `🏟️ Sân: ${court}k  |  🏸 Cầu: ${shuttle}k\n`;
-            text += `💰 *Tổng cộng: ${t}k*\n`;
-            text += `👥 Sĩ số: ${players.length} người\n`;
-            text += `━━━━━━━━━━━━━━━━━━━━━━\n`;
-            if (fNames.length > 0) text += `👩 *NỮ (${f}k):* ${fNames.join(', ')}\n`;
-            if (mNames.length > 0) text += `👨 *NAM (${m}k):* ${mNames.join(', ')}\n`;
-            text += `━━━━━━━━━━━━━━━━━━━━━━\n`;
-            text += `Vui lòng chuyển khoản cho thủ quỹ nha! ❤️`;
+            
+            const males = players.filter(p => !p.isFemale);
+            const females = players.filter(p => p.isFemale);
+            
+            let text = `Badguys\n\n`;
+            text += `NAY CHƠI ${m}K / NGƯỜI\n\n`;
+            text += `${males.length} người chia đều + ${females.length} nữ ${f * females.length}K\n`;
+            text += `${court} tiền sân + ${shuttle} tiền cầu = ${t}K tổng cộng\n\n`;
+            text += `Players:\n\n`;
+            
+            // In danh sách Nam trước
+            let count = 1;
+            males.forEach(p => {
+                text += `${count}. ${p.name}\n`;
+                count++;
+            });
+            
+            // In danh sách Nữ sau cùng mức phí 60K
+            females.forEach(p => {
+                text += `${count}. ${p.name} ${f}K\n`;
+                count++;
+            });
 
             const el = document.createElement('textarea');
             el.value = text;
@@ -295,24 +294,54 @@
             document.execCommand('copy');
             document.body.removeChild(el);
 
+            showToast("Đã copy tóm tắt vào bộ nhớ tạm! 🚀");
+        }
+
+        function handleReset() {
+            const btn = document.getElementById('btnReset');
+            
+            if (resetTimer) {
+                // Thực hiện reset thực sự
+                clearTimeout(resetTimer);
+                resetTimer = null;
+                
+                document.getElementById('courtFee').value = '';
+                document.getElementById('shuttleFee').value = '';
+                document.getElementById('bulkInput').value = '';
+                players = [];
+                
+                renderPlayers();
+                document.getElementById('resultCard').classList.add('hidden');
+                
+                btn.innerText = "ĐẶT LẠI";
+                btn.classList.remove('text-red-600', 'border-red-200', 'bg-red-50');
+                btn.classList.add('text-slate-400', 'border-slate-100', 'bg-white');
+                
+                showToast("Đã đặt lại toàn bộ dữ liệu! ✨");
+            } else {
+                // Bước chuẩn bị (Double click protection)
+                btn.innerText = "XÁC NHẬN?";
+                btn.classList.remove('text-slate-400', 'border-slate-100', 'bg-white');
+                btn.classList.add('text-red-600', 'border-red-200', 'bg-red-50');
+                
+                resetTimer = setTimeout(() => {
+                    btn.innerText = "ĐẶT LẠI";
+                    btn.classList.remove('text-red-600', 'border-red-200', 'bg-red-50');
+                    btn.classList.add('text-slate-400', 'border-slate-100', 'bg-white');
+                    resetTimer = null;
+                }, 2000);
+            }
+        }
+
+        function showToast(msg) {
             const toast = document.getElementById('toast');
+            toast.innerText = msg;
             toast.classList.remove('opacity-0', 'translate-y-5');
             toast.classList.add('opacity-100', 'translate-y-0');
             setTimeout(() => {
                 toast.classList.add('opacity-0', 'translate-y-5');
                 toast.classList.remove('opacity-100', 'translate-y-0');
             }, 2500);
-        }
-
-        function resetAll() {
-            if (confirm('Làm mới toàn bộ danh sách và chi phí?')) {
-                document.getElementById('courtFee').value = '';
-                document.getElementById('shuttleFee').value = '';
-                document.getElementById('bulkInput').value = '';
-                players = [];
-                renderPlayers();
-                document.getElementById('resultCard').classList.add('hidden');
-            }
         }
     </script>
 </body>
