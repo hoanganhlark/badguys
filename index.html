@@ -1,387 +1,474 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BadGuys Badminton - Set Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <style>
-        body {
-            background-color: #fafafa;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            color: #1a1a1a;
-            min-height: 100vh;
+      body {
+        background-color: #fafafa;
+        font-family: "Plus Jakarta Sans", sans-serif;
+        color: #1a1a1a;
+        min-height: 100vh;
+      }
+      .card {
+        background: #ffffff;
+        border: 1px solid #f0f0f0;
+        border-radius: 1rem;
+        transition: all 0.2s ease;
+      }
+      .input-minimal {
+        background-color: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        transition: all 0.2s ease;
+      }
+      .input-minimal:focus {
+        outline: none;
+        border-color: #1a1a1a;
+        background-color: #fff;
+      }
+      .tag {
+        transition: all 0.2s ease;
+        cursor: pointer;
+        user-select: none;
+      }
+      .tag-male {
+        background-color: #f3f4f6;
+        color: #374151;
+        border: 1px solid #e5e7eb;
+      }
+      .tag-female {
+        background-color: #fef2f2;
+        color: #991b1b;
+        border: 1px solid #fee2e2;
+      }
+      .tag-set {
+        background-color: #eff6ff;
+        color: #1d4ed8;
+        border: 1px solid #dbeafe;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
         }
-        .card {
-            background: #ffffff;
-            border: 1px solid #f0f0f0;
-            border-radius: 1rem;
-            transition: all 0.2s ease;
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
-        .input-minimal {
-            background-color: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.75rem;
-            transition: all 0.2s ease;
-        }
-        .input-minimal:focus {
-            outline: none;
-            border-color: #1a1a1a;
-            background-color: #fff;
-        }
-        .tag {
-            transition: all 0.2s ease;
-            cursor: pointer;
-            user-select: none;
-        }
-        .tag-male {
-            background-color: #f3f4f6;
-            color: #374151;
-            border: 1px solid #e5e7eb;
-        }
-        .tag-female {
-            background-color: #fef2f2;
-            color: #991b1b;
-            border: 1px solid #fee2e2;
-        }
-        .tag-set {
-            background-color: #eff6ff;
-            color: #1d4ed8;
-            border: 1px solid #dbeafe;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(4px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade {
-            animation: fadeIn 0.3s ease-out forwards;
-        }
+      }
+      .animate-fade {
+        animation: fadeIn 0.3s ease-out forwards;
+      }
     </style>
-</head>
-<body class="p-5 md:p-12">
+  </head>
+  <body class="p-5 md:p-12">
     <div class="max-w-md mx-auto">
-        <!-- Minimal Header -->
-        <header class="mb-12 text-center">
-            <h1 class="text-2xl font-bold tracking-tight text-slate-900">BadGuys<span class="text-slate-400">.</span></h1>
-            <p class="text-slate-400 text-xs uppercase tracking-widest mt-1">Cost Management</p>
-        </header>
+      <!-- Minimal Header -->
+      <header class="mb-12 text-center">
+        <h1 class="text-2xl font-bold tracking-tight text-slate-900">
+          BadGuys<span class="text-slate-400">.</span>
+        </h1>
+        <p class="text-slate-400 text-xs uppercase tracking-widest mt-1">
+          Cost Management
+        </p>
+      </header>
 
-        <!-- Section 1: Expenses -->
-        <section class="mb-8">
-            <h2 class="text-sm font-semibold text-slate-500 mb-4 px-1 uppercase tracking-wider">Chi phí (k)</h2>
-            <div class="grid grid-cols-2 gap-3">
-                <input type="number" id="courtFee" placeholder="Tiền sân" class="input-minimal px-4 py-3 text-sm font-medium w-full" oninput="calculate()">
-                <input type="number" id="shuttleFee" placeholder="Tiền cầu" class="input-minimal px-4 py-3 text-sm font-medium w-full" oninput="calculate()">
-            </div>
-        </section>
+      <!-- Section 1: Expenses -->
+      <section class="mb-8">
+        <h2
+          class="text-sm font-semibold text-slate-500 mb-4 px-1 uppercase tracking-wider"
+        >
+          Chi phí (k)
+        </h2>
+        <div class="grid grid-cols-2 gap-3">
+          <input
+            type="number"
+            id="courtFee"
+            placeholder="Tiền sân"
+            class="input-minimal px-4 py-3 text-sm font-medium w-full"
+            oninput="calculate()"
+          />
+          <input
+            type="number"
+            id="shuttleFee"
+            placeholder="Tiền cầu"
+            class="input-minimal px-4 py-3 text-sm font-medium w-full"
+            oninput="calculate()"
+          />
+        </div>
+      </section>
 
-        <!-- Section 2: Players -->
-        <section class="mb-8">
-            <div class="flex justify-between items-center mb-4 px-1">
-                <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Danh sách</h2>
-                <span id="playerCounter" class="text-xs font-medium text-slate-400">0 người</span>
-            </div>
-            
-            <textarea id="bulkInput" rows="4" placeholder="Nhập tên...&#10;Thêm 'n' cho nữ, '2s' cho 2 set..." class="input-minimal w-full px-4 py-3 text-sm mb-4 resize-none" oninput="processBulkInput()"></textarea>
-            
-            <div id="playerList" class="flex flex-wrap gap-2 min-h-[20px]">
-                <!-- Tags injected here -->
-            </div>
-        </section>
-
-        <!-- Section 3: Summary -->
-        <section id="resultCard" class="hidden animate-fade mb-10">
-            <div class="card p-6 mb-4">
-                <div class="flex justify-between items-end mb-6">
-                    <div>
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Tổng cộng</p>
-                        <h3 id="billTotal" class="text-3xl font-bold">0k</h3>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Mỗi set</p>
-                        <p class="text-lg font-semibold text-blue-700">12k</p>
-                    </div>
-                </div>
-
-                <div class="space-y-3 pt-4 border-t border-slate-50">
-                    <div class="flex justify-between text-sm">
-                        <span class="text-slate-500">Mỗi Nam đóng:</span>
-                        <span id="maleFeeDisplay" class="font-bold text-lg">0k</span>
-                    </div>
-                </div>
-            </div>
-
-            <button onclick="copySummary()" class="w-full bg-slate-900 text-white py-4 rounded-xl text-sm font-semibold hover:bg-black transition-all active:scale-[0.98]">
-                Sao chép bảng kê
-            </button>
-        </section>
-
-        <!-- Footer Actions -->
-        <div class="flex justify-center gap-8">
-            <button id="btnReset" onclick="handleReset()" class="text-xs font-medium text-slate-400 hover:text-red-500 transition-colors uppercase">
-                Làm mới dữ liệu
-            </button>
+      <!-- Section 2: Players -->
+      <section class="mb-8">
+        <div class="flex justify-between items-center mb-4 px-1">
+          <h2
+            class="text-sm font-semibold text-slate-500 uppercase tracking-wider"
+          >
+            Danh sách
+          </h2>
+          <span id="playerCounter" class="text-xs font-medium text-slate-400"
+            >0 người</span
+          >
         </div>
 
-        <!-- Notification -->
-        <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[13px] px-5 py-3 rounded-full shadow-xl opacity-0 transition-all duration-300 pointer-events-none">
-            Đã sao chép!
+        <textarea
+          id="bulkInput"
+          rows="4"
+          placeholder="Nhập tên...&#10;Thêm 'n' cho nữ, '2s' cho 2 set..."
+          class="input-minimal w-full px-4 py-3 text-sm mb-4 resize-none"
+          oninput="processBulkInput()"
+        ></textarea>
+
+        <div id="playerList" class="flex flex-wrap gap-2 min-h-[20px]">
+          <!-- Tags injected here -->
         </div>
+      </section>
+
+      <!-- Section 3: Summary -->
+      <section id="resultCard" class="hidden animate-fade mb-10">
+        <div class="card p-6 mb-4">
+          <div class="flex justify-between items-end mb-6">
+            <div>
+              <p
+                class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1"
+              >
+                Tổng cộng
+              </p>
+              <h3 id="billTotal" class="text-3xl font-bold">0k</h3>
+            </div>
+            <div class="text-right">
+              <p
+                class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1"
+              >
+                Mỗi set
+              </p>
+              <p class="text-lg font-semibold text-blue-700">12k</p>
+            </div>
+          </div>
+
+          <div class="space-y-3 pt-4 border-t border-slate-50">
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-500">Mỗi Nam đóng:</span>
+              <span id="maleFeeDisplay" class="font-bold text-lg">0k</span>
+            </div>
+          </div>
+        </div>
+
+        <button
+          onclick="copySummary()"
+          class="w-full bg-slate-900 text-white py-4 rounded-xl text-sm font-semibold hover:bg-black transition-all active:scale-[0.98]"
+        >
+          Sao chép bảng kê
+        </button>
+      </section>
+
+      <!-- Footer Actions -->
+      <div class="flex justify-center gap-8">
+        <button
+          id="btnReset"
+          onclick="handleReset()"
+          class="text-xs font-medium text-slate-400 hover:text-red-500 transition-colors uppercase"
+        >
+          Làm mới dữ liệu
+        </button>
+      </div>
+
+      <!-- Notification -->
+      <div
+        id="toast"
+        class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[13px] px-5 py-3 rounded-full shadow-xl opacity-0 transition-all duration-300 pointer-events-none"
+      >
+        Đã sao chép!
+      </div>
     </div>
 
     <script>
-        let players = [];
-        const FEMALE_MAX = 60;
-        const PRICE_PER_SET = 12;
-        let resetTimer = null;
+      let players = [];
+      const FEMALE_MAX = 60;
+      const PRICE_PER_SET = 12;
+      let resetTimer = null;
 
-        function processBulkInput() {
-            const inputEl = document.getElementById('bulkInput');
-            const lines = inputEl.value.split('\n');
-            const newPlayers = [];
+      function processBulkInput() {
+        const inputEl = document.getElementById("bulkInput");
+        const lines = inputEl.value.split("\n");
+        const newPlayers = [];
 
-            lines.forEach(line => {
-                let rawName = line.trim();
-                if (!rawName) return;
+        lines.forEach((line) => {
+          let rawName = line.trim();
+          if (!rawName) return;
 
-                let isFemale = false;
-                let sets = 0;
+          let isFemale = false;
+          let sets = 0;
 
-                // Check for female ' n' suffix
-                if (rawName.toLowerCase().endsWith(' n')) {
-                    isFemale = true;
-                    rawName = rawName.substring(0, rawName.length - 2).trim();
-                }
+          // Check for female ' n' suffix
+          if (rawName.toLowerCase().endsWith(" n")) {
+            isFemale = true;
+            rawName = rawName.substring(0, rawName.length - 2).trim();
+          }
 
-                // Check for set ' 2s' suffix
-                const setMatch = rawName.toLowerCase().match(/\s(\d+)s$/);
-                if (setMatch) {
-                    sets = parseInt(setMatch[1]);
-                    rawName = rawName.replace(setMatch[0], '').trim();
-                }
+          // Check for set ' 2s' suffix
+          const setMatch = rawName.toLowerCase().match(/\s(\d+)s$/);
+          if (setMatch) {
+            sets = parseInt(setMatch[1]);
+            rawName = rawName.replace(setMatch[0], "").trim();
+          }
 
-                if (rawName) {
-                    newPlayers.push({ name: rawName, isFemale: isFemale, sets: sets });
-                }
-            });
+          if (rawName) {
+            newPlayers.push({ name: rawName, isFemale: isFemale, sets: sets });
+          }
+        });
 
-            players = newPlayers;
-            renderPlayers();
-            calculate();
+        players = newPlayers;
+        renderPlayers();
+        calculate();
+      }
+
+      function toggleGender(index) {
+        // Cycle through: Male -> Female -> Set 1s -> Male
+        const p = players[index];
+        if (!p.isFemale && p.sets === 0) {
+          p.isFemale = true;
+        } else if (p.isFemale) {
+          p.isFemale = false;
+          p.sets = 1;
+        } else {
+          p.sets = 0;
+        }
+        updateTextAreaFromPlayers();
+        renderPlayers();
+        calculate();
+      }
+
+      function removePlayer(index, event) {
+        event.stopPropagation();
+        players.splice(index, 1);
+        updateTextAreaFromPlayers();
+        renderPlayers();
+        calculate();
+      }
+
+      function updateTextAreaFromPlayers() {
+        const inputEl = document.getElementById("bulkInput");
+        inputEl.value = players
+          .map((p) => {
+            let suffix = "";
+            if (p.sets > 0) suffix += ` ${p.sets}s`;
+            if (p.isFemale) suffix += " n";
+            return p.name + suffix;
+          })
+          .join("\n");
+      }
+
+      function renderPlayers() {
+        const list = document.getElementById("playerList");
+        const counter = document.getElementById("playerCounter");
+        list.innerHTML = "";
+
+        if (players.length === 0) {
+          counter.innerText = "0 người";
+          return;
         }
 
-        function toggleGender(index) {
-            // Cycle through: Male -> Female -> Set 1s -> Male
-            const p = players[index];
-            if (!p.isFemale && p.sets === 0) {
-                p.isFemale = true;
-            } else if (p.isFemale) {
-                p.isFemale = false;
-                p.sets = 1;
-            } else {
-                p.sets = 0;
-            }
-            updateTextAreaFromPlayers();
-            renderPlayers();
-            calculate();
-        }
+        players.forEach((player, index) => {
+          const tag = document.createElement("div");
+          let typeClass = "tag-male";
+          let label = player.name;
 
-        function removePlayer(index, event) {
-            event.stopPropagation();
-            players.splice(index, 1);
-            updateTextAreaFromPlayers();
-            renderPlayers();
-            calculate();
-        }
+          if (player.sets > 0) {
+            typeClass = "tag-set";
+            label += ` (${player.sets}s)`;
+          } else if (player.isFemale) {
+            typeClass = "tag-female";
+            label += " (n)";
+          }
 
-        function updateTextAreaFromPlayers() {
-            const inputEl = document.getElementById('bulkInput');
-            inputEl.value = players.map(p => {
-                let suffix = '';
-                if (p.sets > 0) suffix += ` ${p.sets}s`;
-                if (p.isFemale) suffix += ' n';
-                return p.name + suffix;
-            }).join('\n');
-        }
-
-        function renderPlayers() {
-            const list = document.getElementById('playerList');
-            const counter = document.getElementById('playerCounter');
-            list.innerHTML = '';
-            
-            if (players.length === 0) {
-                counter.innerText = '0 người';
-                return;
-            }
-
-            players.forEach((player, index) => {
-                const tag = document.createElement('div');
-                let typeClass = 'tag-male';
-                let label = player.name;
-                
-                if (player.sets > 0) {
-                    typeClass = 'tag-set';
-                    label += ` (${player.sets}s)`;
-                } else if (player.isFemale) {
-                    typeClass = 'tag-female';
-                    label += ' (n)';
-                }
-
-                tag.className = `tag ${typeClass} px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center animate-fade`;
-                tag.onclick = () => toggleGender(index);
-                tag.innerHTML = `
+          tag.className = `tag ${typeClass} px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center animate-fade`;
+          tag.onclick = () => toggleGender(index);
+          tag.innerHTML = `
                     <span class="mr-1.5 opacity-40">#</span>
                     <span>${label}</span>
                     <button onclick="removePlayer(${index}, event)" class="ml-2 opacity-40 hover:opacity-100">&times;</button>
                 `;
-                list.appendChild(tag);
-            });
-            counter.innerText = `${players.length} người`;
+          list.appendChild(tag);
+        });
+        counter.innerText = `${players.length} người`;
+      }
+
+      let lastResult = {
+        fFee: 0,
+        mFee: 0,
+        total: 0,
+        setTotal: 0,
+        setPlayersCount: 0,
+      };
+
+      function calculate() {
+        const court =
+          parseFloat(document.getElementById("courtFee").value) || 0;
+        const shuttle =
+          parseFloat(document.getElementById("shuttleFee").value) || 0;
+        const total = court + shuttle;
+
+        if (players.length === 0 || total === 0) {
+          document.getElementById("resultCard").classList.add("hidden");
+          return;
         }
 
-        let lastResult = { fFee: 0, mFee: 0, total: 0, setTotal: 0, setPlayersCount: 0 };
+        const setPlayers = players.filter((p) => p.sets > 0);
+        const nonSetPlayers = players.filter((p) => p.sets === 0);
+        const females = nonSetPlayers.filter((p) => p.isFemale);
+        const males = nonSetPlayers.filter((p) => !p.isFemale);
 
-        function calculate() {
-            const court = parseFloat(document.getElementById('courtFee').value) || 0;
-            const shuttle = parseFloat(document.getElementById('shuttleFee').value) || 0;
-            const total = court + shuttle;
-            
-            if (players.length === 0 || total === 0) {
-                document.getElementById('resultCard').classList.add('hidden');
-                return;
-            }
+        // Calculate revenue from set players
+        let totalSetRevenue = 0;
+        setPlayers.forEach((p) => {
+          totalSetRevenue += p.sets * PRICE_PER_SET;
+        });
 
-            const setPlayers = players.filter(p => p.sets > 0);
-            const nonSetPlayers = players.filter(p => p.sets === 0);
-            const females = nonSetPlayers.filter(p => p.isFemale);
-            const males = nonSetPlayers.filter(p => !p.isFemale);
+        const remainingTotal = total - totalSetRevenue;
+        let fFee = 0,
+          mFee = 0;
 
-            // Calculate revenue from set players
-            let totalSetRevenue = 0;
-            setPlayers.forEach(p => {
-                totalSetRevenue += (p.sets * PRICE_PER_SET);
-            });
-
-            const remainingTotal = total - totalSetRevenue;
-            let fFee = 0, mFee = 0;
-
-            if (nonSetPlayers.length > 0) {
-                const avg = remainingTotal / nonSetPlayers.length;
-                if (avg <= FEMALE_MAX || males.length === 0) {
-                    fFee = Math.ceil(avg);
-                    mFee = fFee;
-                } else {
-                    fFee = FEMALE_MAX;
-                    mFee = Math.ceil((remainingTotal - (fFee * females.length)) / males.length);
-                }
-            }
-
-            lastResult = { 
-                fFee: fFee, 
-                mFee: mFee, 
-                total: total, 
-                setTotal: totalSetRevenue,
-                setPlayersCount: setPlayers.length,
-                femalesCount: females.length,
-                malesCount: males.length
-            };
-
-            document.getElementById('billTotal').innerText = total + 'k';
-            document.getElementById('maleFeeDisplay').innerText = mFee + 'k';
-            document.getElementById('resultCard').classList.remove('hidden');
+        if (nonSetPlayers.length > 0) {
+          const avg = remainingTotal / nonSetPlayers.length;
+          if (avg <= FEMALE_MAX || males.length === 0) {
+            fFee = Math.ceil(avg);
+            mFee = fFee;
+          } else {
+            fFee = FEMALE_MAX;
+            mFee = Math.ceil(
+              (remainingTotal - fFee * females.length) / males.length,
+            );
+          }
         }
 
-        function copySummary() {
-            const { fFee, mFee, total, setTotal, setPlayersCount, femalesCount, malesCount } = lastResult;
-            const court = parseFloat(document.getElementById('courtFee').value) || 0;
-            const shuttle = parseFloat(document.getElementById('shuttleFee').value) || 0;
-            
-            const setPlayers = players.filter(p => p.sets > 0);
-            const nonSetPlayers = players.filter(p => p.sets === 0);
-            const males = nonSetPlayers.filter(p => !p.isFemale);
-            const females = nonSetPlayers.filter(p => p.isFemale);
-            
-            let text = `NAY CHƠI ${mFee}K / NGƯỜI\n\n`;
-            
-            // Stats section
-            if (setPlayers.length > 0) {
-                // Group set players by name for specific detail
-                setPlayers.forEach(p => {
-                    text += `- ${p.name} ${p.sets * PRICE_PER_SET}K (${p.sets} set)\n`;
-                });
-            }
-            if (females.length > 0) {
-                text += `- ${femalesCount} nữ ${fFee * femalesCount}K\n`;
-            }
-            if (males.length > 0) {
-                text += `- ${malesCount} người chia đều\n`;
-            }
-            
-            text += `\n${court} tiền sân + ${shuttle} tiền cầu = ${total}K tổng cộng\n\n`;
-            text += `Players:\n\n`;
-            
-            let count = 1;
-            // Males first
-            males.forEach(p => {
-                text += `${count}. ${p.name}\n`;
-                count++;
-            });
-            // Females
-            females.forEach(p => {
-                text += `${count}. ${p.name} ${fFee}K\n`;
-                count++;
-            });
-            // Sets
-            setPlayers.forEach(p => {
-                text += `${count}. ${p.name} ${p.sets * PRICE_PER_SET}K (${p.sets} set)\n`;
-                count++;
-            });
+        lastResult = {
+          fFee: fFee,
+          mFee: mFee,
+          total: total,
+          setTotal: totalSetRevenue,
+          setPlayersCount: setPlayers.length,
+          femalesCount: females.length,
+          malesCount: males.length,
+        };
 
-            const el = document.createElement('textarea');
-            el.value = text;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
+        document.getElementById("billTotal").innerText = total + "k";
+        document.getElementById("maleFeeDisplay").innerText = mFee + "k";
+        document.getElementById("resultCard").classList.remove("hidden");
+      }
 
+      function copySummary() {
+        const { fFee, mFee, total, malesCount, femalesCount } = lastResult;
+        const court =
+          parseFloat(document.getElementById("courtFee").value) || 0;
+        const shuttle =
+          parseFloat(document.getElementById("shuttleFee").value) || 0;
+
+        const setPlayers = players.filter((p) => p.sets > 0);
+        const nonSetPlayers = players.filter((p) => p.sets === 0);
+        const males = nonSetPlayers.filter((p) => !p.isFemale);
+        const females = nonSetPlayers.filter((p) => p.isFemale);
+
+        // 1. Dòng tiêu đề đầu tiên
+        let text = `NAY CHƠI ${mFee}K / NGƯỜI\n\u200B\n`;
+
+        // 2. Dòng tóm tắt tổng hợp
+        let summaryParts = [];
+        if (malesCount > 0) summaryParts.push(`${malesCount} người chia đều`);
+        if (femalesCount > 0)
+          summaryParts.push(`${femalesCount} nữ ${fFee * femalesCount}K`);
+        if (setPlayers.length > 0) {
+          const totalSetMoney = setPlayers.reduce(
+            (sum, p) => sum + p.sets * PRICE_PER_SET,
+            0,
+          );
+          summaryParts.push(`đánh ít ${totalSetMoney}K`);
+        }
+
+        text += summaryParts.join(" + ") + "\n";
+        text += `${court} tiền sân + ${shuttle} tiền cầu = ${total}K tổng cộng\n\u200B\n`;
+
+        // 3. Danh sách chi tiết Players
+        text += `Players:\n\u200B\n`;
+
+        let count = 1;
+
+        // Danh sách Nam (chia đều - không hiện giá tiền)
+        males.forEach((p) => {
+          text += `${count}. ${p.name}\n`;
+          count++;
+        });
+
+        // Danh sách Nữ
+        females.forEach((p) => {
+          text += `${count}. ${p.name} ${fFee}K\n`;
+          count++;
+        });
+
+        // Danh sách người đánh theo set
+        setPlayers.forEach((p) => {
+          text += `${count}. ${p.name} ${p.sets * PRICE_PER_SET}K (${p.sets} set)\n`;
+          count++;
+        });
+
+        // Thực hiện copy vào clipboard
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(() => {
             showToast("Đã sao chép bảng kê! ✨");
+          });
+        } else {
+          // Fallback cho các trình duyệt cũ
+          const el = document.createElement("textarea");
+          el.value = text;
+          document.body.appendChild(el);
+          el.select();
+          document.execCommand("copy");
+          document.body.removeChild(el);
+          showToast("Đã sao chép bảng kê! ✨");
         }
+      }
 
-        function handleReset() {
-            const btn = document.getElementById('btnReset');
-            if (resetTimer) {
-                clearTimeout(resetTimer);
-                resetTimer = null;
-                document.getElementById('courtFee').value = '';
-                document.getElementById('shuttleFee').value = '';
-                document.getElementById('bulkInput').value = '';
-                players = [];
-                renderPlayers();
-                document.getElementById('resultCard').classList.add('hidden');
-                btn.innerText = "LÀM MỚI DỮ LIỆU";
-                btn.classList.replace('text-red-600', 'text-slate-400');
-                showToast("Dữ liệu đã được xóa.");
-            } else {
-                btn.innerText = "XÁC NHẬN XÓA?";
-                btn.classList.replace('text-slate-400', 'text-red-600');
-                resetTimer = setTimeout(() => {
-                    btn.innerText = "LÀM MỚI DỮ LIỆU";
-                    btn.classList.replace('text-red-600', 'text-slate-400');
-                    resetTimer = null;
-                }, 2000);
-            }
+      function handleReset() {
+        const btn = document.getElementById("btnReset");
+        if (resetTimer) {
+          clearTimeout(resetTimer);
+          resetTimer = null;
+          document.getElementById("courtFee").value = "";
+          document.getElementById("shuttleFee").value = "";
+          document.getElementById("bulkInput").value = "";
+          players = [];
+          renderPlayers();
+          document.getElementById("resultCard").classList.add("hidden");
+          btn.innerText = "LÀM MỚI DỮ LIỆU";
+          btn.classList.replace("text-red-600", "text-slate-400");
+          showToast("Dữ liệu đã được xóa.");
+        } else {
+          btn.innerText = "XÁC NHẬN XÓA?";
+          btn.classList.replace("text-slate-400", "text-red-600");
+          resetTimer = setTimeout(() => {
+            btn.innerText = "LÀM MỚI DỮ LIỆU";
+            btn.classList.replace("text-red-600", "text-slate-400");
+            resetTimer = null;
+          }, 2000);
         }
+      }
 
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            toast.innerText = msg;
-            toast.classList.remove('opacity-0');
-            toast.classList.add('opacity-100');
-            setTimeout(() => {
-                toast.classList.replace('opacity-100', 'opacity-0');
-            }, 2000);
-        }
+      function showToast(msg) {
+        const toast = document.getElementById("toast");
+        toast.innerText = msg;
+        toast.classList.remove("opacity-0");
+        toast.classList.add("opacity-100");
+        setTimeout(() => {
+          toast.classList.replace("opacity-100", "opacity-0");
+        }, 2000);
+      }
     </script>
-</body>
+  </body>
 </html>
