@@ -1,7 +1,8 @@
 let players = [];
 const ENV = window.BADGUY_ENV || {};
 const TELEGRAM_BOT_TOKEN = ENV.telegramBotToken || "__TELEGRAM_BOT_TOKEN__";
-const TELEGRAM_GROUP_CHAT_ID = ENV.telegramGroupChatId || "__TELEGRAM_GROUP_CHAT_ID__";
+const TELEGRAM_GROUP_CHAT_ID =
+  ENV.telegramGroupChatId || "__TELEGRAM_GROUP_CHAT_ID__";
 const APP_VERSION = ENV.appVersion || "v0.0.0";
 const VISIT_SESSION_KEY = "badguyVisitNotified";
 const DEFAULT_CONFIG = {
@@ -123,8 +124,12 @@ function syncConfigInputs() {
   document.getElementById("cfgFemaleMax").value = config.femaleMax;
   document.getElementById("cfgTubePrice").value = config.tubePrice;
   document.getElementById("cfgSetPrice").value = config.setPrice;
-  document.getElementById("setPriceDisplay").innerText = formatK(config.setPrice);
-  document.getElementById("femalePriceDisplay").innerText = formatK(config.femaleMax);
+  document.getElementById("setPriceDisplay").innerText = formatK(
+    config.setPrice,
+  );
+  document.getElementById("femalePriceDisplay").innerText = formatK(
+    config.femaleMax,
+  );
   document.getElementById("cfgRoundResult").checked = !!config.roundResult;
 }
 
@@ -256,7 +261,8 @@ function renderPlayers() {
 
 function calculate() {
   const court = parseFloat(document.getElementById("courtFee").value) || 0;
-  const shuttleCount = parseFloat(document.getElementById("shuttleCount").value) || 0;
+  const shuttleCount =
+    parseFloat(document.getElementById("shuttleCount").value) || 0;
   const shuttle = (shuttleCount * config.tubePrice) / config.shuttlesPerTube;
   const total = court + shuttle;
 
@@ -311,7 +317,8 @@ function calculate() {
 function copySummary() {
   const { fFee, mFee, total, malesCount, femalesCount } = lastResult;
   const court = parseFloat(document.getElementById("courtFee").value) || 0;
-  const shuttleCount = parseFloat(document.getElementById("shuttleCount").value) || 0;
+  const shuttleCount =
+    parseFloat(document.getElementById("shuttleCount").value) || 0;
   const shuttle = (shuttleCount * config.tubePrice) / config.shuttlesPerTube;
 
   const setPlayers = players.filter((p) => p.sets > 0);
@@ -324,11 +331,18 @@ function copySummary() {
   const summaryParts = [];
   if (malesCount > 0) summaryParts.push(`${malesCount} người chia đều`);
   if (femalesCount > 0) {
-    summaryParts.push(`${femalesCount} nữ ${formatSummaryPrice(fFee * femalesCount)}`);
+    summaryParts.push(
+      `${femalesCount} nữ ${formatSummaryPrice(fFee * femalesCount)}`,
+    );
   }
   if (setPlayers.length > 0) {
-    const totalSetMoney = setPlayers.reduce((sum, p) => sum + p.sets * config.setPrice, 0);
-    summaryParts.push(`${setPlayers.length} đánh ít ${formatSummaryPrice(totalSetMoney)}`);
+    const totalSetMoney = setPlayers.reduce(
+      (sum, p) => sum + p.sets * config.setPrice,
+      0,
+    );
+    summaryParts.push(
+      `${setPlayers.length} đánh ít ${formatSummaryPrice(totalSetMoney)}`,
+    );
   }
 
   text += summaryParts.join(" + ") + "\n";

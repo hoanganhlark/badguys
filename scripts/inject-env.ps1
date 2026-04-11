@@ -34,17 +34,23 @@ function Escape-DoubleQuote {
 
 if ($envMap.ContainsKey("TELEGRAM_BOT_TOKEN")) {
     $token = Escape-DoubleQuote $envMap["TELEGRAM_BOT_TOKEN"]
-    $content = $content -replace 'const TELEGRAM_BOT_TOKEN = ".*";', "const TELEGRAM_BOT_TOKEN = `"$token`";"
+    if ($content -match 'telegramBotToken:\s*".*?"') {
+        $content = $content -replace 'telegramBotToken:\s*".*?"', "telegramBotToken: `"$token`""
+    }
 }
 
 if ($envMap.ContainsKey("TELEGRAM_GROUP_CHAT_ID")) {
     $chatId = Escape-DoubleQuote $envMap["TELEGRAM_GROUP_CHAT_ID"]
-    $content = $content -replace 'const TELEGRAM_GROUP_CHAT_ID = ".*";', "const TELEGRAM_GROUP_CHAT_ID = `"$chatId`";"
+    if ($content -match 'telegramGroupChatId:\s*".*?"') {
+        $content = $content -replace 'telegramGroupChatId:\s*".*?"', "telegramGroupChatId: `"$chatId`""
+    }
 }
 
 if ($envMap.ContainsKey("APP_VERSION")) {
     $version = Escape-DoubleQuote $envMap["APP_VERSION"]
-    $content = $content -replace 'const APP_VERSION = ".*";', "const APP_VERSION = `"$version`";"
+    if ($content -match 'appVersion:\s*".*?"') {
+        $content = $content -replace 'appVersion:\s*".*?"', "appVersion: `"$version`""
+    }
 }
 
 Set-Content -Path $OutputFile -Value $content -Encoding UTF8
