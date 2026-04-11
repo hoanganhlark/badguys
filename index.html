@@ -66,10 +66,40 @@
       .animate-fade {
         animation: fadeIn 0.3s ease-out forwards;
       }
+      .panel-backdrop {
+        background: rgba(15, 23, 42, 0.3);
+        backdrop-filter: blur(2px);
+      }
+      .sidebar-panel {
+        background: #ffffff;
+        border-left: 1px solid #f0f0f0;
+      }
     </style>
   </head>
-  <body class="p-5 md:p-12">
+  <body class="p-5 md:p-12 relative">
     <div class="max-w-md mx-auto">
+      <button
+        onclick="toggleConfigPanel(true)"
+        aria-label="Mở cấu hình"
+        class="fixed top-5 left-5 md:top-8 md:left-8 z-30 h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          class="h-5 w-5"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M4.5 12a2.5 2.5 0 0 0 .6 1.62l-.06.14a2 2 0 0 0 .45 2.24l.3.3a2 2 0 0 0 2.24.45l.14-.06a2.5 2.5 0 0 0 3.24 1.47h1.18a2.5 2.5 0 0 0 3.24-1.47l.14.06a2 2 0 0 0 2.24-.45l.3-.3a2 2 0 0 0 .45-2.24l-.06-.14A2.5 2.5 0 0 0 19.5 12a2.5 2.5 0 0 0-.6-1.62l.06-.14a2 2 0 0 0-.45-2.24l-.3-.3a2 2 0 0 0-2.24-.45l-.14.06A2.5 2.5 0 0 0 12.59 5h-1.18a2.5 2.5 0 0 0-3.24 1.47l-.14-.06a2 2 0 0 0-2.24.45l-.3.3a2 2 0 0 0-.45 2.24l.06.14A2.5 2.5 0 0 0 4.5 12Z"
+          />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      </button>
+
       <!-- Minimal Header -->
       <header class="mb-12 text-center">
         <h1 class="text-2xl font-bold tracking-tight text-slate-900">
@@ -97,8 +127,8 @@
           />
           <input
             type="number"
-            id="shuttleFee"
-            placeholder="Tiền cầu"
+            id="shuttleCount"
+            placeholder="Số cầu"
             class="input-minimal px-4 py-3 text-sm font-medium w-full"
             oninput="calculate()"
           />
@@ -149,7 +179,9 @@
               >
                 Mỗi set
               </p>
-              <p class="text-lg font-semibold text-blue-700">12k</p>
+              <p id="setPriceDisplay" class="text-lg font-semibold text-blue-700">
+                12k
+              </p>
             </div>
           </div>
 
@@ -187,13 +219,145 @@
       >
         Đã sao chép!
       </div>
+
+      <!-- Config Sidebar -->
+      <div
+        id="configBackdrop"
+        onclick="toggleConfigPanel(false)"
+        class="hidden fixed inset-0 panel-backdrop z-40"
+      ></div>
+      <aside
+        id="configPanel"
+        class="hidden fixed left-0 top-0 h-full w-full max-w-sm sidebar-panel z-50 p-6"
+      >
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-sm font-semibold text-slate-600 uppercase tracking-wider">
+            Cấu hình
+          </h3>
+          <button
+            onclick="toggleConfigPanel(false)"
+            class="text-slate-400 hover:text-slate-700 text-xl leading-none"
+          >
+            &times;
+          </button>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label for="cfgFemaleMax" class="block text-xs text-slate-500 mb-2"
+              >Giá cố định cho nữ (k / buổi)</label
+            >
+            <input
+              type="number"
+              id="cfgFemaleMax"
+              class="input-minimal px-4 py-3 text-sm font-medium w-full"
+              value="60"
+              min="0"
+              oninput="updateConfig()"
+            />
+          </div>
+          <div>
+            <label for="cfgTubePrice" class="block text-xs text-slate-500 mb-2"
+              >Giá 1 ống cầu (12 trái) (k / ống)</label
+            >
+            <input
+              type="number"
+              id="cfgTubePrice"
+              class="input-minimal px-4 py-3 text-sm font-medium w-full"
+              value="290"
+              min="0"
+              oninput="updateConfig()"
+            />
+          </div>
+          <div>
+            <label for="cfgSetPrice" class="block text-xs text-slate-500 mb-2"
+              >Giá đánh theo set (k / set)</label
+            >
+            <input
+              type="number"
+              id="cfgSetPrice"
+              class="input-minimal px-4 py-3 text-sm font-medium w-full"
+              value="12"
+              min="0"
+              oninput="updateConfig()"
+            />
+          </div>
+        </div>
+
+        <p class="text-xs text-slate-400 mt-6 leading-relaxed">
+          Trường "Số cầu" ngoài màn hình chính sẽ tự quy đổi ra tiền cầu theo giá
+          ống hiện tại.
+        </p>
+      </aside>
     </div>
 
     <script>
       let players = [];
-      const FEMALE_MAX = 60;
-      const PRICE_PER_SET = 12;
+      const DEFAULT_CONFIG = {
+        femaleMax: 60,
+        tubePrice: 290,
+        setPrice: 12,
+        shuttlesPerTube: 12,
+      };
+      let config = { ...DEFAULT_CONFIG };
       let resetTimer = null;
+
+      function formatK(value) {
+        const rounded = Math.round(value * 10) / 10;
+        return Number.isInteger(rounded) ? `${rounded}k` : `${rounded.toFixed(1)}k`;
+      }
+
+      function toggleConfigPanel(show) {
+        const panel = document.getElementById("configPanel");
+        const backdrop = document.getElementById("configBackdrop");
+        panel.classList.toggle("hidden", !show);
+        backdrop.classList.toggle("hidden", !show);
+      }
+
+      function saveConfig() {
+        localStorage.setItem("badguyConfig", JSON.stringify(config));
+      }
+
+      function loadConfig() {
+        const raw = localStorage.getItem("badguyConfig");
+        if (!raw) return;
+        try {
+          const stored = JSON.parse(raw);
+          config = {
+            femaleMax: Number(stored.femaleMax) || DEFAULT_CONFIG.femaleMax,
+            tubePrice: Number(stored.tubePrice) || DEFAULT_CONFIG.tubePrice,
+            setPrice: Number(stored.setPrice) || DEFAULT_CONFIG.setPrice,
+            shuttlesPerTube: DEFAULT_CONFIG.shuttlesPerTube,
+          };
+        } catch {
+          config = { ...DEFAULT_CONFIG };
+        }
+      }
+
+      function syncConfigInputs() {
+        document.getElementById("cfgFemaleMax").value = config.femaleMax;
+        document.getElementById("cfgTubePrice").value = config.tubePrice;
+        document.getElementById("cfgSetPrice").value = config.setPrice;
+        document.getElementById("setPriceDisplay").innerText = formatK(config.setPrice);
+      }
+
+      function updateConfig() {
+        config.femaleMax = Math.max(
+          0,
+          parseFloat(document.getElementById("cfgFemaleMax").value) || 0,
+        );
+        config.tubePrice = Math.max(
+          0,
+          parseFloat(document.getElementById("cfgTubePrice").value) || 0,
+        );
+        config.setPrice = Math.max(
+          0,
+          parseFloat(document.getElementById("cfgSetPrice").value) || 0,
+        );
+        syncConfigInputs();
+        saveConfig();
+        calculate();
+      }
 
       function processBulkInput() {
         const inputEl = document.getElementById("bulkInput");
@@ -312,8 +476,10 @@
       function calculate() {
         const court =
           parseFloat(document.getElementById("courtFee").value) || 0;
+        const shuttleCount =
+          parseFloat(document.getElementById("shuttleCount").value) || 0;
         const shuttle =
-          parseFloat(document.getElementById("shuttleFee").value) || 0;
+          (shuttleCount * config.tubePrice) / config.shuttlesPerTube;
         const total = court + shuttle;
 
         if (players.length === 0 || total === 0) {
@@ -329,7 +495,7 @@
         // Calculate revenue from set players
         let totalSetRevenue = 0;
         setPlayers.forEach((p) => {
-          totalSetRevenue += p.sets * PRICE_PER_SET;
+          totalSetRevenue += p.sets * config.setPrice;
         });
 
         const remainingTotal = total - totalSetRevenue;
@@ -338,11 +504,11 @@
 
         if (nonSetPlayers.length > 0) {
           const avg = remainingTotal / nonSetPlayers.length;
-          if (avg <= FEMALE_MAX || males.length === 0) {
+          if (avg <= config.femaleMax || males.length === 0) {
             fFee = Math.ceil(avg);
             mFee = fFee;
           } else {
-            fFee = FEMALE_MAX;
+            fFee = config.femaleMax;
             mFee = Math.ceil(
               (remainingTotal - fFee * females.length) / males.length,
             );
@@ -359,7 +525,7 @@
           malesCount: males.length,
         };
 
-        document.getElementById("billTotal").innerText = total + "k";
+        document.getElementById("billTotal").innerText = formatK(total);
         document.getElementById("maleFeeDisplay").innerText = mFee + "k";
         document.getElementById("resultCard").classList.remove("hidden");
       }
@@ -368,8 +534,10 @@
         const { fFee, mFee, total, malesCount, femalesCount } = lastResult;
         const court =
           parseFloat(document.getElementById("courtFee").value) || 0;
+        const shuttleCount =
+          parseFloat(document.getElementById("shuttleCount").value) || 0;
         const shuttle =
-          parseFloat(document.getElementById("shuttleFee").value) || 0;
+          (shuttleCount * config.tubePrice) / config.shuttlesPerTube;
 
         const setPlayers = players.filter((p) => p.sets > 0);
         const nonSetPlayers = players.filter((p) => p.sets === 0);
@@ -386,14 +554,14 @@
           summaryParts.push(`${femalesCount} nữ ${fFee * femalesCount}K`);
         if (setPlayers.length > 0) {
           const totalSetMoney = setPlayers.reduce(
-            (sum, p) => sum + p.sets * PRICE_PER_SET,
+            (sum, p) => sum + p.sets * config.setPrice,
             0,
           );
           summaryParts.push(`đánh ít ${totalSetMoney}K`);
         }
 
         text += summaryParts.join(" + ") + "\n";
-        text += `${court} tiền sân + ${shuttle} tiền cầu = ${total}K tổng cộng\n\u200B\n`;
+        text += `${formatK(court)} tiền sân + ${formatK(shuttle)} tiền cầu (${shuttleCount} trái) = ${formatK(total)} tổng cộng\n\u200B\n`;
 
         // 3. Danh sách chi tiết Players
         text += `Players:\n\u200B\n`;
@@ -414,7 +582,7 @@
 
         // Danh sách người đánh theo set
         setPlayers.forEach((p) => {
-          text += `${count}. ${p.name} ${p.sets * PRICE_PER_SET}K (${p.sets} set)\n`;
+          text += `${count}. ${p.name} ${p.sets * config.setPrice}K (${p.sets} set)\n`;
           count++;
         });
 
@@ -441,7 +609,7 @@
           clearTimeout(resetTimer);
           resetTimer = null;
           document.getElementById("courtFee").value = "";
-          document.getElementById("shuttleFee").value = "";
+          document.getElementById("shuttleCount").value = "";
           document.getElementById("bulkInput").value = "";
           players = [];
           renderPlayers();
@@ -469,6 +637,9 @@
           toast.classList.replace("opacity-100", "opacity-0");
         }, 2000);
       }
+
+      loadConfig();
+      syncConfigInputs();
     </script>
   </body>
 </html>
