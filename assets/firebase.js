@@ -89,9 +89,20 @@
       });
     }
 
+    async function removeSession(sessionId) {
+      const id = String(sessionId || "").trim();
+      if (!id) {
+        throw new Error("Missing session id");
+      }
+
+      await sessionsRef.doc(id).delete();
+      return { id };
+    }
+
     window.badguyDb = {
       saveDailySummary,
       getRecentSessions,
+      removeSession,
     };
     window.badguyDbReady = true;
   } catch (error) {

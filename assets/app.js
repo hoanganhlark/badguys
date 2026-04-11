@@ -4,7 +4,7 @@ const TELEGRAM_BOT_TOKEN = ENV.telegramBotToken || "__TELEGRAM_BOT_TOKEN__";
 const TELEGRAM_GROUP_CHAT_ID =
   ENV.telegramGroupChatId || "__TELEGRAM_GROUP_CHAT_ID__";
 const APP_VERSION = ENV.appVersion || "v0.0.0";
-const VISIT_SESSION_KEY = "badguyVisitNotified";
+const VISIT_DAY_KEY = "badguyVisitNotifiedDate";
 
 function getEnvNumber(value, fallback) {
   const parsed = Number(value);
@@ -51,6 +51,14 @@ function formatVisitTimestampUTC7() {
   return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
 }
 
+function getLocalDateKey(dateValue) {
+  const current = dateValue || new Date();
+  const yyyy = current.getFullYear();
+  const mm = String(current.getMonth() + 1).padStart(2, "0");
+  const dd = String(current.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 function isTelegramConfigured() {
   return (
     TELEGRAM_BOT_TOKEN &&
@@ -74,12 +82,13 @@ async function sendTelegramMessage(text) {
 }
 
 async function notifyGuestVisited() {
-  if (sessionStorage.getItem(VISIT_SESSION_KEY)) return;
+  const todayKey = getLocalDateKey();
+  if (localStorage.getItem(VISIT_DAY_KEY) === todayKey) return;
   const text = `A guest visited BadGuys app at ${formatVisitTimestampUTC7()}`;
 
   try {
     await sendTelegramMessage(text);
-    sessionStorage.setItem(VISIT_SESSION_KEY, "1");
+    localStorage.setItem(VISIT_DAY_KEY, todayKey);
   } catch (error) {
     console.warn("Telegram visit notification failed", error);
   }
@@ -129,6 +138,8 @@ function buildSessionCardHtml(session) {
   const femalesCount = session.femalesCount || 0;
   const setPlayersCount = session.setPlayersCount || 0;
   const summaryText = String(session.summaryText || "").trim();
+  const sessionId = String(session.id || "");
+  const sessionIdLiteral = JSON.stringify(sessionId);
 
   let summaryHtml = "";
   if (summaryText) {
@@ -139,7 +150,16 @@ function buildSessionCardHtml(session) {
     <article class="border border-slate-200 rounded-xl p-4 bg-white">
       <div class="flex items-center justify-between mb-2">
         <h5 class="text-sm font-semibold text-slate-800">Buổi ${dateLabel}</h5>
-        <span class="text-xs text-slate-500">Tổng: ${total}</span>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-slate-500">Tổng: ${total}</span>
+          <button
+            onclick='removeSession(${sessionIdLiteral})'
+            class="text-xs px-2 py-1 rounded-md border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
+            title="Xóa buổi này"
+          >
+            Xóa
+          </button>
+        </div>
       </div>
       <p class="text-xs text-slate-500">
         Nam: ${malesCount} người (${maleFee}/người) | Nữ: ${femalesCount} người (${femaleFee}/người) | Đánh set: ${setPlayersCount} người
@@ -171,6 +191,30 @@ function showSessionsList(sessions) {
     .join("");
   state.classList.add("hidden");
   list.classList.remove("hidden");
+}
+
+async function removeSession(sessionId) {
+  if (!sessionId) {
+    showToast("Thiếu mã buổi cần xóa.");
+    return;
+  }
+
+  if (!window.badguyDb || !window.badguyDb.removeSession) {
+    showToast("Chưa thể xóa lúc này. Firebase chưa sẵn sàng.");
+    return;
+  }
+
+  const confirmed = window.confirm("Bạn có chắc muốn xóa buổi này?");
+  if (!confirmed) return;
+
+  try {
+    await window.badguyDb.removeSession(sessionId);
+    showToast("Đã xóa buổi khỏi lịch sử.");
+    loadLastSessions();
+  } catch (error) {
+    console.warn("Remove session failed", error);
+    showToast("Xóa thất bại. Vui lòng thử lại.");
+  }
 }
 
 async function loadLastSessions() {
@@ -590,5 +634,6 @@ window.removePlayer = removePlayer;
 window.toggleGender = toggleGender;
 window.openSessionsModal = openSessionsModal;
 window.closeSessionsModal = closeSessionsModal;
+window.removeSession = removeSession;
 
 document.addEventListener("DOMContentLoaded", init);
