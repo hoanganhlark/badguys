@@ -265,6 +265,23 @@
           </div>
 
           <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <label
+                for="cfgRoundResult"
+                class="block text-xs text-slate-500 mb-2"
+                >Làm tròn kết quả</label
+              >
+              <label class="inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="cfgRoundResult"
+                  class="form-checkbox h-5 w-5 text-blue-600"
+                  checked
+                  onchange="updateConfig()"
+                />
+                <span class="ml-2 text-xs text-slate-500">Bật</span>
+              </label>
+            </div>
             <div>
               <label
                 for="cfgFemaleMax"
@@ -336,6 +353,7 @@
         tubePrice: 290,
         setPrice: 12,
         shuttlesPerTube: 12,
+        roundResult: true,
       };
       let config = { ...DEFAULT_CONFIG };
       let resetTimer = null;
@@ -403,6 +421,13 @@
           : `${rounded.toFixed(1)}k`;
       }
 
+      function formatSummaryPrice(value) {
+        const rounded = Math.round(value * 10) / 10;
+        return Number.isInteger(rounded)
+          ? `${rounded}K`
+          : `${rounded.toFixed(1)}K`;
+      }
+
       function toggleConfigPanel(show) {
         const panel = document.getElementById("configPanel");
         const backdrop = document.getElementById("configBackdrop");
@@ -424,6 +449,10 @@
             tubePrice: Number(stored.tubePrice) || DEFAULT_CONFIG.tubePrice,
             setPrice: Number(stored.setPrice) || DEFAULT_CONFIG.setPrice,
             shuttlesPerTube: DEFAULT_CONFIG.shuttlesPerTube,
+            roundResult:
+              typeof stored.roundResult === "boolean"
+                ? stored.roundResult
+                : DEFAULT_CONFIG.roundResult,
           };
         } catch {
           config = { ...DEFAULT_CONFIG };
@@ -440,6 +469,8 @@
         document.getElementById("femalePriceDisplay").innerText = formatK(
           config.femaleMax,
         );
+        document.getElementById("cfgRoundResult").checked =
+          !!config.roundResult;
       }
 
       function updateConfig() {
@@ -455,6 +486,7 @@
           0,
           parseFloat(document.getElementById("cfgSetPrice").value) || 0,
         );
+        config.roundResult = document.getElementById("cfgRoundResult").checked;
         syncConfigInputs();
         saveConfig();
         calculate();
@@ -606,13 +638,15 @@
         if (nonSetPlayers.length > 0) {
           const avg = remainingTotal / nonSetPlayers.length;
           if (avg <= config.femaleMax || males.length === 0) {
-            fFee = Math.ceil(avg);
+            fFee = config.roundResult ? Math.round(avg) : avg;
             mFee = fFee;
           } else {
             fFee = config.femaleMax;
-            mFee = Math.ceil(
-              (remainingTotal - fFee * females.length) / males.length,
-            );
+            mFee = config.roundResult
+              ? Math.round(
+                  (remainingTotal - fFee * females.length) / males.length,
+                )
+              : (remainingTotal - fFee * females.length) / males.length;
           }
         }
 
@@ -627,7 +661,7 @@
         };
 
         document.getElementById("billTotal").innerText = formatK(total);
-        document.getElementById("maleFeeDisplay").innerText = mFee + "k";
+        document.getElementById("maleFeeDisplay").innerText = formatK(mFee);
         document.getElementById("resultCard").classList.remove("hidden");
       }
 
@@ -646,19 +680,23 @@
         const females = nonSetPlayers.filter((p) => p.isFemale);
 
         // 1. Dòng tiêu đề đầu tiên
-        let text = `NAY CHƠI ${mFee}K / NGƯỜI\n\u200B\n`;
+        let text = `NAY CHƠI ${formatSummaryPrice(mFee)} / NGƯỜI\n\u200B\n`;
 
         // 2. Dòng tóm tắt tổng hợp
         let summaryParts = [];
         if (malesCount > 0) summaryParts.push(`${malesCount} người chia đều`);
         if (femalesCount > 0)
-          summaryParts.push(`${femalesCount} nữ ${fFee * femalesCount}K`);
+          summaryParts.push(
+            `${femalesCount} nữ ${formatSummaryPrice(fFee * femalesCount)}`,
+          );
         if (setPlayers.length > 0) {
           const totalSetMoney = setPlayers.reduce(
             (sum, p) => sum + p.sets * config.setPrice,
             0,
           );
-          summaryParts.push(`${setPlayers.length} đánh ít ${totalSetMoney}K`);
+          summaryParts.push(
+            `${setPlayers.length} đánh ít ${formatSummaryPrice(totalSetMoney)}`,
+          );
         }
 
         text += summaryParts.join(" + ") + "\n";
@@ -677,13 +715,13 @@
 
         // Danh sách Nữ
         females.forEach((p) => {
-          text += `${count}. ${p.name} ${fFee}K\n`;
+          text += `${count}. ${p.name} ${formatSummaryPrice(fFee)}\n`;
           count++;
         });
 
         // Danh sách người đánh theo set
         setPlayers.forEach((p) => {
-          text += `${count}. ${p.name} ${p.sets * config.setPrice}K (${p.sets} set)\n`;
+          text += `${count}. ${p.name} ${formatSummaryPrice(p.sets * config.setPrice)} (${p.sets} set)\n`;
           count++;
         });
 
