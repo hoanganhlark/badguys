@@ -32,5 +32,5 @@ export const envConfig: EnvConfig & { firebaseCollection: string } = {
   appVersion: import.meta.env.VITE_APP_VERSION || "v0.0.0",
   defaultConfig,
   firebaseCollection:
-    import.meta.env.VITE_FIREBASE_COLLECTION || "dev-sessions",
+    import.meta.env.VITE_FIREBASE_COLLECTION_SESSIONS || "dev-sessions",
 };
