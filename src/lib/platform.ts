@@ -3,6 +3,7 @@ import type { AppConfig } from "../types";
 const CONFIG_KEY = "badguyConfig";
 const VISIT_DAY_KEY = "badguyVisitNotifiedDate";
 const INPUT_DRAFT_KEY = "badguyInputDraft";
+const ADMIN_MODE_KEY = "badguyAdminMode";
 
 type InputDraft = {
   courtFeeInput: string;
@@ -82,6 +83,14 @@ export function saveInputDraft(draft: InputDraft): void {
 
 export function clearInputDraft(): void {
   localStorage.removeItem(INPUT_DRAFT_KEY);
+}
+
+export function loadAdminMode(): boolean {
+  return localStorage.getItem(ADMIN_MODE_KEY) === "true";
+}
+
+export function saveAdminMode(value: boolean): void {
+  localStorage.setItem(ADMIN_MODE_KEY, String(value));
 }
 
 export function getLocalDateKey(dateValue?: Date): string {

@@ -6,6 +6,7 @@ type Props = {
   loading: boolean;
   error: string;
   sessions: SessionRecord[];
+  canRemove: boolean;
   onClose: () => void;
   onRemove: (id: string) => void;
   onCopyNote: (text: string) => void;
@@ -16,6 +17,7 @@ export default function SessionsModal({
   loading,
   error,
   sessions,
+  canRemove,
   onClose,
   onRemove,
   onCopyNote,
@@ -73,14 +75,16 @@ export default function SessionsModal({
                       <span className="text-xs text-slate-500">
                         Tổng: {formatK(session.total || 0)}
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => onRemove(session.id)}
-                        className="text-xs px-2 py-1 rounded-md border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
-                        title="Xóa buổi này"
-                      >
-                        Xóa
-                      </button>
+                      {canRemove ? (
+                        <button
+                          type="button"
+                          onClick={() => onRemove(session.id)}
+                          className="text-xs px-2 py-1 rounded-md border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
+                          title="Xóa buổi này"
+                        >
+                          Xóa
+                        </button>
+                      ) : null}
                     </div>
                   </div>
                   <p className="text-xs text-slate-500">

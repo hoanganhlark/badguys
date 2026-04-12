@@ -26,9 +26,11 @@ import {
   clearInputDraft,
   copyText,
   formatVisitTimestampUTC7,
+  loadAdminMode,
   loadStoredConfig,
   loadStoredInputDraft,
   markVisitNotifiedToday,
+  saveAdminMode,
   saveConfig,
   saveInputDraft,
   shouldSendVisitNotificationToday,
@@ -59,6 +61,7 @@ export default function App() {
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [toastMessage, setToastMessage] = useState("");
   const [resetArmed, setResetArmed] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(() => loadAdminMode());
 
   const resetTimerRef = useRef<number | null>(null);
   const sidebarHistoryActiveRef = useRef(false);
@@ -87,6 +90,10 @@ export default function App() {
       bulkInput,
     });
   }, [courtFeeInput, shuttleCountInput, courtCountInput, bulkInput]);
+
+  useEffect(() => {
+    saveAdminMode(isAdmin);
+  }, [isAdmin]);
 
   useEffect(() => {
     if (!toastMessage) return;
@@ -151,6 +158,10 @@ export default function App() {
       setPrice: Math.max(0, next.setPrice || 0),
       enableCourtCount: !!next.enableCourtCount,
     });
+  }
+
+  function handleToggleAdminMode() {
+    setIsAdmin((prev) => !prev);
   }
 
   async function handleCopySummary() {
@@ -382,9 +393,11 @@ export default function App() {
         open={configOpen}
         backdropInteractive={!sessionsOpen}
         config={config}
+        isAdmin={isAdmin}
         onClose={closeConfigPanel}
         onOpenSessions={openSessionsModal}
         onConfigChange={handleConfigChange}
+        onToggleAdmin={handleToggleAdminMode}
         appVersion={envConfig.appVersion}
       />
 
@@ -393,6 +406,7 @@ export default function App() {
         loading={sessionsLoading}
         error={sessionsError}
         sessions={sessions}
+        canRemove={isAdmin}
         onClose={closeSessionsModal}
         onRemove={handleRemoveSession}
         onCopyNote={handleCopySessionNote}

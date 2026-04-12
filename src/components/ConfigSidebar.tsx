@@ -4,9 +4,11 @@ type Props = {
   open: boolean;
   backdropInteractive: boolean;
   config: AppConfig;
+  isAdmin: boolean;
   onClose: () => void;
   onOpenSessions: () => void;
   onConfigChange: (next: AppConfig) => void;
+  onToggleAdmin: () => void;
   appVersion: string;
 };
 
@@ -19,9 +21,11 @@ export default function ConfigSidebar({
   open,
   backdropInteractive,
   config,
+  isAdmin,
   onClose,
   onOpenSessions,
   onConfigChange,
+  onToggleAdmin,
   appVersion,
 }: Props) {
   return (
@@ -194,8 +198,12 @@ export default function ConfigSidebar({
             Lịch sử buổi gần đây
           </button>
 
-          <p className="mt-auto pt-8 text-[11px] text-slate-300 tracking-wide">
+          <p
+            onClick={onToggleAdmin}
+            className="mt-auto pt-8 text-[11px] text-slate-300 tracking-wide"
+          >
             {appVersion}
+            {isAdmin ? " admin" : ""}
           </p>
         </div>
       </aside>
