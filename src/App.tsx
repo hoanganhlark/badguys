@@ -70,8 +70,8 @@ export default function App() {
   const courtCount = parseFloat(courtCountInput) || 0;
 
   const calc = useMemo(
-    () => calculateResult(players, courtFee, courtCount, shuttleCount, config),
-    [players, courtFee, courtCount, shuttleCount, config],
+    () => calculateResult(players, courtFee, shuttleCount, config),
+    [players, courtFee, shuttleCount, config],
   );
 
   const showResult = players.length > 0 && calc.total !== 0;

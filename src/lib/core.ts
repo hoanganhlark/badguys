@@ -44,6 +44,10 @@ export function parsePlayersBulk(input: string): Player[] {
     let raw = line.trim();
     if (!raw) return;
 
+    // Allow numbered list input like "1. an", "2/ bo", "5 bi".
+    raw = raw.replace(/^\d+(?:(?:\s*[./\-:)]\s*)|\s+)/, "").trim();
+    if (!raw) return;
+
     let isFemale = false;
     let sets = 0;
     let customFee: number | null = null;
@@ -107,16 +111,11 @@ export function cyclePlayerMode(player: Player): Player {
 export function calculateResult(
   players: Player[],
   courtFee: number,
-  courtCount: number,
   shuttleCount: number,
   config: AppConfig,
 ): CalcResult {
-  const effectiveCourtCount = config.enableCourtCount
-    ? Math.max(0, courtCount)
-    : 1;
-  const totalCourtFee = courtFee * effectiveCourtCount;
   const shuttle = (shuttleCount * config.tubePrice) / config.shuttlesPerTube;
-  const total = totalCourtFee + shuttle;
+  const total = courtFee + shuttle;
 
   const setPlayers = players.filter((p) => p.sets > 0);
   const nonSetPlayers = players.filter((p) => p.sets === 0);
@@ -180,7 +179,6 @@ export function buildSummaryText(
   const effectiveCourtCount = config.enableCourtCount
     ? Math.max(0, courtCount)
     : 1;
-  const totalCourtFee = courtFee * effectiveCourtCount;
   const shuttle = (shuttleCount * config.tubePrice) / config.shuttlesPerTube;
 
   const setPlayers = players.filter((p) => p.sets > 0);
@@ -189,6 +187,11 @@ export function buildSummaryText(
   const sharedPlayers = nonSetPlayers.filter((p) => p.customFee == null);
   const sharedMales = sharedPlayers.filter((p) => !p.isFemale);
   const sharedFemales = sharedPlayers.filter((p) => p.isFemale);
+
+  const formatSummaryAmount = (value: number): string => {
+    const rounded = Math.round(value * 10) / 10;
+    return Number.isInteger(rounded) ? `${rounded}` : rounded.toFixed(1);
+  };
 
   let text = `NAY CHƠI ${formatSummaryPrice(calc.mFee)} / NGƯỜI\n\u200B\n`;
 
@@ -218,7 +221,13 @@ export function buildSummaryText(
   }
 
   text += summaryParts.join(" + ") + "\n";
-  text += `${formatK(totalCourtFee)} tiền sân + ${formatK(shuttle)} tiền cầu (${shuttleCount} trái) = ${formatK(calc.total)} tổng cộng\n\u200B\n`;
+  if (config.enableCourtCount) {
+    text += `${formatSummaryAmount(effectiveCourtCount)} sân + ${formatSummaryAmount(shuttleCount)} trái cầu\n\u200B\n`;
+  } else {
+    text += `${formatSummaryAmount(shuttleCount)} trái cầu\n\u200B\n`;
+  }
+
+  text += `${formatSummaryAmount(courtFee)} tiền sân + ${formatSummaryAmount(shuttle)} tiền cầu = ${formatK(calc.total)} tổng cộng\n\u200B\n`;
   text += "Players:\n\u200B\n";
 
   let count = 1;
@@ -253,12 +262,11 @@ export function buildSessionPayload(
   const effectiveCourtCount = config.enableCourtCount
     ? Math.max(0, courtCount)
     : 1;
-  const totalCourtFee = courtFee * effectiveCourtCount;
   const shuttle = (shuttleCount * config.tubePrice) / config.shuttlesPerTube;
 
   return {
     summaryText,
-    courtFee: totalCourtFee,
+    courtFee,
     courtCount: config.enableCourtCount ? effectiveCourtCount : undefined,
     shuttleCount,
     shuttleFee: shuttle,
