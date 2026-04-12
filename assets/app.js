@@ -185,7 +185,14 @@ function buildSessionCardHtml(session) {
 
   let summaryHtml = "";
   if (summaryText) {
-    summaryHtml = `<pre class="mt-3 text-xs bg-slate-50 border border-slate-100 rounded-lg p-3 text-slate-600 whitespace-pre-wrap break-words">${summaryText.replace(/</g, "&lt;")}</pre>`;
+    summaryHtml = `
+      <div class="relative mt-1">
+        <button class="copy-session-btn absolute top-2 right-2 text-slate-400 hover:text-blue-600 z-10 bg-white/80 rounded p-1" title="Copy note" data-summary="${encodeURIComponent(summaryText)}">
+          <svg xmlns="http://www.w3.org/2000/svg" class="inline h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="9" y="9" width="13" height="13" rx="2" fill="#fff" stroke="#94a3b8" stroke-width="1.5"/><rect x="3" y="3" width="13" height="13" rx="2" fill="#fff" stroke="#64748b" stroke-width="1.5"/></svg>
+        </button>
+        <pre class="text-xs bg-slate-50 border border-slate-100 rounded-lg p-3 text-slate-600 whitespace-pre-wrap break-words">${summaryText.replace(/</g, "&lt;")}</pre>
+      </div>
+    `;
   }
 
   return `
@@ -740,14 +747,24 @@ function handleReset() {
 }
 
 function showToast(msg) {
-  const toast = document.getElementById("toast");
+  let toast = document.getElementById("toast");
+  if (toast) toast.remove(); // Remove any static or previous toast
+  toast = document.createElement("div");
+  toast.id = "toast";
+  toast.className =
+    "fixed bottom-8 left-1/2 -translate-x-1/2 z-[2147483647] bg-slate-900 text-white text-[13px] px-5 py-3 rounded-full shadow-xl opacity-0 transition-all duration-300 pointer-events-none";
   toast.innerText = msg;
+  document.body.appendChild(toast);
+  // Force reflow for transition
+  void toast.offsetWidth;
   toast.classList.remove("opacity-0");
   toast.classList.add("opacity-100");
-
   setTimeout(() => {
     toast.classList.replace("opacity-100", "opacity-0");
-  }, 2000);
+    setTimeout(() => {
+      toast.remove();
+    }, 400);
+  }, 1800);
 }
 
 function init() {
@@ -774,6 +791,31 @@ window.closeSessionsModal = closeSessionsModal;
 window.removeSession = removeSession;
 
 document.addEventListener("DOMContentLoaded", init);
+
+// Copy note from session history
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest(".copy-session-btn");
+  if (btn) {
+    const summary = decodeURIComponent(btn.getAttribute("data-summary") || "");
+    if (summary) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(summary).then(() => {
+          showToast("Đã copy note!");
+          notifyCopyClicked(summary);
+        });
+      } else {
+        const el = document.createElement("textarea");
+        el.value = summary;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+        showToast("Đã copy note!");
+        notifyCopyClicked(summary);
+      }
+    }
+  }
+});
 
 // Handle popstate for modal/sidebar close (back button)
 window.addEventListener("popstate", function (e) {
