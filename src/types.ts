@@ -50,6 +50,7 @@ export type SessionPayload = Omit<SessionRecord, "id">;
 export type EnvConfig = {
   telegramBotToken: string;
   telegramGroupChatId: string;
+  enableTelegramNotification: boolean;
   firebaseApiKey: string;
   firebaseProjectId: string;
   appVersion: string;

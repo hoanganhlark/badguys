@@ -3,6 +3,7 @@ import { getGuestDeviceName } from "./platform";
 
 function isTelegramConfigured(): boolean {
   return (
+    envConfig.enableTelegramNotification &&
     !!envConfig.telegramBotToken &&
     !!envConfig.telegramGroupChatId &&
     !envConfig.telegramBotToken.startsWith("__") &&

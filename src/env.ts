@@ -31,6 +31,10 @@ const defaultConfig: AppConfig = {
 export const envConfig: EnvConfig & { firebaseCollection: string } = {
   telegramBotToken: import.meta.env.VITE_TELEGRAM_BOT_TOKEN || "",
   telegramGroupChatId: import.meta.env.VITE_TELEGRAM_GROUP_CHAT_ID || "",
+  enableTelegramNotification: getEnvBoolean(
+    import.meta.env.VITE_BADGUY_ENABLE_TELEGRAM_NOTIFICATION,
+    true,
+  ),
   firebaseApiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
   firebaseProjectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "",
   appVersion: import.meta.env.VITE_APP_VERSION || "v0.0.0",
