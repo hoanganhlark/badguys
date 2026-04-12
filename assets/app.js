@@ -290,6 +290,19 @@ function openSessionsModal() {
   loadLastSessions();
 }
 
+// Add event listener to close modal when clicking backdrop
+document.addEventListener("DOMContentLoaded", function () {
+  const modal = document.getElementById("sessionsModal");
+  if (modal) {
+    modal.addEventListener("click", function (e) {
+      // Only close if click is directly on the backdrop (not modal content)
+      if (e.target === modal) {
+        closeSessionsModal();
+      }
+    });
+  }
+});
+
 function closeSessionsModal() {
   const modal = document.getElementById("sessionsModal");
   modal.classList.add("hidden");
