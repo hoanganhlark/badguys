@@ -1,2 +1,6 @@
 .env
 index.local.html
+node_modules
+dist
+.vite
+*.tsbuildinfo

@@ -1,0 +1,77 @@
+body {
+  background-color: #fafafa;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  color: #1a1a1a;
+  min-height: 100vh;
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+  border-radius: 1rem;
+  transition: all 0.2s ease;
+}
+
+.input-minimal {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.input-minimal:focus {
+  outline: none;
+  border-color: #1a1a1a;
+  background-color: #fff;
+}
+
+.tag {
+  transition: all 0.2s ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.tag-male {
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
+
+.tag-female {
+  background-color: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fee2e2;
+}
+
+.tag-set {
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #dbeafe;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.panel-backdrop {
+  background: rgba(15, 23, 42, 0.3);
+  backdrop-filter: blur(2px);
+}
+
+.sidebar-panel {
+  background: #ffffff;
+  border-right: 1px solid #f0f0f0;
+  box-shadow: 12px 0 30px rgba(15, 23, 42, 0.08);
+}

@@ -3,6 +3,7 @@
 ## 1. Current Architecture Overview
 
 ### Current runtime
+
 - One static page in `index.html`.
 - All behavior is in `assets/app.js` with global functions and inline events.
 - Firebase setup and Firestore access are in `assets/firebase.js`.
@@ -10,6 +11,7 @@
 - Env placeholders are injected into HTML (`window.BADGUY_ENV`).
 
 ### Current files
+
 - `index.html`: full UI and env bootstrap.
 - `assets/app.js`: parsing, calculations, summary, copy, toast, modal/sidebar, Telegram notify.
 - `assets/firebase.js`: Firestore init and `save/get/remove session` methods.
@@ -18,6 +20,7 @@
 - `.env.example`: runtime values and defaults.
 
 ### Behavior that must stay identical
+
 - Player parsing rules (`n`, `2s`, `30k`, `+10k`).
 - Tag click cycle: male -> female -> set(1) -> male.
 - Cost split logic (female cap, set pricing, custom fee exclusion, round option).
@@ -29,12 +32,14 @@
 ## 2. Proposed React + Vite + TypeScript Architecture
 
 ### Stack
+
 - Vite + React + TypeScript.
 - Tailwind via npm config (not CDN), keep current UI look.
 - Firebase modular SDK.
 - Vitest + React Testing Library.
 
 ### Design principle
+
 - Keep it simple: one feature-oriented `App` with small components and a few utility files.
 - Move pure business logic to utilities first, then wire React UI around it.
 
@@ -108,6 +113,7 @@ This keeps the project easy to navigate while still separating UI from core logi
 ## 6. Mapping Existing Logic to New Files
 
 ### File mapping
+
 - `index.html` -> `App.tsx` + components.
 - `assets/app.js` -> `components/*` + `lib/*`.
 - `assets/firebase.js` -> `lib/firebase.ts`.
@@ -115,6 +121,7 @@ This keeps the project easy to navigate while still separating UI from core logi
 - env placeholder injection -> Vite `.env` and `env.ts`.
 
 ### Function mapping
+
 - Parsing, calculations, summary text, and format helpers -> `lib/core.ts`.
 - Clipboard fallback logic, localStorage helpers, and device/date helpers -> `lib/platform.ts`.
 - Firebase session API -> `lib/firebase.ts`.
@@ -131,11 +138,13 @@ This keeps the project easy to navigate while still separating UI from core logi
 ## 8. Duplicate Logic and Refactor Plan
 
 ### Duplicate logic found
+
 - Clipboard behavior appears in multiple places.
 - Currency formatting has overlapping functions.
 - Player grouping logic repeats in calculate and summary steps.
 
 ### Simple refactor
+
 - Keep one `core.ts` file for parsing + calculation + summary + formatting.
 - Keep one `platform.ts` file for clipboard + storage + device/date helpers.
 - Keep Firebase and Telegram separate for clear external integration boundaries.
@@ -143,15 +152,18 @@ This keeps the project easy to navigate while still separating UI from core logi
 ## 9. Testing Strategy
 
 ### Framework
+
 - Vitest + React Testing Library + jsdom.
 
 ### Test structure
+
 - `src/tests/parser.test.ts`
 - `src/tests/calculations.test.ts`
 - `src/tests/summary.test.ts`
 - add component tests after core parity is stable.
 
 ### Gradual coverage plan
+
 1. Lock parser/calculation/summary with unit tests.
 2. Add tests for config persistence and reset behavior.
 3. Add component tests for input -> result -> copy flow.

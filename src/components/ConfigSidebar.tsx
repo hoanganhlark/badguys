@@ -1,0 +1,156 @@
+import type { AppConfig } from "../types";
+
+type Props = {
+  open: boolean;
+  config: AppConfig;
+  onClose: () => void;
+  onOpenSessions: () => void;
+  onConfigChange: (next: AppConfig) => void;
+  appVersion: string;
+};
+
+function toSafeNumber(value: string): number {
+  const parsed = parseFloat(value);
+  return Number.isNaN(parsed) ? 0 : Math.max(0, parsed);
+}
+
+export default function ConfigSidebar({
+  open,
+  config,
+  onClose,
+  onOpenSessions,
+  onConfigChange,
+  appVersion,
+}: Props) {
+  return (
+    <>
+      <div
+        onClick={onClose}
+        className={`${open ? "" : "hidden"} fixed inset-0 panel-backdrop z-40`}
+      />
+      <aside
+        className={`${open ? "" : "hidden"} fixed left-0 top-0 h-full w-full max-w-sm sidebar-panel z-50 p-6 overflow-y-auto`}
+      >
+        <div className="min-h-full flex flex-col">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wider">
+              Cấu hình
+            </h3>
+            <button
+              onClick={onClose}
+              className="text-slate-400 hover:text-slate-700 text-xl leading-none"
+            >
+              &times;
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label
+                htmlFor="cfgRoundResult"
+                className="block text-xs text-slate-500 mb-2"
+              >
+                Làm tròn kết quả
+              </label>
+              <label className="inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="cfgRoundResult"
+                  className="form-checkbox h-5 w-5 text-blue-600"
+                  checked={config.roundResult}
+                  onChange={(e) =>
+                    onConfigChange({ ...config, roundResult: e.target.checked })
+                  }
+                />
+                <span className="ml-2 text-xs text-slate-500">Bật</span>
+              </label>
+            </div>
+
+            <div>
+              <label
+                htmlFor="cfgFemaleMax"
+                className="block text-xs text-slate-500 mb-2"
+              >
+                Giá cố định cho nữ (k / buổi)
+              </label>
+              <input
+                type="number"
+                id="cfgFemaleMax"
+                className="input-minimal px-4 py-3 text-sm font-medium w-full"
+                value={config.femaleMax}
+                min={0}
+                onChange={(e) =>
+                  onConfigChange({
+                    ...config,
+                    femaleMax: toSafeNumber(e.target.value),
+                  })
+                }
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="cfgTubePrice"
+                className="block text-xs text-slate-500 mb-2"
+              >
+                Giá 1 ống cầu (12 trái) (k / ống)
+              </label>
+              <input
+                type="number"
+                id="cfgTubePrice"
+                className="input-minimal px-4 py-3 text-sm font-medium w-full"
+                value={config.tubePrice}
+                min={0}
+                onChange={(e) =>
+                  onConfigChange({
+                    ...config,
+                    tubePrice: toSafeNumber(e.target.value),
+                  })
+                }
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="cfgSetPrice"
+                className="block text-xs text-slate-500 mb-2"
+              >
+                Giá đánh theo set (k / set)
+              </label>
+              <input
+                type="number"
+                id="cfgSetPrice"
+                className="input-minimal px-4 py-3 text-sm font-medium w-full"
+                value={config.setPrice}
+                min={0}
+                onChange={(e) =>
+                  onConfigChange({
+                    ...config,
+                    setPrice: toSafeNumber(e.target.value),
+                  })
+                }
+              />
+            </div>
+          </div>
+
+          <p className="text-xs text-slate-400 mt-6 leading-relaxed">
+            Trường "Số cầu" ngoài màn hình chính sẽ tự quy đổi ra tiền cầu theo
+            giá ống hiện tại.
+          </p>
+
+          <button
+            type="button"
+            onClick={onOpenSessions}
+            className="mt-5 w-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 py-3 rounded-xl text-sm font-semibold transition-colors"
+          >
+            Lịch sử buổi gần đây
+          </button>
+
+          <p className="mt-auto pt-8 text-[11px] text-slate-300 tracking-wide">
+            {appVersion}
+          </p>
+        </div>
+      </aside>
+    </>
+  );
+}
