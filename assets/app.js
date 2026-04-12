@@ -379,25 +379,44 @@ function processBulkInput() {
   const newPlayers = [];
 
   lines.forEach((line) => {
-    let rawName = line.trim();
-    if (!rawName) return;
+    let raw = line.trim();
+    if (!raw) return;
 
     let isFemale = false;
     let sets = 0;
+    let customFee = null;
+    let extraFee = null;
 
-    if (rawName.toLowerCase().endsWith(" n")) {
+    // Xử lý nữ
+    if (raw.toLowerCase().endsWith(" n")) {
       isFemale = true;
-      rawName = rawName.substring(0, rawName.length - 2).trim();
+      raw = raw.substring(0, raw.length - 2).trim();
     }
 
-    const setMatch = rawName.toLowerCase().match(/\s(\d+)s$/);
+    // Xử lý set
+    const setMatch = raw.toLowerCase().match(/\s(\d+)s$/);
     if (setMatch) {
       sets = parseInt(setMatch[1], 10);
-      rawName = rawName.replace(setMatch[0], "").trim();
+      raw = raw.replace(setMatch[0], "").trim();
     }
 
-    if (rawName) {
-      newPlayers.push({ name: rawName, isFemale, sets });
+    // Xử lý extraFee: +10k, +20, ...
+    const extraMatch = raw.match(/\+\s*(\d+)(k)?/i);
+    if (extraMatch) {
+      extraFee = parseInt(extraMatch[1], 10);
+      raw = raw.replace(extraMatch[0], "").trim();
+    }
+
+    // Xử lý customFee: 10k, 50, 70k, ... (phải ở cuối tên)
+    const customMatch = raw.match(/(\d+)(k)?$/i);
+    if (customMatch) {
+      customFee = parseInt(customMatch[1], 10);
+      raw = raw.replace(customMatch[0], "").trim();
+    }
+
+    let name = raw.trim();
+    if (name) {
+      newPlayers.push({ name, isFemale, sets, customFee, extraFee });
     }
   });
 
@@ -413,6 +432,8 @@ function updateTextAreaFromPlayers() {
       let suffix = "";
       if (p.sets > 0) suffix += ` ${p.sets}s`;
       if (p.isFemale) suffix += " n";
+      if (p.customFee != null) suffix += ` ${p.customFee}k`;
+      if (p.extraFee != null) suffix += ` +${p.extraFee}k`;
       return p.name + suffix;
     })
     .join("\n");
@@ -455,15 +476,21 @@ function renderPlayers() {
 
   players.forEach((player, index) => {
     const tag = document.createElement("div");
+
     let typeClass = "tag-male";
     let label = player.name;
-
     if (player.sets > 0) {
       typeClass = "tag-set";
       label += ` (${player.sets}s)`;
     } else if (player.isFemale) {
       typeClass = "tag-female";
       label += " (n)";
+    }
+    if (player.customFee != null) {
+      label += ` [${player.customFee}k]`;
+    }
+    if (player.extraFee != null) {
+      label += ` [+${player.extraFee}k]`;
     }
 
     tag.className = `tag ${typeClass} px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center animate-fade`;
@@ -491,31 +518,48 @@ function calculate() {
     return;
   }
 
+  // Tính các nhóm
   const setPlayers = players.filter((p) => p.sets > 0);
   const nonSetPlayers = players.filter((p) => p.sets === 0);
   const females = nonSetPlayers.filter((p) => p.isFemale);
   const males = nonSetPlayers.filter((p) => !p.isFemale);
 
+  // Tổng tiền set
   let totalSetRevenue = 0;
   setPlayers.forEach((p) => {
     totalSetRevenue += p.sets * config.setPrice;
   });
 
-  const remainingTotal = total - totalSetRevenue;
+  // Tổng customFee và extraFee
+  let totalCustomFee = 0;
+  let totalExtraFee = 0;
+  nonSetPlayers.forEach((p) => {
+    if (p.customFee != null) totalCustomFee += p.customFee;
+    if (p.extraFee != null) totalExtraFee += p.extraFee;
+  });
+
+  // Những người chia đều là nonSetPlayers không có customFee
+  const sharedPlayers = nonSetPlayers.filter((p) => p.customFee == null);
+  const sharedFemales = sharedPlayers.filter((p) => p.isFemale);
+  const sharedMales = sharedPlayers.filter((p) => !p.isFemale);
+
+  // Tổng còn lại để chia đều
+  const remainingTotal = total - totalSetRevenue - totalCustomFee;
   let fFee = 0;
   let mFee = 0;
 
-  if (nonSetPlayers.length > 0) {
-    const avg = remainingTotal / nonSetPlayers.length;
-
-    if (avg <= config.femaleMax || males.length === 0) {
+  if (sharedPlayers.length > 0) {
+    const avg = remainingTotal / sharedPlayers.length;
+    if (avg <= config.femaleMax || sharedMales.length === 0) {
       fFee = config.roundResult ? Math.round(avg) : avg;
       mFee = fFee;
     } else {
       fFee = config.femaleMax;
       mFee = config.roundResult
-        ? Math.round((remainingTotal - fFee * females.length) / males.length)
-        : (remainingTotal - fFee * females.length) / males.length;
+        ? Math.round(
+            (remainingTotal - fFee * sharedFemales.length) / sharedMales.length,
+          )
+        : (remainingTotal - fFee * sharedFemales.length) / sharedMales.length;
     }
   }
 
@@ -525,8 +569,10 @@ function calculate() {
     total,
     setTotal: totalSetRevenue,
     setPlayersCount: setPlayers.length,
-    femalesCount: females.length,
-    malesCount: males.length,
+    femalesCount: sharedFemales.length,
+    malesCount: sharedMales.length,
+    totalCustomFee,
+    totalExtraFee,
   };
 
   document.getElementById("billTotal").innerText = formatK(total);
@@ -541,27 +587,39 @@ function copySummary() {
     parseFloat(document.getElementById("shuttleCount").value) || 0;
   const shuttle = (shuttleCount * config.tubePrice) / config.shuttlesPerTube;
 
+  // Phân loại lại cho summary
   const setPlayers = players.filter((p) => p.sets > 0);
   const nonSetPlayers = players.filter((p) => p.sets === 0);
-  const males = nonSetPlayers.filter((p) => !p.isFemale);
-  const females = nonSetPlayers.filter((p) => p.isFemale);
+  const customFeePlayers = nonSetPlayers.filter((p) => p.customFee != null);
+  const sharedPlayers = nonSetPlayers.filter((p) => p.customFee == null);
+  const sharedMales = sharedPlayers.filter((p) => !p.isFemale);
+  const sharedFemales = sharedPlayers.filter((p) => p.isFemale);
 
   let text = `NAY CHƠI ${formatSummaryPrice(mFee)} / NGƯỜI\n\u200B\n`;
 
   const summaryParts = [];
-  if (malesCount > 0) summaryParts.push(`${malesCount} người chia đều`);
-  if (femalesCount > 0) {
+  if (sharedMales.length > 0)
+    summaryParts.push(`${sharedMales.length} người chia đều`);
+  if (sharedFemales.length > 0) {
     summaryParts.push(
-      `${femalesCount} nữ ${formatSummaryPrice(fFee * femalesCount)}`,
+      `${sharedFemales.length} nữ ${formatSummaryPrice(fFee * sharedFemales.length)}`,
     );
   }
-  if (setPlayers.length > 0) {
-    const totalSetMoney = setPlayers.reduce(
-      (sum, p) => sum + p.sets * config.setPrice,
-      0,
-    );
+
+  // Gộp tổng tiền chơi riêng và đánh ít
+  const totalCustomFee = customFeePlayers.reduce(
+    (sum, p) => sum + (p.customFee || 0),
+    0,
+  );
+  const totalSetMoney = setPlayers.reduce(
+    (sum, p) => sum + p.sets * config.setPrice,
+    0,
+  );
+  const totalSpecial = totalCustomFee + totalSetMoney;
+  const specialCount = customFeePlayers.length + setPlayers.length;
+  if (specialCount > 0) {
     summaryParts.push(
-      `${setPlayers.length} đánh ít ${formatSummaryPrice(totalSetMoney)}`,
+      `${specialCount} người đánh ít ${formatSummaryPrice(totalSpecial)}`,
     );
   }
 
@@ -570,19 +628,20 @@ function copySummary() {
   text += "Players:\n\u200B\n";
 
   let count = 1;
-
-  males.forEach((p) => {
-    text += `${count}. ${p.name}\n`;
-    count += 1;
-  });
-
-  females.forEach((p) => {
-    text += `${count}. ${p.name} ${formatSummaryPrice(fFee)}\n`;
-    count += 1;
-  });
-
-  setPlayers.forEach((p) => {
-    text += `${count}. ${p.name} ${formatSummaryPrice(p.sets * config.setPrice)} (${p.sets} set)\n`;
+  // Giữ nguyên thứ tự nhập
+  players.forEach((p) => {
+    let line = `${count}. ${p.name}`;
+    if (p.sets > 0) {
+      line += ` ${formatSummaryPrice(p.sets * config.setPrice)} (${p.sets} set)`;
+    } else if (p.customFee != null) {
+      line += ` ${formatSummaryPrice(p.customFee)}`;
+    } else if (p.isFemale) {
+      line += ` ${formatSummaryPrice(fFee)}`;
+    }
+    if (p.extraFee != null) {
+      line += ` +${formatSummaryPrice(p.extraFee)}`;
+    }
+    text += line + "\n";
     count += 1;
   });
 
