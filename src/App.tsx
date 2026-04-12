@@ -102,13 +102,14 @@ export default function App() {
   }, [toastMessage]);
 
   useEffect(() => {
+    if (isAdmin) return;
     if (!shouldSendVisitNotificationToday()) return;
 
     (async () => {
       await notifyGuestVisited(formatVisitTimestampUTC7());
       markVisitNotifiedToday();
     })();
-  }, []);
+  }, [isAdmin]);
 
   useEffect(() => {
     const syncModalStateFromHistory = () => {
@@ -191,10 +192,12 @@ export default function App() {
       return;
     }
 
-    notifyCopyClicked(summaryText);
-    saveDailySummary(payload).catch((error) => {
-      console.warn("Save daily session failed", error);
-    });
+    if (!isAdmin) {
+      notifyCopyClicked(summaryText);
+      saveDailySummary(payload).catch((error) => {
+        console.warn("Save daily session failed", error);
+      });
+    }
   }
 
   async function loadLastSessions() {
