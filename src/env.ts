@@ -22,6 +22,10 @@ const defaultConfig: AppConfig = {
     12,
   ),
   roundResult: getEnvBoolean(import.meta.env.VITE_BADGUY_ROUND_RESULT, true),
+  enableCourtCount: getEnvBoolean(
+    import.meta.env.VITE_BADGUY_ENABLE_COURT_COUNT,
+    true,
+  ),
 };
 
 export const envConfig: EnvConfig & { firebaseCollection: string } = {

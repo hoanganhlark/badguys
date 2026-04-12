@@ -49,6 +49,30 @@ export default function ConfigSidebar({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <label
+                htmlFor="cfgEnableCourtCount"
+                className="block text-xs text-slate-500 mb-2"
+              >
+                Hiển thị ô nhập số sân
+              </label>
+              <label className="inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="cfgEnableCourtCount"
+                  className="form-checkbox h-5 w-5 text-blue-600"
+                  checked={config.enableCourtCount}
+                  onChange={(e) =>
+                    onConfigChange({
+                      ...config,
+                      enableCourtCount: e.target.checked,
+                    })
+                  }
+                />
+                <span className="ml-2 text-xs text-slate-500">Bật</span>
+              </label>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <label
                 htmlFor="cfgRoundResult"
                 className="block text-xs text-slate-500 mb-2"
               >

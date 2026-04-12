@@ -1,22 +1,30 @@
 type Props = {
   courtFee: string;
   shuttleCount: string;
+  courtCount: string;
+  showCourtCount: boolean;
   onCourtFeeChange: (value: string) => void;
   onShuttleCountChange: (value: string) => void;
+  onCourtCountChange: (value: string) => void;
 };
 
 export default function ExpensesSection({
   courtFee,
   shuttleCount,
+  courtCount,
+  showCourtCount,
   onCourtFeeChange,
   onShuttleCountChange,
+  onCourtCountChange,
 }: Props) {
   return (
     <section className="mb-8">
       <h2 className="text-sm font-semibold text-slate-500 mb-4 px-1 uppercase tracking-wider">
         Chi phí (k)
       </h2>
-      <div className="grid grid-cols-2 gap-3">
+      <div
+        className={`grid ${showCourtCount ? "grid-cols-3" : "grid-cols-2"} gap-3`}
+      >
         <input
           type="number"
           placeholder="Tiền sân"
@@ -24,6 +32,16 @@ export default function ExpensesSection({
           value={courtFee}
           onChange={(e) => onCourtFeeChange(e.target.value)}
         />
+        {showCourtCount ? (
+          <input
+            type="number"
+            placeholder="Số sân"
+            className="input-minimal px-4 py-3 text-sm font-medium w-full"
+            value={courtCount}
+            min={0}
+            onChange={(e) => onCourtCountChange(e.target.value)}
+          />
+        ) : null}
         <input
           type="number"
           placeholder="Số cầu"

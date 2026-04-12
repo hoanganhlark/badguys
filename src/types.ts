@@ -12,6 +12,7 @@ export type AppConfig = {
   setPrice: number;
   shuttlesPerTube: number;
   roundResult: boolean;
+  enableCourtCount: boolean;
 };
 
 export type CalcResult = {
@@ -31,6 +32,7 @@ export type SessionRecord = {
   dateKey?: string;
   summaryText?: string;
   courtFee?: number;
+  courtCount?: number;
   shuttleCount?: number;
   shuttleFee?: number;
   total?: number;

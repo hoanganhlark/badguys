@@ -2,6 +2,21 @@ import type { AppConfig } from "../types";
 
 const CONFIG_KEY = "badguyConfig";
 const VISIT_DAY_KEY = "badguyVisitNotifiedDate";
+const INPUT_DRAFT_KEY = "badguyInputDraft";
+
+type InputDraft = {
+  courtFeeInput: string;
+  shuttleCountInput: string;
+  courtCountInput: string;
+  bulkInput: string;
+};
+
+const DEFAULT_INPUT_DRAFT: InputDraft = {
+  courtFeeInput: "",
+  shuttleCountInput: "",
+  courtCountInput: "",
+  bulkInput: "",
+};
 
 export function loadStoredConfig(defaultConfig: AppConfig): AppConfig {
   const raw = localStorage.getItem(CONFIG_KEY);
@@ -18,6 +33,10 @@ export function loadStoredConfig(defaultConfig: AppConfig): AppConfig {
         typeof stored.roundResult === "boolean"
           ? stored.roundResult
           : defaultConfig.roundResult,
+      enableCourtCount:
+        typeof stored.enableCourtCount === "boolean"
+          ? stored.enableCourtCount
+          : defaultConfig.enableCourtCount,
     };
   } catch {
     return defaultConfig;
@@ -26,6 +45,43 @@ export function loadStoredConfig(defaultConfig: AppConfig): AppConfig {
 
 export function saveConfig(config: AppConfig): void {
   localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+}
+
+export function loadStoredInputDraft(): InputDraft {
+  const raw = localStorage.getItem(INPUT_DRAFT_KEY);
+  if (!raw) return DEFAULT_INPUT_DRAFT;
+
+  try {
+    const stored = JSON.parse(raw) as Partial<InputDraft>;
+    return {
+      courtFeeInput:
+        typeof stored.courtFeeInput === "string"
+          ? stored.courtFeeInput
+          : DEFAULT_INPUT_DRAFT.courtFeeInput,
+      shuttleCountInput:
+        typeof stored.shuttleCountInput === "string"
+          ? stored.shuttleCountInput
+          : DEFAULT_INPUT_DRAFT.shuttleCountInput,
+      courtCountInput:
+        typeof stored.courtCountInput === "string"
+          ? stored.courtCountInput
+          : DEFAULT_INPUT_DRAFT.courtCountInput,
+      bulkInput:
+        typeof stored.bulkInput === "string"
+          ? stored.bulkInput
+          : DEFAULT_INPUT_DRAFT.bulkInput,
+    };
+  } catch {
+    return DEFAULT_INPUT_DRAFT;
+  }
+}
+
+export function saveInputDraft(draft: InputDraft): void {
+  localStorage.setItem(INPUT_DRAFT_KEY, JSON.stringify(draft));
+}
+
+export function clearInputDraft(): void {
+  localStorage.removeItem(INPUT_DRAFT_KEY);
 }
 
 export function getLocalDateKey(dateValue?: Date): string {

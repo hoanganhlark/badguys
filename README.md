@@ -45,6 +45,7 @@ BADGUY_TUBE_PRICE=290
 BADGUY_SET_PRICE=12
 BADGUY_SHUTTLES_PER_TUBE=12
 BADGUY_ROUND_RESULT=true
+BADGUY_ENABLE_COURT_COUNT=true
 ```
 
 3. Inject values into local build file:
@@ -71,8 +72,9 @@ Optional repository variables (GitHub Actions Variables):
 - `BADGUY_SET_PRICE`
 - `BADGUY_SHUTTLES_PER_TUBE`
 - `BADGUY_ROUND_RESULT`
+- `BADGUY_ENABLE_COURT_COUNT`
 
-If these variables are not set, deploy falls back to in-app defaults: 60, 290, 12, 12, and `true`.
+If these variables are not set, deploy falls back to in-app defaults: 60, 290, 12, 12, `true`, and `true`.
 
 On deploy, workflow will:
 

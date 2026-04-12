@@ -107,11 +107,16 @@ export function cyclePlayerMode(player: Player): Player {
 export function calculateResult(
   players: Player[],
   courtFee: number,
+  courtCount: number,
   shuttleCount: number,
   config: AppConfig,
 ): CalcResult {
+  const effectiveCourtCount = config.enableCourtCount
+    ? Math.max(0, courtCount)
+    : 1;
+  const totalCourtFee = courtFee * effectiveCourtCount;
   const shuttle = (shuttleCount * config.tubePrice) / config.shuttlesPerTube;
-  const total = courtFee + shuttle;
+  const total = totalCourtFee + shuttle;
 
   const setPlayers = players.filter((p) => p.sets > 0);
   const nonSetPlayers = players.filter((p) => p.sets === 0);
@@ -169,8 +174,13 @@ export function buildSummaryText(
   config: AppConfig,
   calc: CalcResult,
   courtFee: number,
+  courtCount: number,
   shuttleCount: number,
 ): string {
+  const effectiveCourtCount = config.enableCourtCount
+    ? Math.max(0, courtCount)
+    : 1;
+  const totalCourtFee = courtFee * effectiveCourtCount;
   const shuttle = (shuttleCount * config.tubePrice) / config.shuttlesPerTube;
 
   const setPlayers = players.filter((p) => p.sets > 0);
@@ -208,7 +218,7 @@ export function buildSummaryText(
   }
 
   text += summaryParts.join(" + ") + "\n";
-  text += `${formatK(courtFee)} tiền sân + ${formatK(shuttle)} tiền cầu (${shuttleCount} trái) = ${formatK(calc.total)} tổng cộng\n\u200B\n`;
+  text += `${formatK(totalCourtFee)} tiền sân + ${formatK(shuttle)} tiền cầu (${shuttleCount} trái) = ${formatK(calc.total)} tổng cộng\n\u200B\n`;
   text += "Players:\n\u200B\n";
 
   let count = 1;
@@ -235,15 +245,21 @@ export function buildSessionPayload(
   summaryText: string,
   players: Player[],
   courtFee: number,
+  courtCount: number,
   shuttleCount: number,
   config: AppConfig,
   calc: CalcResult,
 ): SessionPayload {
+  const effectiveCourtCount = config.enableCourtCount
+    ? Math.max(0, courtCount)
+    : 1;
+  const totalCourtFee = courtFee * effectiveCourtCount;
   const shuttle = (shuttleCount * config.tubePrice) / config.shuttlesPerTube;
 
   return {
     summaryText,
-    courtFee,
+    courtFee: totalCourtFee,
+    courtCount: config.enableCourtCount ? effectiveCourtCount : undefined,
     shuttleCount,
     shuttleFee: shuttle,
     total: calc.total,

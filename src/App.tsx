@@ -23,22 +23,33 @@ import {
   saveDailySummary,
 } from "./lib/firebase";
 import {
+  clearInputDraft,
   copyText,
   formatVisitTimestampUTC7,
   getGuestDeviceName,
   loadStoredConfig,
+  loadStoredInputDraft,
   markVisitNotifiedToday,
   saveConfig,
+  saveInputDraft,
   shouldSendVisitNotificationToday,
 } from "./lib/platform";
 import { notifyCopyClicked, notifyGuestVisited } from "./lib/telegram";
 import type { AppConfig, Player, SessionRecord } from "./types";
 
 export default function App() {
-  const [courtFeeInput, setCourtFeeInput] = useState("");
-  const [shuttleCountInput, setShuttleCountInput] = useState("");
-  const [bulkInput, setBulkInput] = useState("");
-  const [players, setPlayers] = useState<Player[]>([]);
+  const [inputDraft] = useState(() => loadStoredInputDraft());
+  const [courtFeeInput, setCourtFeeInput] = useState(inputDraft.courtFeeInput);
+  const [shuttleCountInput, setShuttleCountInput] = useState(
+    inputDraft.shuttleCountInput,
+  );
+  const [courtCountInput, setCourtCountInput] = useState(
+    inputDraft.courtCountInput,
+  );
+  const [bulkInput, setBulkInput] = useState(inputDraft.bulkInput);
+  const [players, setPlayers] = useState<Player[]>(() =>
+    parsePlayersBulk(inputDraft.bulkInput),
+  );
   const [config, setConfig] = useState<AppConfig>(() =>
     loadStoredConfig(envConfig.defaultConfig),
   );
@@ -56,10 +67,11 @@ export default function App() {
 
   const courtFee = parseFloat(courtFeeInput) || 0;
   const shuttleCount = parseFloat(shuttleCountInput) || 0;
+  const courtCount = parseFloat(courtCountInput) || 0;
 
   const calc = useMemo(
-    () => calculateResult(players, courtFee, shuttleCount, config),
-    [players, courtFee, shuttleCount, config],
+    () => calculateResult(players, courtFee, courtCount, shuttleCount, config),
+    [players, courtFee, courtCount, shuttleCount, config],
   );
 
   const showResult = players.length > 0 && calc.total !== 0;
@@ -67,6 +79,15 @@ export default function App() {
   useEffect(() => {
     saveConfig(config);
   }, [config]);
+
+  useEffect(() => {
+    saveInputDraft({
+      courtFeeInput,
+      shuttleCountInput,
+      courtCountInput,
+      bulkInput,
+    });
+  }, [courtFeeInput, shuttleCountInput, courtCountInput, bulkInput]);
 
   useEffect(() => {
     if (!toastMessage) return;
@@ -130,6 +151,7 @@ export default function App() {
       femaleMax: Math.max(0, next.femaleMax || 0),
       tubePrice: Math.max(0, next.tubePrice || 0),
       setPrice: Math.max(0, next.setPrice || 0),
+      enableCourtCount: !!next.enableCourtCount,
     });
   }
 
@@ -139,12 +161,14 @@ export default function App() {
       config,
       calc,
       courtFee,
+      courtCount,
       shuttleCount,
     );
     const payload = buildSessionPayload(
       summaryText,
       players,
       courtFee,
+      courtCount,
       shuttleCount,
       config,
       calc,
@@ -270,8 +294,10 @@ export default function App() {
       setResetArmed(false);
       setCourtFeeInput("");
       setShuttleCountInput("");
+      setCourtCountInput("");
       setBulkInput("");
       setPlayers([]);
+      clearInputDraft();
       showToast("Dữ liệu đã được xóa.");
       return;
     }
@@ -317,8 +343,11 @@ export default function App() {
         <ExpensesSection
           courtFee={courtFeeInput}
           shuttleCount={shuttleCountInput}
+          courtCount={courtCountInput}
+          showCourtCount={config.enableCourtCount}
           onCourtFeeChange={setCourtFeeInput}
           onShuttleCountChange={setShuttleCountInput}
+          onCourtCountChange={setCourtCountInput}
         />
 
         <PlayersSection
