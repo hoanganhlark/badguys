@@ -16,73 +16,55 @@ concurrency:
 
 jobs:
   deploy:
+    runs-on: ubuntu-latest
+
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Inject deployment version
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_GROUP_CHAT_ID: ${{ secrets.TELEGRAM_GROUP_CHAT_ID }}
-          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
-          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
-          BADGUY_FEMALE_MAX: ${{ vars.BADGUY_FEMALE_MAX || '' }}
-          BADGUY_TUBE_PRICE: ${{ vars.BADGUY_TUBE_PRICE || '' }}
-          BADGUY_SET_PRICE: ${{ vars.BADGUY_SET_PRICE || '' }}
-          BADGUY_SHUTTLES_PER_TUBE: ${{ vars.BADGUY_SHUTTLES_PER_TUBE || '' }}
-          BADGUY_ROUND_RESULT: ${{ vars.BADGUY_ROUND_RESULT || '' }}
-        run: |
-          VERSION="v$(date -u +%Y.%m.%d).${{ github.run_number }}"
+      # ✅ Setup Node (for Vite build)
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
 
-          export VERSION
-          python - <<'PY'
-          import os
-          import pathlib
-          import re
+      # ✅ Install dependencies
+      - name: Install dependencies
+        run: npm ci
 
-          file_path = pathlib.Path("index.html")
-          content = file_path.read_text(encoding="utf-8")
+      # ✅ Create .env from ONE secret
+      - name: Create .env
+        run: echo "${{ secrets.ENV_FILE }}" > .env
 
-          replacements = {
-              "appVersion": os.environ.get("VERSION", ""),
-              "telegramBotToken": os.environ.get("TELEGRAM_BOT_TOKEN", ""),
-              "telegramGroupChatId": os.environ.get("TELEGRAM_GROUP_CHAT_ID", ""),
-              "firebaseApiKey": os.environ.get("FIREBASE_API_KEY", ""),
-              "firebaseProjectId": os.environ.get("FIREBASE_PROJECT_ID", ""),
-              "femaleMax": os.environ.get("BADGUY_FEMALE_MAX") or "60",
-              "tubePrice": os.environ.get("BADGUY_TUBE_PRICE") or "290",
-              "setPrice": os.environ.get("BADGUY_SET_PRICE") or "12",
-              "shuttlesPerTube": os.environ.get("BADGUY_SHUTTLES_PER_TUBE") or "12",
-              "roundResult": os.environ.get("BADGUY_ROUND_RESULT") or "true",
-          }
+      # ✅ Inject dynamic version
+      - name: Inject build version
+        run: echo "VITE_APP_VERSION=v$(date -u +%Y.%m.%d).${{ github.run_number }}" >> .env
 
-          for key, value in replacements.items():
-              pattern = re.compile(rf'({re.escape(key)}:\s*")[^"]*(")')
-              content, count = pattern.subn(lambda m: f'{m.group(1)}{value}{m.group(2)}', content, count=1)
-              if count == 0:
-                  raise RuntimeError(f"Could not locate key '{key}' in index.html for replacement")
+      # ✅ Build React (Vite)
+      - name: Build
+        run: npm run build
 
-          file_path.write_text(content, encoding="utf-8")
-          PY
-
-          echo "Deployment version: $VERSION"
-
+      # ✅ Setup GitHub Pages
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
+      # ✅ Upload built app (IMPORTANT: dist folder)
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: ./dist
 
+      # ✅ Deploy
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
 
+      # ✅ Notify success
       - name: Notify Telegram version bump
         if: success()
         env:
@@ -90,37 +72,28 @@ jobs:
           TELEGRAM_GROUP_CHAT_ID: ${{ secrets.TELEGRAM_GROUP_CHAT_ID }}
           DEPLOYED_URL: ${{ steps.deployment.outputs.page_url }}
         run: |
-          VERSION=$(grep -oP 'appVersion: "\K[^"]+' index.html || echo "")
-          if [ -z "$VERSION" ]; then
-            VERSION="unknown"
-          fi
+          VERSION="v$(date -u +%Y.%m.%d).${{ github.run_number }}"
+
           if [ -n "$DEPLOYED_URL" ]; then
             MSG=$(printf 'BadGuys app bumped to %s 🚀\nURL: %s' "$VERSION" "$DEPLOYED_URL")
           else
             MSG="BadGuys app bumped to $VERSION 🚀"
           fi
-          if [ -n "$MSG" ]; then
-            curl -s -X POST https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage \
-              -d chat_id=$TELEGRAM_GROUP_CHAT_ID \
-              --data-urlencode text="$MSG"
-          else
-            echo "Skip Telegram notify: message is empty."
-          fi
 
+          curl -s -X POST https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage \
+            -d chat_id=$TELEGRAM_GROUP_CHAT_ID \
+            --data-urlencode text="$MSG"
+
+      # ❌ Notify failure
       - name: Notify Telegram deploy failure
         if: failure()
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_GROUP_CHAT_ID: ${{ secrets.TELEGRAM_GROUP_CHAT_ID }}
         run: |
-          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_GROUP_CHAT_ID" ]; then
-            echo "Skip Telegram notify: missing TELEGRAM_BOT_TOKEN or TELEGRAM_GROUP_CHAT_ID."
-            exit 0
-          fi
-
           RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           MSG="BadGuys deploy failed on ${{ github.ref_name }}. Run: $RUN_URL"
 
-          curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
-            -d chat_id="$TELEGRAM_GROUP_CHAT_ID" \
+          curl -s -X POST https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage \
+            -d chat_id=$TELEGRAM_GROUP_CHAT_ID \
             --data-urlencode text="$MSG" || echo "Telegram failure notify could not be sent."
