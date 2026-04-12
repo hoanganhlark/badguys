@@ -218,7 +218,15 @@
                 class="input-minimal px-4 py-3 text-sm font-medium w-full"
                 value="60"
                 min="0"
-                oninput="updateConfig()"
+                oninput="
+                  if (this.value !== '' && !isNaN(this.value)) updateConfig();
+                "
+                onblur="
+                  if (this.value === '' || isNaN(this.value)) {
+                    this.value = 0;
+                    updateConfig();
+                  }
+                "
               />
             </div>
             <div>
@@ -233,7 +241,15 @@
                 class="input-minimal px-4 py-3 text-sm font-medium w-full"
                 value="290"
                 min="0"
-                oninput="updateConfig()"
+                oninput="
+                  if (this.value !== '' && !isNaN(this.value)) updateConfig();
+                "
+                onblur="
+                  if (this.value === '' || isNaN(this.value)) {
+                    this.value = 0;
+                    updateConfig();
+                  }
+                "
               />
             </div>
             <div>
@@ -246,7 +262,15 @@
                 class="input-minimal px-4 py-3 text-sm font-medium w-full"
                 value="12"
                 min="0"
-                oninput="updateConfig()"
+                oninput="
+                  if (this.value !== '' && !isNaN(this.value)) updateConfig();
+                "
+                onblur="
+                  if (this.value === '' || isNaN(this.value)) {
+                    this.value = 0;
+                    updateConfig();
+                  }
+                "
               />
             </div>
           </div>
