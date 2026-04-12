@@ -284,10 +284,33 @@ async function loadLastSessions() {
   }
 }
 
+let modalHistoryActive = false;
+let sidebarHistoryActive = false;
 function openSessionsModal() {
   const modal = document.getElementById("sessionsModal");
+  if (!modal.classList.contains("hidden")) return; // Prevent duplicate push
   modal.classList.remove("hidden");
   loadLastSessions();
+  if (!modalHistoryActive) {
+    history.pushState({ modal: "sessions" }, "");
+    modalHistoryActive = true;
+  }
+}
+
+function toggleConfigPanel(show) {
+  const panel = document.getElementById("configPanel");
+  const backdrop = document.getElementById("configBackdrop");
+  panel.classList.toggle("hidden", !show);
+  backdrop.classList.toggle("hidden", !show);
+  if (show && !sidebarHistoryActive) {
+    history.pushState({ modal: "sidebar" }, "");
+    sidebarHistoryActive = true;
+  } else if (!show && sidebarHistoryActive) {
+    sidebarHistoryActive = false;
+    if (history.state && history.state.modal === "sidebar") {
+      history.back();
+    }
+  }
 }
 
 // Add event listener to close modal when clicking backdrop
@@ -305,14 +328,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
 function closeSessionsModal() {
   const modal = document.getElementById("sessionsModal");
+  if (modal.classList.contains("hidden")) return;
   modal.classList.add("hidden");
-}
-
-function toggleConfigPanel(show) {
-  const panel = document.getElementById("configPanel");
-  const backdrop = document.getElementById("configBackdrop");
-  panel.classList.toggle("hidden", !show);
-  backdrop.classList.toggle("hidden", !show);
+  if (modalHistoryActive) {
+    modalHistoryActive = false;
+    if (history.state && history.state.modal === "sessions") {
+      history.back();
+    }
+  }
 }
 
 function saveConfig() {
@@ -751,3 +774,23 @@ window.closeSessionsModal = closeSessionsModal;
 window.removeSession = removeSession;
 
 document.addEventListener("DOMContentLoaded", init);
+
+// Handle popstate for modal/sidebar close (back button)
+window.addEventListener("popstate", function (e) {
+  const modal = document.getElementById("sessionsModal");
+  const panel = document.getElementById("configPanel");
+  const backdrop = document.getElementById("configBackdrop");
+  // Close modal if open
+  if (modal && !modal.classList.contains("hidden")) {
+    modal.classList.add("hidden");
+    modalHistoryActive = false;
+    return;
+  }
+  // Close sidebar if open
+  if (panel && !panel.classList.contains("hidden")) {
+    panel.classList.add("hidden");
+    if (backdrop) backdrop.classList.add("hidden");
+    sidebarHistoryActive = false;
+    return;
+  }
+});
