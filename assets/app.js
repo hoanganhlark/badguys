@@ -801,7 +801,6 @@ document.addEventListener("click", function (e) {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(summary).then(() => {
           showToast("Đã copy note!");
-          notifyCopyClicked(summary);
         });
       } else {
         const el = document.createElement("textarea");
@@ -811,7 +810,6 @@ document.addEventListener("click", function (e) {
         document.execCommand("copy");
         document.body.removeChild(el);
         showToast("Đã copy note!");
-        notifyCopyClicked(summary);
       }
     }
   }
