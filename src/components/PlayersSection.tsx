@@ -15,6 +15,26 @@ export default function PlayersSection({
   onTogglePlayer,
   onRemovePlayer,
 }: Props) {
+  const normalizeName = (name: string) => name.trim().toLowerCase();
+
+  const duplicateNameCounts = new Map<string, number>();
+  players.forEach((player) => {
+    const key = normalizeName(player.name);
+    if (!key) return;
+    duplicateNameCounts.set(key, (duplicateNameCounts.get(key) || 0) + 1);
+  });
+
+  const duplicateIndexes = new Set<number>();
+  players.forEach((player, index) => {
+    const key = normalizeName(player.name);
+    if (!key) return;
+    if ((duplicateNameCounts.get(key) || 0) > 1) {
+      duplicateIndexes.add(index);
+    }
+  });
+
+  const hasDuplicateNames = duplicateIndexes.size > 0;
+
   return (
     <section className="mb-8">
       <div className="flex justify-between items-center mb-4 px-1">
@@ -35,6 +55,12 @@ export default function PlayersSection({
         value={bulkInput}
         onChange={(e) => onBulkInputChange(e.target.value)}
       />
+
+      {hasDuplicateNames ? (
+        <p className="text-xs text-amber-700 mb-3 px-1">
+          Có tên bị trùng. Vui lòng kiểm tra lại danh sách.
+        </p>
+      ) : null}
 
       <div className="flex flex-wrap gap-2 min-h-[20px]">
         {players.map((player, index) => {
@@ -58,7 +84,7 @@ export default function PlayersSection({
           return (
             <div
               key={`${player.name}-${index}`}
-              className={`tag ${typeClass} px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center animate-fade`}
+              className={`tag ${typeClass} ${duplicateIndexes.has(index) ? "tag-duplicate" : ""} px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center animate-fade`}
               onClick={() => onTogglePlayer(index)}
             >
               <span className="mr-1.5 opacity-40">#</span>
