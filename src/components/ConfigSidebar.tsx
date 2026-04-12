@@ -77,14 +77,22 @@ export default function ConfigSidebar({
                 type="number"
                 id="cfgFemaleMax"
                 className="input-minimal px-4 py-3 text-sm font-medium w-full"
-                value={config.femaleMax}
+                value={config.femaleMax === 0 ? "" : config.femaleMax}
                 min={0}
-                onChange={(e) =>
-                  onConfigChange({
-                    ...config,
-                    femaleMax: toSafeNumber(e.target.value),
-                  })
-                }
+                onChange={(e) => {
+                  const val = e.target.value;
+                  // Allow empty string for user editing
+                  if (val === "") {
+                    onConfigChange({ ...config, femaleMax: 0 });
+                  } else {
+                    onConfigChange({ ...config, femaleMax: toSafeNumber(val) });
+                  }
+                }}
+                onBlur={(e) => {
+                  if (e.target.value === "" || isNaN(Number(e.target.value))) {
+                    onConfigChange({ ...config, femaleMax: 0 });
+                  }
+                }}
               />
             </div>
 
@@ -99,14 +107,21 @@ export default function ConfigSidebar({
                 type="number"
                 id="cfgTubePrice"
                 className="input-minimal px-4 py-3 text-sm font-medium w-full"
-                value={config.tubePrice}
+                value={config.tubePrice === 0 ? "" : config.tubePrice}
                 min={0}
-                onChange={(e) =>
-                  onConfigChange({
-                    ...config,
-                    tubePrice: toSafeNumber(e.target.value),
-                  })
-                }
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "") {
+                    onConfigChange({ ...config, tubePrice: 0 });
+                  } else {
+                    onConfigChange({ ...config, tubePrice: toSafeNumber(val) });
+                  }
+                }}
+                onBlur={(e) => {
+                  if (e.target.value === "" || isNaN(Number(e.target.value))) {
+                    onConfigChange({ ...config, tubePrice: 0 });
+                  }
+                }}
               />
             </div>
 
@@ -121,14 +136,21 @@ export default function ConfigSidebar({
                 type="number"
                 id="cfgSetPrice"
                 className="input-minimal px-4 py-3 text-sm font-medium w-full"
-                value={config.setPrice}
+                value={config.setPrice === 0 ? "" : config.setPrice}
                 min={0}
-                onChange={(e) =>
-                  onConfigChange({
-                    ...config,
-                    setPrice: toSafeNumber(e.target.value),
-                  })
-                }
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "") {
+                    onConfigChange({ ...config, setPrice: 0 });
+                  } else {
+                    onConfigChange({ ...config, setPrice: toSafeNumber(val) });
+                  }
+                }}
+                onBlur={(e) => {
+                  if (e.target.value === "" || isNaN(Number(e.target.value))) {
+                    onConfigChange({ ...config, setPrice: 0 });
+                  }
+                }}
               />
             </div>
           </div>

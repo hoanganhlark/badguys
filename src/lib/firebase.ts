@@ -69,7 +69,10 @@ export async function saveDailySummary(
   }
 
   const dateKey = getSessionDateKey();
-  const sessionRef = doc(collection(context.db, "sessions"), dateKey);
+  const sessionRef = doc(
+    collection(context.db, envConfig.firebaseCollection),
+    dateKey,
+  );
 
   await setDoc(
     sessionRef,
@@ -103,7 +106,7 @@ export async function getRecentSessions(
     throw new Error("Firebase is not configured");
   }
 
-  const sessionsRef = collection(context.db, "sessions");
+  const sessionsRef = collection(context.db, envConfig.firebaseCollection);
   const sessionsQuery = query(
     sessionsRef,
     orderBy("updatedAt", "desc"),
@@ -130,6 +133,6 @@ export async function removeSession(
     throw new Error("Missing session id");
   }
 
-  await deleteDoc(doc(collection(context.db, "sessions"), id));
+  await deleteDoc(doc(collection(context.db, envConfig.firebaseCollection), id));
   return { id };
 }

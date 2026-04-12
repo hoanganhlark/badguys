@@ -24,11 +24,13 @@ const defaultConfig: AppConfig = {
   roundResult: getEnvBoolean(import.meta.env.VITE_BADGUY_ROUND_RESULT, true),
 };
 
-export const envConfig: EnvConfig = {
+export const envConfig: EnvConfig & { firebaseCollection: string } = {
   telegramBotToken: import.meta.env.VITE_TELEGRAM_BOT_TOKEN || "",
   telegramGroupChatId: import.meta.env.VITE_TELEGRAM_GROUP_CHAT_ID || "",
   firebaseApiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
   firebaseProjectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "",
   appVersion: import.meta.env.VITE_APP_VERSION || "v0.0.0",
   defaultConfig,
+  firebaseCollection:
+    import.meta.env.VITE_FIREBASE_COLLECTION || "dev-sessions",
 };
