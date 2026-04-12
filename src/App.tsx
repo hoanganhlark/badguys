@@ -85,21 +85,21 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const handlePopstate = () => {
-      if (sessionsOpen) {
-        setSessionsOpen(false);
-        modalHistoryActiveRef.current = false;
-        return;
-      }
-      if (configOpen) {
-        setConfigOpen(false);
-        sidebarHistoryActiveRef.current = false;
-      }
+    const syncModalStateFromHistory = () => {
+      const modal = history.state?.modal;
+      const nextSessionsOpen = modal === "sessions";
+      const nextConfigOpen = modal === "sidebar" || modal === "sessions";
+
+      setSessionsOpen(nextSessionsOpen);
+      setConfigOpen(nextConfigOpen);
+      modalHistoryActiveRef.current = nextSessionsOpen;
+      sidebarHistoryActiveRef.current = nextConfigOpen;
     };
 
-    window.addEventListener("popstate", handlePopstate);
-    return () => window.removeEventListener("popstate", handlePopstate);
-  }, [configOpen, sessionsOpen]);
+    window.addEventListener("popstate", syncModalStateFromHistory);
+    return () =>
+      window.removeEventListener("popstate", syncModalStateFromHistory);
+  }, []);
 
   function showToast(message: string) {
     setToastMessage(message);
@@ -197,13 +197,13 @@ export default function App() {
   }
 
   function closeConfigPanel() {
-    setConfigOpen(false);
-    if (sidebarHistoryActiveRef.current) {
-      sidebarHistoryActiveRef.current = false;
-      if (history.state && history.state.modal === "sidebar") {
-        history.back();
-      }
+    if (history.state?.modal === "sidebar") {
+      history.back();
+      return;
     }
+
+    setConfigOpen(false);
+    sidebarHistoryActiveRef.current = false;
   }
 
   function openSessionsModal() {
@@ -218,13 +218,13 @@ export default function App() {
   }
 
   function closeSessionsModal() {
-    setSessionsOpen(false);
-    if (modalHistoryActiveRef.current) {
-      modalHistoryActiveRef.current = false;
-      if (history.state && history.state.modal === "sessions") {
-        history.back();
-      }
+    if (history.state?.modal === "sessions") {
+      history.back();
+      return;
     }
+
+    setSessionsOpen(false);
+    modalHistoryActiveRef.current = false;
   }
 
   async function handleRemoveSession(sessionId: string) {
@@ -353,6 +353,7 @@ export default function App() {
 
       <ConfigSidebar
         open={configOpen}
+        backdropInteractive={!sessionsOpen}
         config={config}
         onClose={closeConfigPanel}
         onOpenSessions={openSessionsModal}

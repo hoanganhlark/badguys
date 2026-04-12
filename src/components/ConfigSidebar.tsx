@@ -2,6 +2,7 @@ import type { AppConfig } from "../types";
 
 type Props = {
   open: boolean;
+  backdropInteractive: boolean;
   config: AppConfig;
   onClose: () => void;
   onOpenSessions: () => void;
@@ -16,6 +17,7 @@ function toSafeNumber(value: string): number {
 
 export default function ConfigSidebar({
   open,
+  backdropInteractive,
   config,
   onClose,
   onOpenSessions,
@@ -26,7 +28,7 @@ export default function ConfigSidebar({
     <>
       <div
         onClick={onClose}
-        className={`${open ? "" : "hidden"} fixed inset-0 panel-backdrop z-40`}
+        className={`${open ? "" : "hidden"} ${backdropInteractive ? "" : "pointer-events-none"} fixed inset-0 panel-backdrop z-40`}
       />
       <aside
         className={`${open ? "" : "hidden"} fixed left-0 top-0 h-full w-full max-w-sm sidebar-panel z-50 p-6 overflow-y-auto`}
