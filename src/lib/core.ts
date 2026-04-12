@@ -20,16 +20,30 @@ export function normalizeKLabels(text: string): string {
   return String(text).replace(/(\d+(?:\.\d+)?)\s*k\b/gi, "$1K");
 }
 
+function formatDateWithWeekday(date: Date): string {
+  const dd = String(date.getDate()).padStart(2, "0");
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const yyyy = date.getFullYear();
+  const day = date.getDay();
+  const weekday = day === 0 ? "Chủ nhật" : `Thứ ${day + 1}`;
+  return `${weekday} ${dd}/${mm}/${yyyy}`;
+}
+
 export function formatSessionDateLabel(session: SessionRecord): string {
   if (session.dateKey) {
     const [yyyy, mm, dd] = String(session.dateKey).split("-");
-    if (yyyy && mm && dd) return `${dd}/${mm}/${yyyy}`;
+    if (yyyy && mm && dd) {
+      const d = new Date(Number(yyyy), Number(mm) - 1, Number(dd), 0, 0, 0, 0);
+      if (!Number.isNaN(d.getTime())) {
+        return formatDateWithWeekday(d);
+      }
+    }
   }
 
   if (session.clientUpdatedAt) {
     const d = new Date(session.clientUpdatedAt);
     if (!Number.isNaN(d.getTime())) {
-      return d.toLocaleDateString("vi-VN");
+      return formatDateWithWeekday(d);
     }
   }
 

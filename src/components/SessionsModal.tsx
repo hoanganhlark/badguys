@@ -67,7 +67,7 @@ export default function SessionsModal({
                 >
                   <div className="flex items-center justify-between mb-2">
                     <h5 className="text-sm font-semibold text-slate-800">
-                      Buổi {formatSessionDateLabel(session)}
+                      {formatSessionDateLabel(session)}
                     </h5>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-slate-500">

@@ -26,7 +26,6 @@ import {
   clearInputDraft,
   copyText,
   formatVisitTimestampUTC7,
-  getGuestDeviceName,
   loadStoredConfig,
   loadStoredInputDraft,
   markVisitNotifiedToday,
@@ -99,8 +98,7 @@ export default function App() {
     if (!shouldSendVisitNotificationToday()) return;
 
     (async () => {
-      const deviceName = await getGuestDeviceName();
-      await notifyGuestVisited(formatVisitTimestampUTC7(), deviceName);
+      await notifyGuestVisited(formatVisitTimestampUTC7());
       markVisitNotifiedToday();
     })();
   }, []);
