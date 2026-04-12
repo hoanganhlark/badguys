@@ -147,12 +147,16 @@ async function notifyCopyClicked(summaryContent) {
 
 function formatK(value) {
   const rounded = Math.round(value * 10) / 10;
-  return Number.isInteger(rounded) ? `${rounded}k` : `${rounded.toFixed(1)}k`;
+  return Number.isInteger(rounded) ? `${rounded}K` : `${rounded.toFixed(1)}K`;
 }
 
 function formatSummaryPrice(value) {
   const rounded = Math.round(value * 10) / 10;
   return Number.isInteger(rounded) ? `${rounded}K` : `${rounded.toFixed(1)}K`;
+}
+
+function normalizeKLabels(text) {
+  return String(text).replace(/(\d+(?:\.\d+)?)\s*k\b/gi, "$1K");
 }
 
 function formatSessionDateLabel(session) {
@@ -675,6 +679,8 @@ function copySummary() {
     count += 1;
   });
 
+  text = normalizeKLabels(text);
+
   const payload = {
     summaryText: text,
     courtFee: court,
@@ -796,7 +802,9 @@ document.addEventListener("DOMContentLoaded", init);
 document.addEventListener("click", function (e) {
   const btn = e.target.closest(".copy-session-btn");
   if (btn) {
-    const summary = decodeURIComponent(btn.getAttribute("data-summary") || "");
+    const summary = normalizeKLabels(
+      decodeURIComponent(btn.getAttribute("data-summary") || ""),
+    );
     if (summary) {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(summary).then(() => {
