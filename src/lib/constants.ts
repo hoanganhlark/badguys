@@ -1,0 +1,3 @@
+export const TOAST_DURATION_MS = 1800;
+export const RESET_CONFIRM_TIMEOUT_MS = 2000;
+export const SESSIONS_FETCH_LIMIT = 20;

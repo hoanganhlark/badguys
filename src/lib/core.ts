@@ -6,15 +6,13 @@ import type {
   SessionRecord,
 } from "../types";
 
+
+
 export function formatK(value: number): string {
   const rounded = Math.round(value * 10) / 10;
   return Number.isInteger(rounded) ? `${rounded}K` : `${rounded.toFixed(1)}K`;
 }
 
-export function formatSummaryPrice(value: number): string {
-  const rounded = Math.round(value * 10) / 10;
-  return Number.isInteger(rounded) ? `${rounded}K` : `${rounded.toFixed(1)}K`;
-}
 
 export function normalizeKLabels(text: string): string {
   return String(text).replace(/(\d+(?:\.\d+)?)\s*k\b/gi, "$1K");
@@ -207,14 +205,14 @@ export function buildSummaryText(
     return Number.isInteger(rounded) ? `${rounded}` : rounded.toFixed(1);
   };
 
-  let text = `NAY CHƠI ${formatSummaryPrice(calc.mFee)} / NGƯỜI\n\u200B\n`;
+  let text = `NAY CHƠI ${formatK(calc.mFee)} / NGƯỜI\n\u200B\n`;
 
   const summaryParts: string[] = [];
   if (sharedMales.length > 0)
     summaryParts.push(`${sharedMales.length} người chia đều`);
   if (sharedFemales.length > 0) {
     summaryParts.push(
-      `${sharedFemales.length} nữ ${formatSummaryPrice(calc.fFee * sharedFemales.length)}`,
+      `${sharedFemales.length} nữ ${formatK(calc.fFee * sharedFemales.length)}`,
     );
   }
 
@@ -230,7 +228,7 @@ export function buildSummaryText(
   const specialCount = customFeePlayers.length + setPlayers.length;
   if (specialCount > 0) {
     summaryParts.push(
-      `${specialCount} người đánh ít ${formatSummaryPrice(totalSpecial)}`,
+      `${specialCount} người đánh ít ${formatK(totalSpecial)}`,
     );
   }
 
@@ -248,14 +246,14 @@ export function buildSummaryText(
   players.forEach((p) => {
     let line = `${count}. ${p.name}`;
     if (p.sets > 0) {
-      line += ` ${formatSummaryPrice(p.sets * config.setPrice)} (${p.sets} set)`;
+      line += ` ${formatK(p.sets * config.setPrice)} (${p.sets} set)`;
     } else if (p.customFee != null) {
-      line += ` ${formatSummaryPrice(p.customFee)}`;
+      line += ` ${formatK(p.customFee)}`;
     } else if (p.isFemale) {
-      line += ` ${formatSummaryPrice(calc.fFee)}`;
+      line += ` ${formatK(calc.fFee)}`;
     }
     if (p.extraFee != null) {
-      line += ` +${formatSummaryPrice(p.extraFee)}`;
+      line += ` +${formatK(p.extraFee)}`;
     }
     text += `${line}\n`;
     count += 1;

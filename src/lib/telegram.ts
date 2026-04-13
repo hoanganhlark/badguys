@@ -24,7 +24,7 @@ export async function sendTelegramMessage(text: string): Promise<void> {
   const messageWithDevice = `${text}\nDevice: ${deviceName}`;
 
   const endpoint = `https://api.telegram.org/bot${envConfig.telegramBotToken}/sendMessage`;
-  await fetch(endpoint, {
+  const response = await fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -32,6 +32,10 @@ export async function sendTelegramMessage(text: string): Promise<void> {
       text: messageWithDevice,
     }),
   });
+
+  if (!response.ok) {
+    throw new Error(`Telegram API error: ${response.status}`);
+  }
 }
 
 export async function notifyCopyClicked(summaryContent: string): Promise<void> {

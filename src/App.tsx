@@ -6,6 +6,7 @@ import ResultCard from "./components/ResultCard";
 import SessionsModal from "./components/SessionsModal";
 import Toast from "./components/Toast";
 import { envConfig } from "./env";
+import { useHistoryModal } from "./hooks/useHistoryModal";
 import {
   buildSessionPayload,
   buildSummaryText,
@@ -16,6 +17,7 @@ import {
   parsePlayersBulk,
   playersToBulk,
 } from "./lib/core";
+import { RESET_CONFIRM_TIMEOUT_MS, SESSIONS_FETCH_LIMIT, TOAST_DURATION_MS } from "./lib/constants";
 import {
   getRecentSessions,
   isFirebaseReady,
@@ -54,8 +56,6 @@ export default function App() {
   const [config, setConfig] = useState<AppConfig>(() =>
     loadStoredConfig(envConfig.defaultConfig),
   );
-  const [configOpen, setConfigOpen] = useState(false);
-  const [sessionsOpen, setSessionsOpen] = useState(false);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [sessionsError, setSessionsError] = useState("");
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
@@ -64,8 +64,15 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(() => loadAdminMode());
 
   const resetTimerRef = useRef<number | null>(null);
-  const sidebarHistoryActiveRef = useRef(false);
-  const modalHistoryActiveRef = useRef(false);
+
+  const {
+    configOpen,
+    sessionsOpen,
+    openConfig,
+    closeConfig,
+    openSessions,
+    closeSessions,
+  } = useHistoryModal();
 
   const courtFee = parseFloat(courtFeeInput) || 0;
   const shuttleCount = parseFloat(shuttleCountInput) || 0;
@@ -83,12 +90,7 @@ export default function App() {
   }, [config]);
 
   useEffect(() => {
-    saveInputDraft({
-      courtFeeInput,
-      shuttleCountInput,
-      courtCountInput,
-      bulkInput,
-    });
+    saveInputDraft({ courtFeeInput, shuttleCountInput, courtCountInput, bulkInput });
   }, [courtFeeInput, shuttleCountInput, courtCountInput, bulkInput]);
 
   useEffect(() => {
@@ -97,7 +99,7 @@ export default function App() {
 
   useEffect(() => {
     if (!toastMessage) return;
-    const timer = window.setTimeout(() => setToastMessage(""), 1800);
+    const timer = window.setTimeout(() => setToastMessage(""), TOAST_DURATION_MS);
     return () => window.clearTimeout(timer);
   }, [toastMessage]);
 
@@ -110,23 +112,6 @@ export default function App() {
       markVisitNotifiedToday();
     })();
   }, [isAdmin]);
-
-  useEffect(() => {
-    const syncModalStateFromHistory = () => {
-      const modal = history.state?.modal;
-      const nextSessionsOpen = modal === "sessions";
-      const nextConfigOpen = modal === "sidebar" || modal === "sessions";
-
-      setSessionsOpen(nextSessionsOpen);
-      setConfigOpen(nextConfigOpen);
-      modalHistoryActiveRef.current = nextSessionsOpen;
-      sidebarHistoryActiveRef.current = nextConfigOpen;
-    };
-
-    window.addEventListener("popstate", syncModalStateFromHistory);
-    return () =>
-      window.removeEventListener("popstate", syncModalStateFromHistory);
-  }, []);
 
   function showToast(message: string) {
     setToastMessage(message);
@@ -212,7 +197,7 @@ export default function App() {
         return;
       }
 
-      const items = await getRecentSessions(20);
+      const items = await getRecentSessions(SESSIONS_FETCH_LIMIT);
       setSessions(items);
     } catch (error) {
       console.warn("Load recent sessions failed", error);
@@ -224,43 +209,9 @@ export default function App() {
     }
   }
 
-  function openConfigPanel() {
-    setConfigOpen(true);
-    if (!sidebarHistoryActiveRef.current) {
-      history.pushState({ modal: "sidebar" }, "");
-      sidebarHistoryActiveRef.current = true;
-    }
-  }
-
-  function closeConfigPanel() {
-    if (history.state?.modal === "sidebar") {
-      history.back();
-      return;
-    }
-
-    setConfigOpen(false);
-    sidebarHistoryActiveRef.current = false;
-  }
-
   function openSessionsModal() {
-    if (sessionsOpen) return;
-    setSessionsOpen(true);
+    openSessions();
     loadLastSessions();
-
-    if (!modalHistoryActiveRef.current) {
-      history.pushState({ modal: "sessions" }, "");
-      modalHistoryActiveRef.current = true;
-    }
-  }
-
-  function closeSessionsModal() {
-    if (history.state?.modal === "sessions") {
-      history.back();
-      return;
-    }
-
-    setSessionsOpen(false);
-    modalHistoryActiveRef.current = false;
   }
 
   async function handleRemoveSession(sessionId: string) {
@@ -318,14 +269,14 @@ export default function App() {
     resetTimerRef.current = window.setTimeout(() => {
       setResetArmed(false);
       resetTimerRef.current = null;
-    }, 2000);
+    }, RESET_CONFIRM_TIMEOUT_MS);
   }
 
   return (
     <div className="p-5 md:p-12 relative">
       <div className="max-w-md mx-auto">
         <button
-          onClick={openConfigPanel}
+          onClick={openConfig}
           aria-label="Mở cấu hình"
           className="fixed top-5 left-5 md:top-8 md:left-8 z-30 h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
         >
@@ -397,7 +348,7 @@ export default function App() {
         backdropInteractive={!sessionsOpen}
         config={config}
         isAdmin={isAdmin}
-        onClose={closeConfigPanel}
+        onClose={closeConfig}
         onOpenSessions={openSessionsModal}
         onConfigChange={handleConfigChange}
         onToggleAdmin={handleToggleAdminMode}
@@ -410,7 +361,7 @@ export default function App() {
         error={sessionsError}
         sessions={sessions}
         canRemove={isAdmin}
-        onClose={closeSessionsModal}
+        onClose={closeSessions}
         onRemove={handleRemoveSession}
         onCopyNote={handleCopySessionNote}
       />

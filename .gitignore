@@ -1,5 +1,6 @@
 .env
 .env.*
+.claude
 index.local.html
 node_modules
 dist

@@ -1,89 +1,97 @@
-# BadGuys App
+# BadGuys
 
-A lightweight badminton cost-sharing app with a minimalist UI.
+A badminton session cost-sharing calculator. Splits court fees and shuttle costs among players with configurable rules for female caps, per-set pricing, and custom fees.
 
 ## Features
 
-- Calculate total session cost from:
-  - Court fee
-  - Shuttle count (converted by tube price)
-- Split costs with rules:
-  - Female fixed cap (configurable)
-  - Per-set pricing (configurable)
-- Copy a session summary to clipboard
-- Telegram notifications:
-  - Guest visit event
-  - Copy button event with summary content
-- Deployment version shown in sidebar
+- **Cost calculation** — court fee + shuttle cost (auto-converted from tube price), split across all players
+- **Flexible player rules:**
+  - Female players: capped at a configurable max fee
+  - Per-set players: pay a flat per-set rate, excluded from shared pool
+  - Custom-fee players: pay a fixed amount, excluded from shared pool
+  - Surcharge: add an extra fee on top of any player's base cost
+- **Session summary** — formatted clipboard text with full breakdown
+- **Session history** — saved to Firestore, viewable and deletable (admin only)
+- **Telegram notifications** — guest visit and copy events (configurable)
+- **Admin mode** — toggles session deletion and suppresses outgoing notifications
 
-## Project Structure
+## Player input syntax
 
-- `index.html`: main source file (placeholders for Telegram values)
-- `index.local.html`: local generated file with injected values from `.env`
-- `.github/workflows/deploy-pages.yml`: GitHub Pages deploy workflow and secret injection
-- `scripts/inject-env.ps1`: local env injector script
-- `.env.example`: local env template
+Each line in the player text area represents one player. Modifiers are appended to the name:
 
-## Local Setup
+| Modifier | Meaning | Example |
+|----------|---------|---------|
+| `n` | Female player (capped fee) | `Lan n` |
+| `2s` | Plays by set (2 sets) | `Hung 2s` |
+| `30k` | Custom fixed fee | `Nam 30k` |
+| `+10k` | Surcharge on top of base fee | `Minh +10k` |
 
-1. Create local env file:
+Numbered list format is also accepted: `1. Lan n`, `2/ Hung 2s`.
 
-```powershell
-Copy-Item .env.example .env
+## Tech stack
+
+- React 18 + TypeScript
+- Vite 5
+- Tailwind CSS
+- Firebase Firestore
+- Telegram Bot API
+
+## Local development
+
+**1. Create a local env file:**
+
+```bash
+cp .env.example .env.local
 ```
 
-2. Update `.env` values:
+**2. Fill in `.env.local`:**
 
 ```env
-TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
-TELEGRAM_GROUP_CHAT_ID=your_group_chat_id_here
-FIREBASE_API_KEY=your_firebase_api_key_here
-FIREBASE_PROJECT_ID=your_firebase_project_id_here
-APP_VERSION=v-local
-BADGUY_FEMALE_MAX=60
-BADGUY_TUBE_PRICE=290
-BADGUY_SET_PRICE=12
-BADGUY_SHUTTLES_PER_TUBE=12
-BADGUY_ROUND_RESULT=true
-BADGUY_ENABLE_COURT_COUNT=true
+VITE_TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+VITE_TELEGRAM_GROUP_CHAT_ID=your_group_chat_id
+VITE_FIREBASE_API_KEY=your_firebase_api_key
+VITE_FIREBASE_PROJECT_ID=your_firebase_project_id
+VITE_APP_VERSION=v-local
+
+# Optional — falls back to these defaults if omitted
+VITE_BADGUY_FEMALE_MAX=60
+VITE_BADGUY_TUBE_PRICE=290
+VITE_BADGUY_SET_PRICE=12
+VITE_BADGUY_SHUTTLES_PER_TUBE=12
+VITE_BADGUY_ROUND_RESULT=true
+VITE_BADGUY_ENABLE_COURT_COUNT=true
+VITE_BADGUY_ENABLE_TELEGRAM_NOTIFICATION=true
+VITE_FIREBASE_COLLECTION_SESSIONS=dev-sessions
 ```
 
-3. Inject values into local build file:
+**3. Start the dev server:**
 
-```powershell
-./scripts/inject-env.ps1
+```bash
+npm install
+npm run dev
 ```
 
-4. Open `index.local.html` in your browser.
+## Deployment (GitHub Pages)
 
-## Deploy Setup (GitHub Pages)
+The workflow in `.github/workflows/deploy-pages.yml` auto-deploys on push to `main`.
 
-Set these repository secrets:
+**Required repository secrets:**
 
-- `TELEGRAM_BOT_TOKEN`
-- `TELEGRAM_GROUP_CHAT_ID`
-- `FIREBASE_API_KEY`
-- `FIREBASE_PROJECT_ID`
+| Secret | Description |
+|--------|-------------|
+| `VITE_TELEGRAM_BOT_TOKEN` | Telegram bot token |
+| `VITE_TELEGRAM_GROUP_CHAT_ID` | Telegram group chat ID |
+| `VITE_FIREBASE_API_KEY` | Firebase API key |
+| `VITE_FIREBASE_PROJECT_ID` | Firebase project ID |
 
-Optional repository variables (GitHub Actions Variables):
+**Optional repository variables** (fall back to defaults if not set):
 
-- `BADGUY_FEMALE_MAX`
-- `BADGUY_TUBE_PRICE`
-- `BADGUY_SET_PRICE`
-- `BADGUY_SHUTTLES_PER_TUBE`
-- `BADGUY_ROUND_RESULT`
-- `BADGUY_ENABLE_COURT_COUNT`
+`VITE_BADGUY_FEMALE_MAX`, `VITE_BADGUY_TUBE_PRICE`, `VITE_BADGUY_SET_PRICE`, `VITE_BADGUY_SHUTTLES_PER_TUBE`, `VITE_BADGUY_ROUND_RESULT`, `VITE_BADGUY_ENABLE_COURT_COUNT`, `VITE_FIREBASE_COLLECTION_SESSIONS`
 
-If these variables are not set, deploy falls back to in-app defaults: 60, 290, 12, 12, `true`, and `true`.
-
-On deploy, workflow will:
-
-- Auto-generate app version: `vYYYY.MM.DD.RUN_NUMBER`
-- Inject version + Telegram values into deployed artifact
-- Inject Firebase API key + project ID into deployed artifact
+On each deploy the workflow auto-generates a version tag (`vYYYY.MM.DD.RUN_NUMBER`) and sends a Telegram notification on success or failure.
 
 ## Notes
 
-- This is a static frontend app.
-- Secret injection prevents committing token values to git history.
-- Runtime values are still present in delivered client files. For real secret protection, route Telegram calls through a backend/serverless endpoint.
+- This is a static frontend app with no backend. Secrets are embedded in the built client bundle.
+- To avoid exposing the Telegram bot token publicly, route Telegram calls through a serverless function or backend proxy.
+- Firebase Firestore security rules should restrict writes to your app's origin in production.
