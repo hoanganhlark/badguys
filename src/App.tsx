@@ -32,10 +32,12 @@ import {
   loadStoredConfig,
   loadStoredInputDraft,
   markVisitNotifiedToday,
+  readAdminFromUrl,
   saveAdminMode,
   saveConfig,
   saveInputDraft,
   shouldSendVisitNotificationToday,
+  syncAdminToUrl,
 } from "./lib/platform";
 import { notifyCopyClicked, notifyGuestVisited } from "./lib/telegram";
 import type { AppConfig, Player, SessionRecord } from "./types";
@@ -61,9 +63,10 @@ export default function App() {
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [toastMessage, setToastMessage] = useState("");
   const [resetArmed, setResetArmed] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(() => loadAdminMode());
+  const [isAdmin, setIsAdmin] = useState(() => readAdminFromUrl() || loadAdminMode());
 
   const resetTimerRef = useRef<number | null>(null);
+  const isAdminRef = useRef(isAdmin);
 
   const {
     configOpen,
@@ -94,7 +97,9 @@ export default function App() {
   }, [courtFeeInput, shuttleCountInput, courtCountInput, bulkInput]);
 
   useEffect(() => {
+    isAdminRef.current = isAdmin;
     saveAdminMode(isAdmin);
+    syncAdminToUrl(isAdmin);
   }, [isAdmin]);
 
   useEffect(() => {
@@ -112,6 +117,13 @@ export default function App() {
       markVisitNotifiedToday();
     })();
   }, [isAdmin]);
+
+  // Re-sync admin URL param after browser back/forward may have cleared it
+  useEffect(() => {
+    const onPopState = () => syncAdminToUrl(isAdminRef.current);
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
 
   function showToast(message: string) {
     setToastMessage(message);
@@ -299,7 +311,7 @@ export default function App() {
 
         <header className="mb-12 text-center">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            BadGuys<span className="text-slate-400">.</span>
+            {isAdmin ? "@BadGuys" : "BadGuys"}<span className="text-slate-400">.</span>
           </h1>
         </header>
 
