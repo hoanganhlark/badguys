@@ -30,10 +30,12 @@ import {
   loadStoredConfig,
   loadStoredInputDraft,
   markVisitNotifiedToday,
+  readAdminFromUrl,
   saveAdminMode,
   saveConfig,
   saveInputDraft,
   shouldSendVisitNotificationToday,
+  syncAdminToUrl,
 } from "./lib/platform";
 import { notifyCopyClicked, notifyGuestVisited } from "./lib/telegram";
 import type { AppConfig, Player, SessionRecord } from "./types";
@@ -61,7 +63,7 @@ export default function App() {
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [toastMessage, setToastMessage] = useState("");
   const [resetArmed, setResetArmed] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(() => loadAdminMode());
+  const [isAdmin, setIsAdmin] = useState(() => readAdminFromUrl() || loadAdminMode());
 
   const resetTimerRef = useRef<number | null>(null);
   const sidebarHistoryActiveRef = useRef(false);
@@ -93,6 +95,7 @@ export default function App() {
 
   useEffect(() => {
     saveAdminMode(isAdmin);
+    syncAdminToUrl(isAdmin);
   }, [isAdmin]);
 
   useEffect(() => {
