@@ -348,7 +348,7 @@ export default function App() {
 
         <header className="mb-12 text-center">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            BadGuys<span className="text-slate-400">.</span>
+            {isAdmin ? "@BadGuys" : "BadGuys"}<span className="text-slate-400">.</span>
           </h1>
         </header>
 
