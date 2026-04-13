@@ -68,6 +68,7 @@ export default function App() {
   const resetTimerRef = useRef<number | null>(null);
   const sidebarHistoryActiveRef = useRef(false);
   const modalHistoryActiveRef = useRef(false);
+  const isAdminRef = useRef(isAdmin);
 
   const courtFee = parseFloat(courtFeeInput) || 0;
   const shuttleCount = parseFloat(shuttleCountInput) || 0;
@@ -94,6 +95,7 @@ export default function App() {
   }, [courtFeeInput, shuttleCountInput, courtCountInput, bulkInput]);
 
   useEffect(() => {
+    isAdminRef.current = isAdmin;
     saveAdminMode(isAdmin);
     syncAdminToUrl(isAdmin);
   }, [isAdmin]);
@@ -124,6 +126,9 @@ export default function App() {
       setConfigOpen(nextConfigOpen);
       modalHistoryActiveRef.current = nextSessionsOpen;
       sidebarHistoryActiveRef.current = nextConfigOpen;
+
+      // Re-sync admin URL after popstate may have reverted it to a previous entry
+      syncAdminToUrl(isAdminRef.current);
     };
 
     window.addEventListener("popstate", syncModalStateFromHistory);
