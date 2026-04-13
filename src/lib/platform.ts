@@ -93,6 +93,20 @@ export function saveAdminMode(value: boolean): void {
   localStorage.setItem(ADMIN_MODE_KEY, String(value));
 }
 
+export function readAdminFromUrl(): boolean {
+  return new URLSearchParams(window.location.search).get("r") === "@";
+}
+
+export function syncAdminToUrl(isAdmin: boolean): void {
+  const url = new URL(window.location.href);
+  if (isAdmin) {
+    url.searchParams.set("r", "@");
+  } else {
+    url.searchParams.delete("r");
+  }
+  history.replaceState(history.state, "", url.toString());
+}
+
 export function getLocalDateKey(dateValue?: Date): string {
   const current = dateValue || new Date();
   const yyyy = current.getFullYear();
