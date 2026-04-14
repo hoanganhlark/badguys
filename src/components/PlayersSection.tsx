@@ -46,11 +46,12 @@ export default function PlayersSection({
         </span>
       </div>
 
+      <label htmlFor="bulkInput" className="block text-xs text-slate-500 mb-2 px-1">
+        Nhập tên mỗi người một dòng. Thêm: n (nữ), 2s (set), 30k (riêng), +10k (phụ thu)
+      </label>
       <textarea
+        id="bulkInput"
         rows={4}
-        placeholder={
-          "Nhập tên...\nThêm: n (nữ), 2s (set), 30k (riêng), +10k (phụ thu)"
-        }
         className="input-minimal w-full px-4 py-3 text-sm mb-4 resize-none"
         value={bulkInput}
         onChange={(e) => onBulkInputChange(e.target.value)}
