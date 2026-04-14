@@ -53,6 +53,7 @@ export default function PlayersSection({
         id="bulkInput"
         rows={4}
         className="input-minimal w-full px-4 py-3 text-sm mb-4 resize-none"
+        placeholder={"Bi\nKhang 2s\nThiện 50k\nPhượng n"}
         value={bulkInput}
         onChange={(e) => onBulkInputChange(e.target.value)}
       />
