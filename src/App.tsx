@@ -379,6 +379,8 @@ export default function App() {
       />
 
       {toastMessage ? <Toast message={toastMessage} /> : null}
+
+      <p className="fixed bottom-2 left-0 right-0 text-center text-xs text-slate-400">hoanganh.lark</p>
     </div>
   );
 }
