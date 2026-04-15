@@ -7,5 +7,9 @@ export default defineConfig(({ command }) => {
   return {
     plugins: [react()],
     base: isBuild ? "/badguys/" : "/",
+    test: {
+      environment: "jsdom",
+      setupFiles: ["src/tests/setup.ts"],
+    },
   };
 });
