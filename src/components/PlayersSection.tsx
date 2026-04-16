@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import type { Player } from "../types";
 
 type Props = {
@@ -38,11 +38,16 @@ export default function PlayersSection({
 
   const hasDuplicateNames = duplicateIndexes.size > 0;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
-    textarea.style.height = "auto";
-    textarea.style.height = `${textarea.scrollHeight}px`;
+
+    const frame = window.requestAnimationFrame(() => {
+      textarea.style.height = "auto";
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    });
+
+    return () => window.cancelAnimationFrame(frame);
   }, [bulkInput]);
 
   return (
@@ -62,7 +67,7 @@ export default function PlayersSection({
       <textarea
         ref={textareaRef}
         id="bulkInput"
-        rows={1}
+        rows={2}
         className="input-minimal w-full px-4 py-3 text-sm mb-4 resize-none overflow-hidden"
         placeholder={"Bi\nKhang 2s\nThiện 30k\nPhượng n"}
         value={bulkInput}
