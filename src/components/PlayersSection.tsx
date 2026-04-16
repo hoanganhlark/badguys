@@ -62,7 +62,7 @@ export default function PlayersSection({
       <textarea
         ref={textareaRef}
         id="bulkInput"
-        rows={4}
+        rows={1}
         className="input-minimal w-full px-4 py-3 text-sm mb-4 resize-none overflow-hidden"
         placeholder={"Bi\nKhang 2s\nThiện 30k\nPhượng n"}
         value={bulkInput}
