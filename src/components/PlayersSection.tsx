@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import type { Player } from "../types";
 
 type Props = {
@@ -15,6 +16,8 @@ export default function PlayersSection({
   onTogglePlayer,
   onRemovePlayer,
 }: Props) {
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
   const normalizeName = (name: string) => name.trim().toLowerCase();
 
   const duplicateNameCounts = new Map<string, number>();
@@ -35,6 +38,13 @@ export default function PlayersSection({
 
   const hasDuplicateNames = duplicateIndexes.size > 0;
 
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, [bulkInput]);
+
   return (
     <section className="mb-8">
       <div className="flex justify-between items-center mb-4 px-1">
@@ -50,9 +60,10 @@ export default function PlayersSection({
         Nhập tên mỗi người một dòng. Thêm: n (nữ), 2s (set), 30k (riêng), +10k (phụ thu)
       </label>
       <textarea
+        ref={textareaRef}
         id="bulkInput"
         rows={4}
-        className="input-minimal w-full px-4 py-3 text-sm mb-4 resize-none"
+        className="input-minimal w-full px-4 py-3 text-sm mb-4 resize-none overflow-hidden"
         placeholder={"Bi\nKhang 2s\nThiện 30k\nPhượng n"}
         value={bulkInput}
         onChange={(e) => onBulkInputChange(e.target.value)}
