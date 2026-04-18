@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import ConfigSidebar from "./components/ConfigSidebar";
 import ExpensesSection from "./components/ExpensesSection";
 import PlayersSection from "./components/PlayersSection";
+import RankingPage from "./components/RankingPage";
 import ResultCard from "./components/ResultCard";
 import SessionsModal from "./components/SessionsModal";
 import Toast from "./components/Toast";
@@ -71,10 +72,13 @@ export default function App() {
   const {
     configOpen,
     sessionsOpen,
+    rankingOpen,
     openConfig,
     closeConfig,
     openSessions,
     closeSessions,
+    openRanking,
+    closeRanking,
   } = useHistoryModal();
 
   const courtFee = parseFloat(courtFeeInput) || 0;
@@ -309,6 +313,25 @@ export default function App() {
           </svg>
         </button>
 
+        {isAdmin && (
+          <button
+            onClick={openRanking}
+            aria-label="Bảng xếp hạng"
+            className="fixed top-5 right-5 md:top-8 md:right-8 z-30 h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              className="h-5 w-5"
+            >
+              <path d="M6 9H3v6h3m0 0h12m0 0h3v-6h-3m0 0V5h-2V3m0 0h-6v2m-2 4h0M5 15a1 1 0 001 1h12a1 1 0 001-1v-2H5v2z" />
+            </svg>
+          </button>
+        )}
+
         <header className="mb-12 text-center">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
             {isAdmin ? "@BadGuys" : "BadGuys"}<span className="text-slate-400">.</span>
@@ -377,6 +400,8 @@ export default function App() {
         onRemove={handleRemoveSession}
         onCopyNote={handleCopySessionNote}
       />
+
+      <RankingPage isOpen={rankingOpen} onClose={closeRanking} />
 
       {toastMessage ? <Toast message={toastMessage} /> : null}
 

@@ -3,20 +3,25 @@ import { useEffect, useRef, useState } from "react";
 export function useHistoryModal() {
   const [configOpen, setConfigOpen] = useState(false);
   const [sessionsOpen, setSessionsOpen] = useState(false);
+  const [rankingOpen, setRankingOpen] = useState(false);
 
   const sidebarHistoryActiveRef = useRef(false);
   const modalHistoryActiveRef = useRef(false);
+  const rankingHistoryActiveRef = useRef(false);
 
   useEffect(() => {
     const syncFromHistory = () => {
       const modal = history.state?.modal;
       const nextSessionsOpen = modal === "sessions";
       const nextConfigOpen = modal === "sidebar" || modal === "sessions";
+      const nextRankingOpen = modal === "ranking";
 
       setSessionsOpen(nextSessionsOpen);
       setConfigOpen(nextConfigOpen);
+      setRankingOpen(nextRankingOpen);
       modalHistoryActiveRef.current = nextSessionsOpen;
       sidebarHistoryActiveRef.current = nextConfigOpen;
+      rankingHistoryActiveRef.current = nextRankingOpen;
     };
 
     window.addEventListener("popstate", syncFromHistory);
@@ -58,5 +63,23 @@ export function useHistoryModal() {
     modalHistoryActiveRef.current = false;
   }
 
-  return { configOpen, sessionsOpen, openConfig, closeConfig, openSessions, closeSessions };
+  function openRanking() {
+    if (rankingOpen) return;
+    setRankingOpen(true);
+    if (!rankingHistoryActiveRef.current) {
+      history.pushState({ modal: "ranking" }, "");
+      rankingHistoryActiveRef.current = true;
+    }
+  }
+
+  function closeRanking() {
+    if (history.state?.modal === "ranking") {
+      history.back();
+      return;
+    }
+    setRankingOpen(false);
+    rankingHistoryActiveRef.current = false;
+  }
+
+  return { configOpen, sessionsOpen, rankingOpen, openConfig, closeConfig, openSessions, closeSessions, openRanking, closeRanking };
 }
