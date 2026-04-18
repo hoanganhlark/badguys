@@ -245,8 +245,12 @@ export async function getRankingMatches(): Promise<RankingMatch[]> {
   const matchesRaw = Array.isArray(data.matches) ? data.matches : [];
 
   return matchesRaw
-    .map((item) => {
-      const id = Number(item?.id);
+    .map((item): RankingMatch | null => {
+      const rawId = item?.id;
+      const normalizedId =
+        typeof rawId === "number" || typeof rawId === "string"
+          ? rawId
+          : null;
       const type = item?.type === "doubles" ? "doubles" : "singles";
       const team1 = Array.isArray(item?.team1)
         ? item.team1.map((name: unknown) => String(name))
@@ -259,11 +263,11 @@ export async function getRankingMatches(): Promise<RankingMatch[]> {
         : [];
       const date = String(item?.date || "");
 
-      if (!Number.isFinite(id) || team1.length === 0 || team2.length === 0) {
+      if (!normalizedId || team1.length === 0 || team2.length === 0) {
         return null;
       }
 
-      return { id, type, team1, team2, sets, date };
+      return { id: normalizedId, type, team1, team2, sets, date };
     })
     .filter((match): match is RankingMatch => match !== null);
 }
