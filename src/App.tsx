@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Award, Settings } from "react-feather";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { Award, Key, LogOut, Settings, User, X } from "react-feather";
 import { useLocation } from "react-router-dom";
 import LoginPage from "./components/LoginPage";
 import ConfigSidebar from "./components/ConfigSidebar";
@@ -31,11 +31,14 @@ import {
   TOAST_DURATION_MS,
 } from "./lib/constants";
 import {
+  getUserByUsername,
   getRecentSessions,
   isFirebaseReady,
   removeSession,
   saveDailySummary,
+  updateUserPassword,
 } from "./lib/firebase";
+import { hashMd5 } from "./lib/hash";
 import {
   clearInputDraft,
   copyText,
@@ -74,8 +77,19 @@ export default function App() {
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [toastMessage, setToastMessage] = useState("");
   const [resetArmed, setResetArmed] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [changePasswordError, setChangePasswordError] = useState("");
+  const [changePasswordSubmitting, setChangePasswordSubmitting] =
+    useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
 
   const resetTimerRef = useRef<number | null>(null);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
 
   const {
     configOpen,
@@ -132,6 +146,31 @@ export default function App() {
     })();
   }, [isAdmin]);
 
+  useEffect(() => {
+    if (!userMenuOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!userMenuRef.current) return;
+      if (userMenuRef.current.contains(event.target as Node)) return;
+      setUserMenuOpen(false);
+    };
+
+    window.addEventListener("mousedown", handleClickOutside);
+    return () => window.removeEventListener("mousedown", handleClickOutside);
+  }, [userMenuOpen]);
+
+  useEffect(() => {
+    if (isAuthenticated) return;
+    setUserMenuOpen(false);
+    setChangePasswordOpen(false);
+    setChangePasswordError("");
+    setPasswordForm({
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    });
+  }, [isAuthenticated]);
+
   function showToast(message: string) {
     setToastMessage(message);
   }
@@ -150,6 +189,9 @@ export default function App() {
   }
 
   function handleRemovePlayer(index: number) {
+    const confirmed = window.confirm("Bạn có chắc chắn muốn xóa không?");
+    if (!confirmed) return;
+
     const next = players.filter((_, i) => i !== index);
     setPlayers(next);
     setBulkInput(playersToBulk(next));
@@ -240,7 +282,7 @@ export default function App() {
       return;
     }
 
-    const confirmed = window.confirm("Bạn có chắc muốn xóa buổi này?");
+    const confirmed = window.confirm("Bạn có chắc chắn muốn xóa không?");
     if (!confirmed) return;
 
     try {
@@ -287,6 +329,73 @@ export default function App() {
     }, RESET_CONFIRM_TIMEOUT_MS);
   }
 
+  async function handleSubmitChangePassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!currentUser) {
+      setChangePasswordError("Bạn chưa đăng nhập.");
+      return;
+    }
+
+    const currentPassword = String(passwordForm.currentPassword || "");
+    const newPassword = String(passwordForm.newPassword || "");
+    const confirmPassword = String(passwordForm.confirmPassword || "");
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setChangePasswordError("Vui lòng nhập đầy đủ thông tin.");
+      return;
+    }
+
+    if (newPassword.length < 4) {
+      setChangePasswordError("Mật khẩu mới cần ít nhất 4 ký tự.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setChangePasswordError("Mật khẩu xác nhận không khớp.");
+      return;
+    }
+
+    if (newPassword === currentPassword) {
+      setChangePasswordError("Mật khẩu mới phải khác mật khẩu hiện tại.");
+      return;
+    }
+
+    setChangePasswordSubmitting(true);
+    setChangePasswordError("");
+
+    try {
+      const userRecord = await getUserByUsername(currentUser.username);
+      if (!userRecord || userRecord.id !== currentUser.userId) {
+        throw new Error("Không tìm thấy tài khoản hiện tại.");
+      }
+
+      const currentPasswordHash = hashMd5(currentPassword);
+      if (currentPasswordHash !== userRecord.password) {
+        throw new Error("Mật khẩu hiện tại không đúng.");
+      }
+
+      await updateUserPassword(userRecord.id, hashMd5(newPassword));
+
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      setChangePasswordOpen(false);
+      setUserMenuOpen(false);
+      showToast("Đổi mật khẩu thành công.");
+    } catch (error) {
+      setChangePasswordError(
+        error instanceof Error
+          ? error.message
+          : "Đổi mật khẩu thất bại. Vui lòng thử lại.",
+      );
+    } finally {
+      setChangePasswordSubmitting(false);
+    }
+  }
+
   if (location.pathname === "/login") {
     return <LoginPage />;
   }
@@ -313,10 +422,54 @@ export default function App() {
         <button
           onClick={openRanking}
           aria-label="Bảng xếp hạng"
-          className="fixed top-5 right-5 md:top-8 md:right-8 z-30 h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
+          className={`fixed top-5 ${isAuthenticated ? "right-20 md:right-24" : "right-5 md:right-8"} md:top-8 z-30 h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center`}
         >
           <Award className="h-5 w-5" />
         </button>
+
+        {isAuthenticated ? (
+          <div
+            ref={userMenuRef}
+            className="fixed top-5 right-5 md:top-8 md:right-8 z-40"
+          >
+            <button
+              type="button"
+              onClick={() => setUserMenuOpen((prev) => !prev)}
+              aria-label="Mở menu tài khoản"
+              className="h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
+            >
+              <User className="h-5 w-5" />
+            </button>
+
+            {userMenuOpen ? (
+              <div className="mt-2 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+                <p className="px-2 py-1 text-xs font-semibold text-slate-500 truncate">
+                  {currentUser?.username}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setChangePasswordOpen(true);
+                    setChangePasswordError("");
+                  }}
+                  className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center gap-2"
+                >
+                  <Key className="h-4 w-4" /> Đổi mật khẩu
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    logout();
+                  }}
+                  className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-red-600 hover:bg-red-50 inline-flex items-center gap-2"
+                >
+                  <LogOut className="h-4 w-4" /> Đăng xuất
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         <header className="mb-12 text-center">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
@@ -398,6 +551,119 @@ export default function App() {
         <ProtectedRoute>
           <RankingPage isOpen={rankingOpen} onClose={closeRanking} />
         </ProtectedRoute>
+      ) : null}
+
+      {changePasswordOpen ? (
+        <div
+          className="fixed inset-0 z-[80] bg-black/40 p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="mx-auto mt-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-semibold text-slate-900">
+                Đổi mật khẩu
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setChangePasswordOpen(false);
+                  setChangePasswordError("");
+                }}
+                className="rounded-md p-1 text-slate-400 hover:text-slate-700"
+                aria-label="Đóng đổi mật khẩu"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form
+              className="mt-4 space-y-3"
+              onSubmit={handleSubmitChangePassword}
+            >
+              <div>
+                <label className="block text-xs font-semibold uppercase text-slate-600">
+                  Mật khẩu hiện tại
+                </label>
+                <input
+                  type="password"
+                  value={passwordForm.currentPassword}
+                  onChange={(event) =>
+                    setPasswordForm((prev) => ({
+                      ...prev,
+                      currentPassword: event.target.value,
+                    }))
+                  }
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  autoComplete="current-password"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase text-slate-600">
+                  Mật khẩu mới
+                </label>
+                <input
+                  type="password"
+                  value={passwordForm.newPassword}
+                  onChange={(event) =>
+                    setPasswordForm((prev) => ({
+                      ...prev,
+                      newPassword: event.target.value,
+                    }))
+                  }
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  autoComplete="new-password"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase text-slate-600">
+                  Xác nhận mật khẩu mới
+                </label>
+                <input
+                  type="password"
+                  value={passwordForm.confirmPassword}
+                  onChange={(event) =>
+                    setPasswordForm((prev) => ({
+                      ...prev,
+                      confirmPassword: event.target.value,
+                    }))
+                  }
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  autoComplete="new-password"
+                  required
+                />
+              </div>
+
+              {changePasswordError ? (
+                <p className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {changePasswordError}
+                </p>
+              ) : null}
+
+              <div className="flex items-center justify-end gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setChangePasswordOpen(false);
+                    setChangePasswordError("");
+                  }}
+                  className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={changePasswordSubmitting}
+                  className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
+                >
+                  {changePasswordSubmitting ? "Đang lưu..." : "Lưu mật khẩu"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       ) : null}
 
       {toastMessage ? <Toast message={toastMessage} /> : null}

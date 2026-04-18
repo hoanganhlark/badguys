@@ -6,6 +6,7 @@ import {
   isFirebaseReady,
   saveRankingMembers,
   subscribeMatches,
+  subscribeUsers,
 } from "../lib/firebase";
 import { matchPath, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -58,6 +59,9 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     null,
   );
   const [isRemoteHydrated, setIsRemoteHydrated] = useState(false);
+  const [usernamesById, setUsernamesById] = useState<Record<string, string>>(
+    {},
+  );
 
   // Member Form State
   const [isEditing, setIsEditing] = useState<number | null>(null);
@@ -177,6 +181,27 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isOpen || !isFirebaseReady()) return;
+
+    const unsubscribe = subscribeUsers(
+      (users) => {
+        const nextMap = users.reduce<Record<string, string>>((acc, user) => {
+          acc[user.id] = user.username;
+          return acc;
+        }, {});
+        setUsernamesById(nextMap);
+      },
+      () => {
+        setUsernamesById({});
+      },
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, [isOpen]);
+
   // Persist members
   useEffect(() => {
     saveMembersToStorage(members);
@@ -212,6 +237,8 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
 
   const deleteMember = (id: number) => {
     if (!isAdmin) return;
+    const confirmed = window.confirm("Bạn có chắc chắn muốn xóa không?");
+    if (!confirmed) return;
     setMembers(members.filter((m) => m.id !== id));
   };
 
@@ -225,9 +252,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     if (!isAdmin) return;
     if (matches.length === 0) return;
 
-    const confirmed = window.confirm(
-      "Bạn có chắc muốn xóa toàn bộ lịch sử trận đấu?",
-    );
+    const confirmed = window.confirm("Bạn có chắc chắn muốn xóa không?");
     if (!confirmed) return;
 
     try {
@@ -249,7 +274,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
       return;
     }
 
-    const confirmed = window.confirm("Bạn có chắc muốn xóa trận này?");
+    const confirmed = window.confirm("Bạn có chắc chắn muốn xóa không?");
     if (!confirmed) return;
 
     try {
@@ -301,6 +326,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
         playerB: selectedTeam2.join(" / "),
         score: parsedSets.join(","),
         createdBy: currentUser.userId,
+        createdByUsername: currentUser.username,
       });
 
       const newMatch = mapMatchRecordToRankingMatch(created);
@@ -322,6 +348,16 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     const stats = members.map((m) => calculateAdvancedStats(m.name, matches));
     return stats.sort((a, b) => b.rankScore - a.rankScore);
   }, [members, matches]);
+
+  const matchesForDisplay = useMemo(
+    () =>
+      matches.map((match) => ({
+        ...match,
+        createdByUsername:
+          match.createdByUsername || usernamesById[match.createdBy || ""] || "",
+      })),
+    [matches, usernamesById],
+  );
 
   if (!isOpen) return null;
 
@@ -417,7 +453,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
             {view === "ranking" && (
               <RankingPanel
                 rankings={rankings}
-                matches={matches}
+                matches={matchesForDisplay}
                 onSelectPlayer={setSelectedPlayer}
                 onClearHistory={handleClearHistory}
                 onDeleteMatch={handleDeleteMatch}
@@ -463,6 +499,7 @@ function mapMatchRecordToRankingMatch(record: MatchRecord): Match {
     sets,
     date: formatDateTime(record.createdAt),
     createdBy: record.createdBy,
+    createdByUsername: record.createdByUsername,
   };
 }
 
@@ -472,12 +509,11 @@ function formatDateTime(value?: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
 
-  return date.toLocaleString("vi-VN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
+  const dd = String(date.getDate()).padStart(2, "0");
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const yyyy = date.getFullYear();
+  const hh = String(date.getHours()).padStart(2, "0");
+  const min = String(date.getMinutes()).padStart(2, "0");
+
+  return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
 }

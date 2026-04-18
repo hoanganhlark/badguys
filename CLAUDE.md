@@ -20,7 +20,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `src/lib/core.ts` — Core business logic: `parsePlayersBulk()`, `calculateResult()`, `buildSummaryText()`, `buildSessionPayload()`
 - `src/types.ts` — Shared types: `Player`, `AppConfig`, `CalcResult`, `SessionRecord`, `AuthUser`, `UserRecord`, `RankingMember`, `RankingMatch`, `RankingLevel`
 - `src/env.ts` — Parses `VITE_*` env vars with fallback defaults
-- `src/lib/firebase.ts` — Firestore init, session CRUD, ranking data CRUD (members and matches), and user management (`getUsers()`, `getUserByUsername()`, `createUser()`, `deleteUser()`, `updateUserRole()`)
+- `src/lib/firebase.ts` — Firestore init, session CRUD, ranking data CRUD (members and matches), and user management; provides both async fetch (`getUsers()`, `getMatches()`) and real-time subscriptions (`subscribeUsers()`, `subscribeMatches()` via `onSnapshot`)
 - `src/lib/hash.ts` — MD5 password hashing
 - `src/lib/telegram.ts` — Async Telegram notification (silent failure on error)
 - `src/lib/platform.ts` — localStorage, clipboard, URL params, device detection
@@ -30,6 +30,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `src/context/AuthContext.tsx` — Auth state management: `useAuth()` hook, login/logout, role-based access
 - `src/components/LoginPage.tsx` — Login form and authentication UI
 - `src/components/UserManagementPage.tsx` — Admin-only page for creating/deleting users and managing roles
+- `src/components/ConfigSidebar.tsx` — Settings sidebar modal for config management and user info
+- `src/components/SessionsModal.tsx` — Modal displaying session history with copy and delete functionality
 - `src/components/auth/ProtectedRoute.tsx` — Wrapper enforcing authenticated access (redirects to `/login`)
 - `src/components/auth/AdminRoute.tsx` — Wrapper enforcing admin-only access
 - `src/components/RankingPage.tsx` — Ranking root component; manages view state (dashboard/match-form/ranking)
