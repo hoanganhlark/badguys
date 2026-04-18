@@ -1,11 +1,17 @@
 import { Check, Edit2, Plus, Trash2, UserPlus } from "react-feather";
 import type { Member } from "./types";
+import type { RankingLevel } from "../../types";
+import {
+  getRankingLevelDisplay,
+  normalizeRankingLevel,
+  sortMembersByLevelAndName,
+} from "../../lib/rankingLevel";
 
 interface MembersPanelProps {
   isEditing: number | null;
-  newMember: { name: string; level: string };
+  newMember: { name: string; level: RankingLevel };
   members: Member[];
-  onSetNewMember: (next: { name: string; level: string }) => void;
+  onSetNewMember: (next: { name: string; level: RankingLevel }) => void;
   onAddOrUpdateMember: () => void;
   onStartEdit: (member: Member) => void;
   onDeleteMember: (id: number) => void;
@@ -20,6 +26,8 @@ export default function MembersPanel({
   onStartEdit,
   onDeleteMember,
 }: MembersPanelProps) {
+  const sortedMembers = sortMembersByLevelAndName(members);
+
   return (
     <div className="max-w-5xl space-y-4 md:space-y-6">
       <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm">
@@ -45,13 +53,15 @@ export default function MembersPanel({
             className="px-3 py-2.5 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-sky-500"
             value={newMember.level}
             onChange={(e) =>
-              onSetNewMember({ ...newMember, level: e.target.value })
+              onSetNewMember({
+                ...newMember,
+                level: normalizeRankingLevel(e.target.value),
+              })
             }
           >
-            <option>Yếu</option>
-            <option>Trung bình</option>
-            <option>Khá</option>
-            <option>Giỏi</option>
+            <option value="Yo">Yo (Khá)</option>
+            <option value="Lo">Lo (Trung Bình)</option>
+            <option value="Nè">Nè (Yếu)</option>
           </select>
           <button
             onClick={onAddOrUpdateMember}
@@ -68,7 +78,7 @@ export default function MembersPanel({
       </div>
 
       <div className="md:hidden space-y-2.5">
-        {members.map((member) => (
+        {sortedMembers.map((member) => (
           <div
             key={member.id}
             className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm"
@@ -77,7 +87,7 @@ export default function MembersPanel({
               <div>
                 <p className="font-semibold text-slate-900">{member.name}</p>
                 <span className="mt-1 inline-flex px-2 py-1 bg-slate-100 text-slate-700 text-xs rounded-lg font-medium">
-                  {member.level}
+                  {getRankingLevelDisplay(member.level)}
                 </span>
               </div>
               <div className="flex items-center gap-1">
@@ -115,7 +125,7 @@ export default function MembersPanel({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {members.map((member) => (
+            {sortedMembers.map((member) => (
               <tr
                 key={member.id}
                 className="hover:bg-slate-50 transition-colors"
@@ -123,7 +133,7 @@ export default function MembersPanel({
                 <td className="px-4 py-3 font-medium">{member.name}</td>
                 <td className="px-4 py-3">
                   <span className="px-2 py-1 bg-slate-100 text-slate-700 text-xs rounded-lg font-medium">
-                    {member.level}
+                    {getRankingLevelDisplay(member.level)}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-right">

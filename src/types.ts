@@ -47,10 +47,12 @@ export type SessionRecord = {
 
 export type SessionPayload = Omit<SessionRecord, "id">;
 
+export type RankingLevel = "Yo" | "Lo" | "Nè";
+
 export type RankingMember = {
   id: number;
   name: string;
-  level: string;
+  level: RankingLevel;
 };
 
 export type RankingMatch = {

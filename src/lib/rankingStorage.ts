@@ -1,18 +1,24 @@
 import type { Match, Member } from "../components/ranking/types";
+import { normalizeRankingLevel } from "./rankingLevel";
 
 const STORAGE_MEMBERS_KEY = "rankingMembers";
 const STORAGE_MATCHES_KEY = "rankingMatches";
 
 const DEFAULT_MEMBERS: Member[] = [
-  { id: 1, name: "Nguyễn Văn A", level: "Khá" },
-  { id: 2, name: "Trần Thị B", level: "Trung bình" },
-  { id: 3, name: "Lê Văn C", level: "Giỏi" },
+  { id: 1, name: "Nguyễn Văn A", level: "Yo" },
+  { id: 2, name: "Trần Thị B", level: "Lo" },
+  { id: 3, name: "Lê Văn C", level: "Yo" },
 ];
 
 export function loadMembersFromStorage(): Member[] {
   try {
     const stored = localStorage.getItem(STORAGE_MEMBERS_KEY);
-    return stored ? JSON.parse(stored) : DEFAULT_MEMBERS;
+    const parsed: Member[] = stored ? JSON.parse(stored) : DEFAULT_MEMBERS;
+
+    return parsed.map((member) => ({
+      ...member,
+      level: normalizeRankingLevel(member.level),
+    }));
   } catch {
     return DEFAULT_MEMBERS;
   }
@@ -69,6 +75,6 @@ export function buildMembersFromMatches(matches: Match[]): Member[] {
     .map((name, index) => ({
       id: Date.now() + index,
       name,
-      level: "Trung bình",
+      level: "Lo",
     }));
 }

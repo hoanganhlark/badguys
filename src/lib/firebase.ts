@@ -13,6 +13,7 @@ import {
   setDoc,
 } from "firebase/firestore";
 import { envConfig } from "../env";
+import { normalizeRankingLevel } from "./rankingLevel";
 import type {
   RankingMatch,
   RankingMember,
@@ -187,7 +188,7 @@ export async function getRankingMembers(): Promise<RankingMember[]> {
     .map((item) => {
       const id = Number(item?.id);
       const name = String(item?.name || "").trim();
-      const level = String(item?.level || "Trung bình");
+      const level = normalizeRankingLevel(String(item?.level || "Lo"));
 
       if (!Number.isFinite(id) || !name) return null;
       return { id, name, level };

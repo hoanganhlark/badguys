@@ -1,16 +1,30 @@
-import { Award, Clock, FileText, Star, User, Users } from "react-feather";
+import { Award, Clock, FileText, Star, Trash2, User, Users } from "react-feather";
 import type { AdvancedStats, Match } from "./types";
 
 interface RankingPanelProps {
   rankings: AdvancedStats[];
   matches: Match[];
   onSelectPlayer: (player: AdvancedStats) => void;
+  onClearHistory: () => void;
+  onDeleteMatch: (matchId: number) => void;
+}
+
+function formatMatchDateTime(dateText: string): string {
+  if (!dateText) return "--/--/---- --:--";
+
+  // New format already contains hour and minute (e.g. 19/04/2026 21:45)
+  if (/\d{1,2}:\d{2}/.test(dateText)) return dateText;
+
+  // Legacy records only had date, so keep date and mark unknown time.
+  return `${dateText} --:--`;
 }
 
 export default function RankingPanel({
   rankings,
   matches,
   onSelectPlayer,
+  onClearHistory,
+  onDeleteMatch,
 }: RankingPanelProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
@@ -123,9 +137,19 @@ export default function RankingPanel({
       </div>
 
       <div className="space-y-3">
-        <h3 className="font-bold text-slate-900 flex items-center gap-2">
-          <Clock className="h-5 w-5 text-slate-700" /> Lịch sử gần đây
-        </h3>
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="font-bold text-slate-900 flex items-center gap-2">
+            <Clock className="h-5 w-5 text-slate-700" /> Lịch sử gần đây
+          </h3>
+          <button
+            type="button"
+            onClick={onClearHistory}
+            disabled={matches.length === 0}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 text-xs font-semibold hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Trash2 className="h-3.5 w-3.5" /> Xóa lịch sử
+          </button>
+        </div>
         <div className="space-y-2">
           {matches.length === 0 && (
             <div className="bg-white p-4 rounded-xl border border-slate-200 text-center">
@@ -139,13 +163,24 @@ export default function RankingPanel({
               key={match.id}
               className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm text-xs"
             >
-              <div className="text-slate-500 mb-1 inline-flex items-center gap-1.5">
-                {match.type === "singles" ? (
-                  <User className="h-3.5 w-3.5" />
-                ) : (
-                  <Users className="h-3.5 w-3.5" />
-                )}
-                {match.type === "singles" ? "Đơn" : "Đôi"} • {match.date}
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <div className="text-slate-500 inline-flex items-center gap-1.5">
+                  {match.type === "singles" ? (
+                    <User className="h-3.5 w-3.5" />
+                  ) : (
+                    <Users className="h-3.5 w-3.5" />
+                  )}
+                  {match.type === "singles" ? "Đơn" : "Đôi"} • {formatMatchDateTime(match.date)}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onDeleteMatch(match.id)}
+                  className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-red-600 hover:bg-red-50"
+                  aria-label="Xóa trận này"
+                  title="Xóa trận này"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
               </div>
               <div className="space-y-1">
                 <div className="font-medium text-slate-900">

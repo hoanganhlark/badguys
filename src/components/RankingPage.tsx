@@ -27,6 +27,7 @@ import type {
   Member,
   RankingView,
 } from "./ranking/types";
+import type { RankingLevel } from "../types";
 import { Award, BarChart2, Settings } from "react-feather";
 
 interface RankingPageProps {
@@ -57,7 +58,10 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
 
   // Member Form State
   const [isEditing, setIsEditing] = useState<number | null>(null);
-  const [newMember, setNewMember] = useState({ name: "", level: "Trung bình" });
+  const [newMember, setNewMember] = useState<{
+    name: string;
+    level: RankingLevel;
+  }>({ name: "", level: "Lo" });
 
   // Match Form State
   const [matchType, setMatchType] = useState<"singles" | "doubles">("doubles");
@@ -165,7 +169,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     } else {
       setMembers([...members, { ...newMember, id: Date.now() }]);
     }
-    setNewMember({ name: "", level: "Trung bình" });
+    setNewMember({ name: "", level: "Lo" });
   };
 
   const deleteMember = (id: number) => {
@@ -175,6 +179,24 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   const startEdit = (member: Member) => {
     setIsEditing(member.id);
     setNewMember({ name: member.name, level: member.level });
+  };
+
+  const handleClearHistory = () => {
+    if (matches.length === 0) return;
+
+    const confirmed = window.confirm(
+      "Bạn có chắc muốn xóa toàn bộ lịch sử trận đấu?",
+    );
+    if (!confirmed) return;
+
+    setMatches([]);
+  };
+
+  const handleDeleteMatch = (matchId: number) => {
+    const confirmed = window.confirm("Bạn có chắc muốn xóa trận này?");
+    if (!confirmed) return;
+
+    setMatches((prev) => prev.filter((match) => match.id !== matchId));
   };
 
   // Logic: Trận đấu
@@ -214,7 +236,14 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
       team1: selectedTeam1,
       team2: selectedTeam2,
       sets: parsedSets,
-      date: new Date().toLocaleDateString("vi-VN"),
+      date: new Date().toLocaleString("vi-VN", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }),
     };
 
     setMatches([newMatch, ...matches]);
@@ -321,6 +350,8 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                 rankings={rankings}
                 matches={matches}
                 onSelectPlayer={setSelectedPlayer}
+                onClearHistory={handleClearHistory}
+                onDeleteMatch={handleDeleteMatch}
               />
             )}
           </div>
