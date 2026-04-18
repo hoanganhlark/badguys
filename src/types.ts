@@ -56,12 +56,39 @@ export type RankingMember = {
 };
 
 export type RankingMatch = {
-  id: number;
+  id: number | string;
   type: "singles" | "doubles";
   team1: string[];
   team2: string[];
   sets: string[];
   date: string;
+  createdBy?: string;
+};
+
+export type UserRole = "admin" | "member";
+
+export type AuthUser = {
+  userId: string;
+  username: string;
+  role: UserRole;
+};
+
+export type UserRecord = {
+  id: string;
+  username: string;
+  usernameKey: string;
+  password: string;
+  role: UserRole;
+  createdAt?: string;
+};
+
+export type MatchRecord = {
+  id: string;
+  playerA: string;
+  playerB: string;
+  score: string;
+  createdBy: string;
+  createdAt?: string;
 };
 
 export type EnvConfig = {

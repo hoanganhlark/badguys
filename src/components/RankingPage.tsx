@@ -1,12 +1,14 @@
 import { useMemo, useState, useEffect } from "react";
 import {
-  getRankingMatches,
+  createMatch,
+  deleteMatch,
+  getMatches,
   getRankingMembers,
   isFirebaseReady,
-  saveRankingMatches,
   saveRankingMembers,
 } from "../lib/firebase";
 import { matchPath, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { calculateAdvancedStats } from "../lib/rankingStats";
 import {
   buildMembersFromMatches,
@@ -27,7 +29,7 @@ import type {
   Member,
   RankingView,
 } from "./ranking/types";
-import type { RankingLevel } from "../types";
+import type { MatchRecord, RankingLevel } from "../types";
 import { Award, BarChart2, Settings } from "react-feather";
 
 interface RankingPageProps {
@@ -40,6 +42,7 @@ function isRankingView(value: string | null): value is RankingView {
 }
 
 export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
+  const { currentUser, isAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const matchedRoute = matchPath("/dashboard/:tab", location.pathname);
@@ -95,12 +98,16 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
       }
 
       try {
-        const [remoteMembers, remoteMatches] = await Promise.all([
+        const [remoteMembers, remoteMatchRecords] = await Promise.all([
           getRankingMembers(),
-          getRankingMatches(),
+          getMatches(),
         ]);
 
         if (!mounted) return;
+
+        const remoteMatches = remoteMatchRecords.map(
+          mapMatchRecordToRankingMatch,
+        );
 
         const hasRemoteMembers = remoteMembers.length > 0;
         const fallbackMembers = hasRemoteMembers
@@ -148,16 +155,11 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   // Persist matches
   useEffect(() => {
     saveMatchesToStorage(matches);
-
-    if (!isRemoteHydrated || !isFirebaseReady()) return;
-
-    void saveRankingMatches(matches).catch((error) => {
-      console.error("Failed to save ranking matches to Firestore", error);
-    });
   }, [matches, isRemoteHydrated]);
 
   // Logic: Thành viên
   const handleAddMember = () => {
+    if (!isAdmin) return;
     if (!newMember.name.trim()) return;
     if (isEditing) {
       setMembers(
@@ -173,15 +175,18 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   };
 
   const deleteMember = (id: number) => {
+    if (!isAdmin) return;
     setMembers(members.filter((m) => m.id !== id));
   };
 
   const startEdit = (member: Member) => {
+    if (!isAdmin) return;
     setIsEditing(member.id);
     setNewMember({ name: member.name, level: member.level });
   };
 
-  const handleClearHistory = () => {
+  const handleClearHistory = async () => {
+    if (!isAdmin) return;
     if (matches.length === 0) return;
 
     const confirmed = window.confirm(
@@ -189,18 +194,42 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     );
     if (!confirmed) return;
 
-    setMatches([]);
+    try {
+      await Promise.all(matches.map((match) => deleteMatch(String(match.id))));
+      setMatches([]);
+    } catch (error) {
+      console.error("Failed to clear matches", error);
+    }
   };
 
-  const handleDeleteMatch = (matchId: number) => {
+  const handleDeleteMatch = async (matchId: number | string) => {
+    const target = matches.find(
+      (match) => String(match.id) === String(matchId),
+    );
+    if (!target || !currentUser) return;
+
+    if (!isAdmin && target.createdBy !== currentUser.userId) {
+      window.alert("Bạn chỉ có thể xóa trận do chính bạn tạo.");
+      return;
+    }
+
     const confirmed = window.confirm("Bạn có chắc muốn xóa trận này?");
     if (!confirmed) return;
 
-    setMatches((prev) => prev.filter((match) => match.id !== matchId));
+    try {
+      await deleteMatch(String(matchId));
+      setMatches((prev) =>
+        prev.filter((match) => String(match.id) !== String(matchId)),
+      );
+    } catch (error) {
+      console.error("Failed to delete match", error);
+    }
   };
 
   // Logic: Trận đấu
-  const handleSaveMatch = () => {
+  const handleSaveMatch = async () => {
+    if (!currentUser) return;
+
     const { team1, team2, sets } = matchData;
 
     const slotCount = matchType === "singles" ? 1 : 2;
@@ -230,29 +259,26 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
 
     if (parsedSets.length === 0) return;
 
-    const newMatch: Match = {
-      id: Date.now(),
-      type: matchType,
-      team1: selectedTeam1,
-      team2: selectedTeam2,
-      sets: parsedSets,
-      date: new Date().toLocaleString("vi-VN", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      }),
-    };
+    try {
+      const created = await createMatch({
+        playerA: selectedTeam1.join(" / "),
+        playerB: selectedTeam2.join(" / "),
+        score: parsedSets.join(","),
+        createdBy: currentUser.userId,
+      });
 
-    setMatches([newMatch, ...matches]);
-    setMatchData({
-      team1: [],
-      team2: [],
-      sets: [{ team1Score: "", team2Score: "" }],
-    });
-    setViewWithRoute("ranking", "push");
+      const newMatch = mapMatchRecordToRankingMatch(created);
+      setMatches((prev) => [newMatch, ...prev]);
+      setMatchData({
+        team1: [],
+        team2: [],
+        sets: [{ team1Score: "", team2Score: "" }],
+      });
+      setViewWithRoute("ranking", "push");
+    } catch (error) {
+      console.error("Failed to save match", error);
+      window.alert("Không thể lưu trận đấu. Vui lòng thử lại.");
+    }
   };
 
   // Advanced Rankings with Stats
@@ -271,6 +297,8 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
           currentView={view}
           onSetView={setViewWithRoute}
           onGoHome={onClose}
+          isAdmin={isAdmin}
+          onGoUsers={() => navigate("/users")}
         />
 
         {/* Main Content */}
@@ -280,8 +308,8 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
               <h1 className="text-xl md:text-3xl font-bold text-slate-900 flex items-center gap-3">
                 {view === "member" && (
                   <>
-                    <Settings className="h-6 w-6 md:h-8 md:w-8 text-sky-600" /> Quản
-                    lý thành viên
+                    <Settings className="h-6 w-6 md:h-8 md:w-8 text-sky-600" />{" "}
+                    Quản lý thành viên
                   </>
                 )}
                 {view === "match-form" && (
@@ -292,8 +320,8 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                 )}
                 {view === "ranking" && (
                   <>
-                    <Award className="h-6 w-6 md:h-8 md:w-8 text-sky-600" /> Bảng
-                    xếp hạng câu lạc bộ
+                    <Award className="h-6 w-6 md:h-8 md:w-8 text-sky-600" />{" "}
+                    Bảng xếp hạng câu lạc bộ
                   </>
                 )}
               </h1>
@@ -305,11 +333,15 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
             <section className="grid grid-cols-3 gap-2 mb-4 md:mb-6 md:max-w-2xl">
               <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
                 <p className="text-[11px] text-slate-500">Thành viên</p>
-                <p className="text-lg font-bold text-slate-900">{members.length}</p>
+                <p className="text-lg font-bold text-slate-900">
+                  {members.length}
+                </p>
               </div>
               <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
                 <p className="text-[11px] text-slate-500">Trận đấu</p>
-                <p className="text-lg font-bold text-slate-900">{matches.length}</p>
+                <p className="text-lg font-bold text-slate-900">
+                  {matches.length}
+                </p>
               </div>
               <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
                 <p className="text-[11px] text-slate-500">Top rank</p>
@@ -329,6 +361,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                 onAddOrUpdateMember={handleAddMember}
                 onStartEdit={startEdit}
                 onDeleteMember={deleteMember}
+                canManage={isAdmin}
               />
             )}
 
@@ -352,6 +385,8 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                 onSelectPlayer={setSelectedPlayer}
                 onClearHistory={handleClearHistory}
                 onDeleteMatch={handleDeleteMatch}
+                isAdmin={isAdmin}
+                currentUserId={currentUser?.userId || ""}
               />
             )}
           </div>
@@ -367,4 +402,46 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
       )}
     </div>
   );
+}
+
+function mapMatchRecordToRankingMatch(record: MatchRecord): Match {
+  const team1 = String(record.playerA || "")
+    .split("/")
+    .map((name) => name.trim())
+    .filter(Boolean);
+  const team2 = String(record.playerB || "")
+    .split("/")
+    .map((name) => name.trim())
+    .filter(Boolean);
+  const sets = String(record.score || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const hasDoubleTeams = team1.length > 1 || team2.length > 1;
+
+  return {
+    id: record.id,
+    type: hasDoubleTeams ? "doubles" : "singles",
+    team1,
+    team2,
+    sets,
+    date: formatDateTime(record.createdAt),
+    createdBy: record.createdBy,
+  };
+}
+
+function formatDateTime(value?: string): string {
+  if (!value) return "--/--/---- --:--";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return date.toLocaleString("vi-VN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 }

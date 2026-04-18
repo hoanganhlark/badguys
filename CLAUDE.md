@@ -17,12 +17,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `src/App.tsx` — Root component; owns all state, wires together calculation and UI
 - `src/lib/core.ts` — Core business logic: `parsePlayersBulk()`, `calculateResult()`, `buildSummaryText()`, `buildSessionPayload()`
-- `src/types.ts` — Shared types: `Player`, `AppConfig`, `CalcResult`, `SessionRecord`, `RankingMember`, `RankingMatch`
+- `src/types.ts` — Shared types: `Player`, `AppConfig`, `CalcResult`, `SessionRecord`, `RankingMember`, `RankingMatch`, `RankingLevel`
 - `src/env.ts` — Parses `VITE_*` env vars with fallback defaults
 - `src/lib/firebase.ts` — Firestore init, session CRUD, and ranking data CRUD (members and matches)
 - `src/lib/telegram.ts` — Async Telegram notification (silent failure on error)
 - `src/lib/platform.ts` — localStorage, clipboard, URL params, device detection
 - `src/lib/rankingStats.ts` — Player performance calculations: `calculateAdvancedStats()` for skill, stability, uncertainty, momentum, win rate
+- `src/lib/rankingLevel.ts` — Ranking level utilities: `normalizeRankingLevel()` for legacy Vietnamese name mapping, `getRankingLevelDisplay()`, `sortMembersByLevelAndName()`
 - `src/lib/rankingStorage.ts` — localStorage operations for ranking members and matches (load/save/migrate)
 - `src/components/RankingPage.tsx` — Ranking root component; manages view state (dashboard/match-form/ranking)
 - `src/components/ranking/` — Ranking subsystem components:

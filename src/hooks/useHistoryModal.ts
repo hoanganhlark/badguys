@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-export function useHistoryModal() {
+export function useHistoryModal(isAuthenticated: boolean) {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -40,6 +40,10 @@ export function useHistoryModal() {
   }
 
   function openRanking() {
+    if (!isAuthenticated) {
+      navigate("/login", { state: { from: "/dashboard/ranking" } });
+      return;
+    }
     navigate("/dashboard/ranking");
   }
 

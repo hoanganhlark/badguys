@@ -6,10 +6,11 @@ type Props = {
   backdropInteractive: boolean;
   config: AppConfig;
   isAdmin: boolean;
+  currentUsername: string;
   onClose: () => void;
   onOpenSessions: () => void;
   onConfigChange: (next: AppConfig) => void;
-  onToggleAdmin: () => void;
+  onLogout: () => void;
   appVersion: string;
 };
 
@@ -23,10 +24,11 @@ export default function ConfigSidebar({
   backdropInteractive,
   config,
   isAdmin,
+  currentUsername,
   onClose,
   onOpenSessions,
   onConfigChange,
-  onToggleAdmin,
+  onLogout,
   appVersion,
 }: Props) {
   return (
@@ -200,13 +202,21 @@ export default function ConfigSidebar({
             Lịch sử buổi gần đây
           </button>
 
-          <p
-            onClick={onToggleAdmin}
-            className="mt-auto pt-8 text-[11px] text-slate-300 tracking-wide"
-          >
-            {appVersion}
-            {isAdmin ? " admin" : ""}
-          </p>
+          <div className="mt-auto pt-8 space-y-2">
+            {currentUsername ? (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Đăng xuất ({currentUsername})
+              </button>
+            ) : null}
+            <p className="text-[11px] text-slate-300 tracking-wide">
+              {appVersion}
+              {isAdmin ? " admin" : ""}
+            </p>
+          </div>
         </div>
       </aside>
     </>

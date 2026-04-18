@@ -11,6 +11,7 @@ interface MembersPanelProps {
   isEditing: number | null;
   newMember: { name: string; level: RankingLevel };
   members: Member[];
+  canManage: boolean;
   onSetNewMember: (next: { name: string; level: RankingLevel }) => void;
   onAddOrUpdateMember: () => void;
   onStartEdit: (member: Member) => void;
@@ -21,6 +22,7 @@ export default function MembersPanel({
   isEditing,
   newMember,
   members,
+  canManage,
   onSetNewMember,
   onAddOrUpdateMember,
   onStartEdit,
@@ -48,6 +50,7 @@ export default function MembersPanel({
             onChange={(e) =>
               onSetNewMember({ ...newMember, name: e.target.value })
             }
+            disabled={!canManage}
           />
           <select
             className="px-3 py-2.5 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-sky-500"
@@ -58,6 +61,7 @@ export default function MembersPanel({
                 level: normalizeRankingLevel(e.target.value),
               })
             }
+            disabled={!canManage}
           >
             <option value="Yo">Yo (Khá)</option>
             <option value="Lo">Lo (Trung Bình)</option>
@@ -65,6 +69,7 @@ export default function MembersPanel({
           </select>
           <button
             onClick={onAddOrUpdateMember}
+            disabled={!canManage}
             className="bg-slate-900 text-white px-4 py-2.5 rounded-xl font-medium hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
           >
             {isEditing ? (
@@ -93,12 +98,14 @@ export default function MembersPanel({
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => onStartEdit(member)}
+                  disabled={!canManage}
                   className="h-8 w-8 rounded-lg border border-slate-200 text-slate-500 hover:text-sky-700 hover:border-sky-200 transition-colors inline-flex items-center justify-center"
                 >
                   <Edit2 className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => onDeleteMember(member.id)}
+                  disabled={!canManage}
                   className="h-8 w-8 rounded-lg border border-slate-200 text-slate-500 hover:text-red-600 hover:border-red-200 transition-colors inline-flex items-center justify-center"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -140,12 +147,14 @@ export default function MembersPanel({
                   <div className="flex justify-end gap-2">
                     <button
                       onClick={() => onStartEdit(member)}
+                      disabled={!canManage}
                       className="p-1 text-slate-400 hover:text-sky-700 transition-colors"
                     >
                       <Edit2 className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => onDeleteMember(member.id)}
+                      disabled={!canManage}
                       className="p-1 text-slate-400 hover:text-red-600 transition-colors"
                     >
                       <Trash2 className="h-4 w-4" />

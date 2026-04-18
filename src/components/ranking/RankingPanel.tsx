@@ -1,12 +1,22 @@
-import { Award, Clock, FileText, Star, Trash2, User, Users } from "react-feather";
+import {
+  Award,
+  Clock,
+  FileText,
+  Star,
+  Trash2,
+  User,
+  Users,
+} from "react-feather";
 import type { AdvancedStats, Match } from "./types";
 
 interface RankingPanelProps {
   rankings: AdvancedStats[];
   matches: Match[];
   onSelectPlayer: (player: AdvancedStats) => void;
-  onClearHistory: () => void;
-  onDeleteMatch: (matchId: number) => void;
+  onClearHistory: () => void | Promise<void>;
+  onDeleteMatch: (matchId: number | string) => void | Promise<void>;
+  isAdmin: boolean;
+  currentUserId: string;
 }
 
 function formatMatchDateTime(dateText: string): string {
@@ -25,6 +35,8 @@ export default function RankingPanel({
   onSelectPlayer,
   onClearHistory,
   onDeleteMatch,
+  isAdmin,
+  currentUserId,
 }: RankingPanelProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
@@ -63,11 +75,15 @@ export default function RankingPanel({
               <div className="mt-2.5 grid grid-cols-2 gap-2 text-xs">
                 <div className="rounded-lg bg-slate-50 px-2.5 py-2">
                   <p className="text-slate-500">Số trận</p>
-                  <p className="text-sm font-semibold text-slate-900">{player.matches}</p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {player.matches}
+                  </p>
                 </div>
                 <div className="rounded-lg bg-slate-50 px-2.5 py-2">
                   <p className="text-slate-500">Trận thắng</p>
-                  <p className="text-sm font-semibold text-slate-900">{player.wins}</p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {player.wins}
+                  </p>
                 </div>
               </div>
             </button>
@@ -144,7 +160,7 @@ export default function RankingPanel({
           <button
             type="button"
             onClick={onClearHistory}
-            disabled={matches.length === 0}
+            disabled={matches.length === 0 || !isAdmin}
             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 text-xs font-semibold hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Trash2 className="h-3.5 w-3.5" /> Xóa lịch sử
@@ -170,11 +186,13 @@ export default function RankingPanel({
                   ) : (
                     <Users className="h-3.5 w-3.5" />
                   )}
-                  {match.type === "singles" ? "Đơn" : "Đôi"} • {formatMatchDateTime(match.date)}
+                  {match.type === "singles" ? "Đơn" : "Đôi"} •{" "}
+                  {formatMatchDateTime(match.date)}
                 </div>
                 <button
                   type="button"
                   onClick={() => onDeleteMatch(match.id)}
+                  disabled={!isAdmin && match.createdBy !== currentUserId}
                   className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-red-600 hover:bg-red-50"
                   aria-label="Xóa trận này"
                   title="Xóa trận này"

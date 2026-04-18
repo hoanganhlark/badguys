@@ -1,11 +1,13 @@
 import type { ComponentType } from "react";
-import { Award, Grid, Home, PlusCircle } from "react-feather";
+import { Award, Grid, Home, PlusCircle, Shield } from "react-feather";
 import type { RankingView } from "./types";
 
 interface RankingSidebarProps {
   currentView: RankingView;
   onSetView: (view: RankingView) => void;
   onGoHome: () => void;
+  isAdmin: boolean;
+  onGoUsers: () => void;
 }
 
 function SidebarItem({
@@ -40,6 +42,8 @@ export default function RankingSidebar({
   currentView,
   onSetView,
   onGoHome,
+  isAdmin,
+  onGoUsers,
 }: RankingSidebarProps) {
   const navItems: Array<{
     icon: ComponentType<{ className?: string }>;
@@ -60,17 +64,32 @@ export default function RankingSidebar({
               <Award className="h-4 w-4" />
             </span>
             <div>
-              <p className="text-sm font-bold text-slate-900 leading-none">BadGuys</p>
-              <p className="text-[11px] text-slate-500 mt-1">Mobile Dashboard</p>
+              <p className="text-sm font-bold text-slate-900 leading-none">
+                BadGuys
+              </p>
+              <p className="text-[11px] text-slate-500 mt-1">
+                Mobile Dashboard
+              </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onGoHome}
-            className="h-9 px-3 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-semibold inline-flex items-center gap-1.5"
-          >
-            <Home className="h-3.5 w-3.5" /> Trang chủ
-          </button>
+          <div className="flex items-center gap-1.5">
+            {isAdmin ? (
+              <button
+                type="button"
+                onClick={onGoUsers}
+                className="h-9 px-3 rounded-xl border border-sky-200 bg-sky-50 text-sky-700 text-xs font-semibold inline-flex items-center gap-1.5"
+              >
+                <Shield className="h-3.5 w-3.5" /> Users
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={onGoHome}
+              className="h-9 px-3 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-semibold inline-flex items-center gap-1.5"
+            >
+              <Home className="h-3.5 w-3.5" /> Trang chủ
+            </button>
+          </div>
         </div>
       </header>
 
@@ -129,6 +148,16 @@ export default function RankingSidebar({
             onSetView={onSetView}
           />
         </nav>
+
+        {isAdmin ? (
+          <button
+            type="button"
+            onClick={onGoUsers}
+            className="mb-4 flex items-center gap-2 rounded-xl border border-sky-300/40 bg-sky-500/10 px-3 py-2 text-sm font-semibold text-sky-100 hover:bg-sky-500/20"
+          >
+            <Shield className="h-4 w-4" /> User Management
+          </button>
+        ) : null}
 
         <div className="border-t border-white/20 pt-4 text-xs text-slate-300">
           <p>© BadGuys Ranking 2026</p>
