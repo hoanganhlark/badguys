@@ -2,10 +2,10 @@ import { useMemo, useState, useEffect } from "react";
 import {
   createMatch,
   deleteMatch,
-  getMatches,
   getRankingMembers,
   isFirebaseReady,
   saveRankingMembers,
+  subscribeMatches,
 } from "../lib/firebase";
 import { matchPath, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -74,6 +74,24 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     sets: [{ team1Score: "", team2Score: "" }] as MatchSetInput[],
   });
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+
+      if (selectedPlayer) {
+        setSelectedPlayer(null);
+        return;
+      }
+
+      onClose();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose, selectedPlayer]);
+
   const setViewWithRoute = (
     nextView: RankingView,
     mode: "push" | "replace" = "push",
@@ -90,6 +108,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
 
   useEffect(() => {
     let mounted = true;
+    let unsubscribeMatches: (() => void) | null = null;
 
     const hydrateRankingData = async () => {
       if (!isFirebaseReady()) {
@@ -98,38 +117,52 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
       }
 
       try {
-        const [remoteMembers, remoteMatchRecords] = await Promise.all([
-          getRankingMembers(),
-          getMatches(),
-        ]);
+        const remoteMembers = await getRankingMembers();
 
         if (!mounted) return;
 
-        const remoteMatches = remoteMatchRecords.map(
-          mapMatchRecordToRankingMatch,
-        );
-
         const hasRemoteMembers = remoteMembers.length > 0;
-        const fallbackMembers = hasRemoteMembers
-          ? remoteMembers
-          : buildMembersFromMatches(remoteMatches);
+        let shouldDeriveMembersFromMatches = !hasRemoteMembers;
 
-        // Use DB as the source of truth when Firestore is reachable.
-        setMembers(fallbackMembers);
-        setMatches(remoteMatches);
-
-        // Auto-repair missing members document based on DB matches.
-        if (!hasRemoteMembers && fallbackMembers.length > 0) {
-          void saveRankingMembers(fallbackMembers).catch((error) => {
-            console.error(
-              "Failed to backfill ranking members from match history",
-              error,
-            );
-          });
+        if (hasRemoteMembers) {
+          setMembers(remoteMembers);
         }
+
+        unsubscribeMatches = subscribeMatches(
+          (remoteMatchRecords) => {
+            if (!mounted) return;
+
+            const remoteMatches = remoteMatchRecords.map(
+              mapMatchRecordToRankingMatch,
+            );
+
+            setMatches(remoteMatches);
+
+            if (shouldDeriveMembersFromMatches) {
+              const fallbackMembers = buildMembersFromMatches(remoteMatches);
+
+              if (fallbackMembers.length > 0) {
+                setMembers(fallbackMembers);
+                shouldDeriveMembersFromMatches = false;
+
+                void saveRankingMembers(fallbackMembers).catch((error) => {
+                  console.error(
+                    "Failed to backfill ranking members from match history",
+                    error,
+                  );
+                });
+              }
+            }
+
+            setIsRemoteHydrated(true);
+          },
+          (error) => {
+            console.error("Failed to subscribe ranking matches", error);
+            setIsRemoteHydrated(true);
+          },
+        );
       } catch (error) {
         console.error("Failed to load ranking data from Firestore", error);
-      } finally {
         if (mounted) setIsRemoteHydrated(true);
       }
     };
@@ -138,6 +171,9 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
 
     return () => {
       mounted = false;
+      if (unsubscribeMatches) {
+        unsubscribeMatches();
+      }
     };
   }, []);
 

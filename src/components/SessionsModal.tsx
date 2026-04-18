@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { formatK, formatSessionDateLabel, normalizeKLabels } from "../lib/core";
 import { Copy, X } from "react-feather";
 import type { SessionRecord } from "../types";
@@ -23,6 +24,19 @@ export default function SessionsModal({
   onRemove,
   onCopyNote,
 }: Props) {
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, onClose]);
+
   if (!open) return null;
 
   return (

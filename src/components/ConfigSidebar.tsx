@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import type { AppConfig } from "../types";
 import { X } from "react-feather";
 
@@ -31,6 +32,19 @@ export default function ConfigSidebar({
   onLogout,
   appVersion,
 }: Props) {
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, onClose]);
+
   return (
     <>
       <div
