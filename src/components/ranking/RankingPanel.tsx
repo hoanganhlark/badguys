@@ -1,0 +1,120 @@
+import { Award, Clock, FileText, Star, User, Users } from "react-feather";
+import type { AdvancedStats, Match } from "./types";
+
+interface RankingPanelProps {
+  rankings: AdvancedStats[];
+  matches: Match[];
+  onSelectPlayer: (player: AdvancedStats) => void;
+}
+
+export default function RankingPanel({
+  rankings,
+  matches,
+  onSelectPlayer,
+}: RankingPanelProps) {
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-2">
+        <div className="bg-white rounded border border-gray-200 shadow overflow-hidden">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase">
+                  Hạng
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase">
+                  Vận động viên
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase text-center">
+                  Trận
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase text-center">
+                  Thắng
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase text-right">
+                  RankScore
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {rankings.map((player, index) => (
+                <tr
+                  key={player.name}
+                  onClick={() => onSelectPlayer(player)}
+                  className="hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  <td className="px-4 py-3 font-semibold">
+                    {index < 3 ? (
+                      <span className="inline-flex">
+                        {index === 0 ? (
+                          <Award className="h-5 w-5 text-amber-500" />
+                        ) : index === 1 ? (
+                          <Award className="h-5 w-5 text-slate-400" />
+                        ) : (
+                          <Star className="h-5 w-5 text-orange-400" />
+                        )}
+                      </span>
+                    ) : (
+                      <span className="text-gray-500">#{index + 1}</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 font-semibold text-gray-900">
+                    {player.name}
+                  </td>
+                  <td className="px-4 py-3 text-center text-gray-600">
+                    {player.matches}
+                  </td>
+                  <td className="px-4 py-3 text-center text-gray-600">
+                    {player.wins}
+                  </td>
+                  <td className="px-4 py-3 text-right font-bold text-blue-600">
+                    {player.rankScore.toFixed(3)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <h3 className="font-bold flex items-center gap-2">
+          <Clock className="h-5 w-5" /> Lịch sử gần đây
+        </h3>
+        <div className="space-y-2">
+          {matches.length === 0 && (
+            <div className="bg-white p-4 rounded border border-gray-200 text-center">
+              <p className="text-gray-400 text-sm inline-flex items-center gap-2">
+                <FileText className="h-4 w-4" /> Chưa có trận đấu
+              </p>
+            </div>
+          )}
+          {matches.slice(0, 10).map((match) => (
+            <div
+              key={match.id}
+              className="bg-white p-3 rounded border border-gray-200 shadow-sm text-xs"
+            >
+              <div className="text-gray-500 mb-1 inline-flex items-center gap-1.5">
+                {match.type === "singles" ? (
+                  <User className="h-3.5 w-3.5" />
+                ) : (
+                  <Users className="h-3.5 w-3.5" />
+                )}
+                {match.type === "singles" ? "Đơn" : "Đôi"} • {match.date}
+              </div>
+              <div className="space-y-1">
+                <div className="font-medium text-gray-900">
+                  {match.team1.join(" & ")}
+                </div>
+                <div className="text-gray-500">{match.sets.join(", ")}</div>
+                <div className="font-medium text-gray-900">
+                  {match.team2.join(" & ")}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

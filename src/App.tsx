@@ -314,15 +314,13 @@ export default function App() {
           <Settings className="h-5 w-5" />
         </button>
 
-        {isAdmin && (
-          <button
-            onClick={openRanking}
-            aria-label="Bảng xếp hạng"
-            className="fixed top-5 right-5 md:top-8 md:right-8 z-30 h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
-          >
-            <Award className="h-5 w-5" />
-          </button>
-        )}
+        <button
+          onClick={openRanking}
+          aria-label="Bảng xếp hạng"
+          className="fixed top-5 right-5 md:top-8 md:right-8 z-30 h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
+        >
+          <Award className="h-5 w-5" />
+        </button>
 
         <header className="mb-12 text-center">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">

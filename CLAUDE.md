@@ -11,17 +11,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
-**BadGuys** is a single-page React + TypeScript app for splitting badminton session costs. Deployed to GitHub Pages, with Firebase Firestore for session history and Telegram Bot API for notifications.
+**BadGuys** is a single-page React + TypeScript app for splitting badminton session costs and tracking player rankings. Deployed to GitHub Pages, with Firebase Firestore for session history, ranking data, and Telegram Bot API for notifications.
 
 ### Key files
 
 - `src/App.tsx` — Root component; owns all state, wires together calculation and UI
 - `src/lib/core.ts` — Core business logic: `parsePlayersBulk()`, `calculateResult()`, `buildSummaryText()`, `buildSessionPayload()`
-- `src/types.ts` — Shared types: `Player`, `AppConfig`, `CalcResult`, `SessionRecord`
+- `src/types.ts` — Shared types: `Player`, `AppConfig`, `CalcResult`, `SessionRecord`, `RankingMember`, `RankingMatch`
 - `src/env.ts` — Parses `VITE_*` env vars with fallback defaults
-- `src/lib/firebase.ts` — Firestore init and session CRUD
+- `src/lib/firebase.ts` — Firestore init, session CRUD, and ranking data CRUD (members and matches)
 - `src/lib/telegram.ts` — Async Telegram notification (silent failure on error)
 - `src/lib/platform.ts` — localStorage, clipboard, URL params, device detection
+- `src/components/RankingPage.tsx` — Ranking subsystem: member management, match recording (singles/doubles), and advanced stats (skill, stability, uncertainty, momentum)
 - `vite.config.ts` — Base path is `/` in dev, `/badguys/` in production build
 
 ### Cost calculation model
@@ -52,7 +53,7 @@ Enabled via URL param `?r=@` or toggled in UI. Unlocks session delete and suppre
 ## Environment variables
 
 Copy `.env.example` to `.env.local` for local development. Required secrets for production (set as GitHub Actions secrets/variables):
-- `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID` — Firestore access
+- `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID` — Firestore access (sessions, ranking members, ranking matches)
 - `VITE_TELEGRAM_BOT_TOKEN`, `VITE_TELEGRAM_GROUP_CHAT_ID` — Notifications
 
 Optional overrides: female max fee, tube price, set price, court fee defaults.
