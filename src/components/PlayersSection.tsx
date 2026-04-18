@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef } from "react";
+import { X } from "react-feather";
 import type { Player } from "../types";
 
 type Props = {
@@ -61,8 +62,12 @@ export default function PlayersSection({
         </span>
       </div>
 
-      <label htmlFor="bulkInput" className="block text-xs text-slate-500 mb-2 px-1">
-        Nhập tên mỗi người một dòng. Thêm: n (nữ), 2s (set), 30k (riêng), +10k (phụ thu)
+      <label
+        htmlFor="bulkInput"
+        className="block text-xs text-slate-500 mb-2 px-1"
+      >
+        Nhập tên mỗi người một dòng. Thêm: n (nữ), 2s (set), 30k (riêng), +10k
+        (phụ thu)
       </label>
       <textarea
         ref={textareaRef}
@@ -114,8 +119,9 @@ export default function PlayersSection({
                   onRemovePlayer(index);
                 }}
                 className="ml-2 opacity-40 hover:opacity-100"
+                aria-label={`Xóa ${player.name}`}
               >
-                &times;
+                <X className="h-3.5 w-3.5" />
               </button>
             </div>
           );

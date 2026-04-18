@@ -1,4 +1,5 @@
 import type { AppConfig } from "../types";
+import { X } from "react-feather";
 
 type Props = {
   open: boolean;
@@ -44,9 +45,10 @@ export default function ConfigSidebar({
             </h3>
             <button
               onClick={onClose}
-              className="text-slate-400 hover:text-slate-700 text-xl leading-none"
+              className="text-slate-400 hover:text-slate-700"
+              aria-label="Đóng cấu hình"
             >
-              &times;
+              <X className="h-5 w-5" />
             </button>
           </div>
 
