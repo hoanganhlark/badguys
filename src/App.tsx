@@ -526,7 +526,7 @@ export default function App() {
                   }}
                   className="w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
                 >
-                  Xem ranking
+                  Xem xếp hạng
                 </button>
                 <button
                   type="button"
@@ -605,11 +605,11 @@ export default function App() {
             {isAdmin ? "@BadGuys" : "BadGuys"}
             <span className="text-slate-400">.</span>
           </h1>
-          <p className="mt-2 text-xs text-slate-500">
-            {currentUser
-              ? `Đăng nhập: ${currentUser.username} (${currentUser.role})`
-              : "Chưa đăng nhập"}
-          </p>
+          {currentUser ? (
+            <p className="mt-2 text-xs text-slate-500">
+              {`Đăng nhập: ${currentUser.username} (${currentUser.role})`}
+            </p>
+          ) : null}
         </header>
 
         <ExpensesSection
