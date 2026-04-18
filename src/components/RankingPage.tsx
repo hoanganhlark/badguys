@@ -27,7 +27,7 @@ import type {
   Member,
   RankingView,
 } from "./ranking/types";
-import { Award, BarChart2, Settings } from "react-feather";
+import { Award, BarChart2, Menu, Settings } from "react-feather";
 
 interface RankingPageProps {
   isOpen: boolean;
@@ -54,6 +54,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     null,
   );
   const [isRemoteHydrated, setIsRemoteHydrated] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Member Form State
   const [isEditing, setIsEditing] = useState<number | null>(null);
@@ -72,6 +73,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     mode: "push" | "replace" = "push",
   ) => {
     if (!isOpen) return;
+    setIsMobileSidebarOpen(false);
     navigate(`/dashboard/${nextView}`, { replace: mode === "replace" });
   };
 
@@ -236,24 +238,28 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/40 flex">
-      <div className="flex min-h-screen bg-white text-gray-900 font-sans w-full">
+      <div className="flex flex-col md:flex-row min-h-screen bg-white text-gray-900 font-sans w-full">
         {/* Sidebar */}
         <RankingSidebar
           currentView={view}
           onSetView={setViewWithRoute}
           onGoHome={onClose}
+          mobileOpen={isMobileSidebarOpen}
+          onCloseMobile={() => setIsMobileSidebarOpen(false)}
         />
 
         {/* Main Content */}
         <main className="flex-1 p-4 md:p-8 overflow-auto relative">
+          <button
+            type="button"
+            aria-label="Mở menu dashboard"
+            onClick={() => setIsMobileSidebarOpen(true)}
+            className="md:hidden mb-4 h-10 w-10 rounded border border-gray-200 bg-white text-gray-700 flex items-center justify-center"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+
           <header className="mb-6">
-            <button
-              type="button"
-              onClick={onClose}
-              className="md:hidden mb-3 text-lg font-bold text-gray-900"
-            >
-              BadGuys
-            </button>
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
               {view === "member" && (
                 <>
