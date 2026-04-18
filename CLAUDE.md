@@ -22,7 +22,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `src/lib/firebase.ts` — Firestore init, session CRUD, and ranking data CRUD (members and matches)
 - `src/lib/telegram.ts` — Async Telegram notification (silent failure on error)
 - `src/lib/platform.ts` — localStorage, clipboard, URL params, device detection
-- `src/components/RankingPage.tsx` — Ranking subsystem: member management, match recording (singles/doubles), and advanced stats (skill, stability, uncertainty, momentum)
+- `src/lib/rankingStats.ts` — Player performance calculations: `calculateAdvancedStats()` for skill, stability, uncertainty, momentum, win rate
+- `src/lib/rankingStorage.ts` — localStorage operations for ranking members and matches (load/save/migrate)
+- `src/components/RankingPage.tsx` — Ranking root component; manages view state (dashboard/match-form/ranking)
+- `src/components/ranking/` — Ranking subsystem components:
+  - `RankingPanel.tsx` — Member ranking table with stats display
+  - `MatchFormPanel.tsx` — Match recording form (singles/doubles with multi-set support)
+  - `MembersPanel.tsx` — Member list management
+  - `PlayerStatsModal.tsx` — Detailed player statistics
+  - `RankingSidebar.tsx` — Navigation sidebar
+  - `types.ts` — Local types: `Member`, `Match`, `AdvancedStats`, `RankingView`, `MatchSetInput`
 - `vite.config.ts` — Base path is `/` in dev, `/badguys/` in production build
 
 ### Cost calculation model
@@ -45,6 +54,18 @@ Single textarea; each line is one player. Supported modifiers:
 ### State management
 
 Pure React hooks (`useState`, `useEffect`, `useMemo`). No external state library. `localStorage` persists config, input drafts, and admin flag across reloads.
+
+### Routing
+
+App uses `react-router-dom` for client-side routing with BrowserRouter wrapper. Routes:
+- `/` — Home page
+- `/config` — Sidebar/config modal
+- `/config/sessions` — Session history modal
+- `/dashboard/ranking` — Ranking view (member list, rankings, match form)
+- `/dashboard/member` — Member management view
+- `/dashboard/match-form` — Match recording form
+
+Navigation is managed by `useHistoryModal()` hook which syncs browser history with modal states.
 
 ### Admin mode
 

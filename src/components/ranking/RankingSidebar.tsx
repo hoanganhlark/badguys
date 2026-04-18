@@ -50,7 +50,7 @@ export default function RankingSidebar({
         <SidebarItem
           icon={Grid}
           label="Thành viên"
-          id="dashboard"
+          id="member"
           currentView={currentView}
           onSetView={onSetView}
         />

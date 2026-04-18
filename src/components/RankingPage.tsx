@@ -6,6 +6,7 @@ import {
   saveRankingMatches,
   saveRankingMembers,
 } from "../lib/firebase";
+import { matchPath, useLocation, useNavigate } from "react-router-dom";
 import { calculateAdvancedStats } from "../lib/rankingStats";
 import {
   buildMembersFromMatches,
@@ -26,28 +27,23 @@ import type {
   Member,
   RankingView,
 } from "./ranking/types";
-import { Award, BarChart2, Settings, X } from "react-feather";
+import { Award, BarChart2, Settings } from "react-feather";
 
 interface RankingPageProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const RANKING_TAB_PARAM = "rankingTab";
-
 function isRankingView(value: string | null): value is RankingView {
-  return value === "dashboard" || value === "match-form" || value === "ranking";
-}
-
-function readRankingViewFromUrl(): RankingView {
-  const current = new URL(window.location.href).searchParams.get(
-    RANKING_TAB_PARAM,
-  );
-  return isRankingView(current) ? current : "ranking";
+  return value === "member" || value === "match-form" || value === "ranking";
 }
 
 export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
-  const [view, setView] = useState<RankingView>(() => readRankingViewFromUrl());
+  const navigate = useNavigate();
+  const location = useLocation();
+  const matchedRoute = matchPath("/dashboard/:tab", location.pathname);
+  const tab = matchedRoute?.params.tab ?? null;
+  const view: RankingView = isRankingView(tab) ? tab : "ranking";
   const [members, setMembers] = useState<Member[]>(() =>
     loadMembersFromStorage(),
   );
@@ -71,35 +67,19 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     sets: [{ team1Score: "", team2Score: "" }] as MatchSetInput[],
   });
 
-  const updateViewRoute = (
-    nextView: RankingView,
-    mode: "push" | "replace" = "push",
-  ) => {
-    const url = new URL(window.location.href);
-    url.searchParams.set(RANKING_TAB_PARAM, nextView);
-
-    const nextState = {
-      ...(window.history.state ?? {}),
-      modal: "ranking",
-      rankingTab: nextView,
-    };
-
-    if (mode === "push") {
-      window.history.pushState(nextState, "", url);
-      return;
-    }
-
-    window.history.replaceState(nextState, "", url);
-  };
-
   const setViewWithRoute = (
     nextView: RankingView,
     mode: "push" | "replace" = "push",
   ) => {
-    setView(nextView);
     if (!isOpen) return;
-    updateViewRoute(nextView, mode);
+    navigate(`/dashboard/${nextView}`, { replace: mode === "replace" });
   };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (tab == null || isRankingView(tab)) return;
+    navigate("/dashboard/ranking", { replace: true });
+  }, [isOpen, navigate, tab]);
 
   useEffect(() => {
     let mounted = true;
@@ -149,20 +129,6 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
       mounted = false;
     };
   }, []);
-
-  useEffect(() => {
-    const onPopState = () => {
-      setView(readRankingViewFromUrl());
-    };
-
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, []);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    updateViewRoute(view, "replace");
-  }, [isOpen, view]);
 
   // Persist members
   useEffect(() => {
@@ -272,22 +238,24 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     <div className="fixed inset-0 z-[60] bg-black/40 flex">
       <div className="flex min-h-screen bg-white text-gray-900 font-sans w-full">
         {/* Sidebar */}
-        <RankingSidebar currentView={view} onSetView={setViewWithRoute} />
+        <RankingSidebar
+          currentView={view}
+          onSetView={setViewWithRoute}
+          onGoHome={onClose}
+        />
 
         {/* Main Content */}
         <main className="flex-1 p-4 md:p-8 overflow-auto relative">
-          {/* Close button */}
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 md:top-8 md:right-8 z-10 h-8 w-8 rounded border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 transition-colors flex items-center justify-center"
-            aria-label="Đóng"
-          >
-            <X className="h-5 w-5" />
-          </button>
-
           <header className="mb-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="md:hidden mb-3 text-lg font-bold text-gray-900"
+            >
+              BadGuys
+            </button>
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              {view === "dashboard" && (
+              {view === "member" && (
                 <>
                   <Settings className="h-8 w-8" /> Quản lý thành viên
                 </>
@@ -309,7 +277,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
           </header>
 
           {/* View: Dashboard (Members) */}
-          {view === "dashboard" && (
+          {view === "member" && (
             <MembersPanel
               isEditing={isEditing}
               newMember={newMember}

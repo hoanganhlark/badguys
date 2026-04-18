@@ -1,85 +1,61 @@
-import { useEffect, useRef, useState } from "react";
+import { useMemo } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export function useHistoryModal() {
-  const [configOpen, setConfigOpen] = useState(false);
-  const [sessionsOpen, setSessionsOpen] = useState(false);
-  const [rankingOpen, setRankingOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  const sidebarHistoryActiveRef = useRef(false);
-  const modalHistoryActiveRef = useRef(false);
-  const rankingHistoryActiveRef = useRef(false);
+  const { configOpen, sessionsOpen, rankingOpen } = useMemo(() => {
+    const path = location.pathname;
+    const nextSessionsOpen = path === "/config/sessions";
+    const nextConfigOpen = path === "/config" || nextSessionsOpen;
+    const nextRankingOpen =
+      path === "/dashboard" || path.startsWith("/dashboard/");
 
-  useEffect(() => {
-    const syncFromHistory = () => {
-      const modal = history.state?.modal;
-      const nextSessionsOpen = modal === "sessions";
-      const nextConfigOpen = modal === "sidebar" || modal === "sessions";
-      const nextRankingOpen = modal === "ranking";
-
-      setSessionsOpen(nextSessionsOpen);
-      setConfigOpen(nextConfigOpen);
-      setRankingOpen(nextRankingOpen);
-      modalHistoryActiveRef.current = nextSessionsOpen;
-      sidebarHistoryActiveRef.current = nextConfigOpen;
-      rankingHistoryActiveRef.current = nextRankingOpen;
+    return {
+      configOpen: nextConfigOpen,
+      sessionsOpen: nextSessionsOpen,
+      rankingOpen: nextRankingOpen,
     };
-
-    window.addEventListener("popstate", syncFromHistory);
-    return () => window.removeEventListener("popstate", syncFromHistory);
-  }, []);
+  }, [location.pathname]);
 
   function openConfig() {
-    setConfigOpen(true);
-    if (!sidebarHistoryActiveRef.current) {
-      history.pushState({ modal: "sidebar" }, "");
-      sidebarHistoryActiveRef.current = true;
-    }
+    navigate("/config");
   }
 
   function closeConfig() {
-    if (history.state?.modal === "sidebar") {
-      history.back();
+    if (sessionsOpen) {
+      navigate("/config");
       return;
     }
-    setConfigOpen(false);
-    sidebarHistoryActiveRef.current = false;
+    navigate("/");
   }
 
   function openSessions() {
-    if (sessionsOpen) return;
-    setSessionsOpen(true);
-    if (!modalHistoryActiveRef.current) {
-      history.pushState({ modal: "sessions" }, "");
-      modalHistoryActiveRef.current = true;
-    }
+    navigate("/config/sessions");
   }
 
   function closeSessions() {
-    if (history.state?.modal === "sessions") {
-      history.back();
-      return;
-    }
-    setSessionsOpen(false);
-    modalHistoryActiveRef.current = false;
+    navigate("/config");
   }
 
   function openRanking() {
-    if (rankingOpen) return;
-    setRankingOpen(true);
-    if (!rankingHistoryActiveRef.current) {
-      history.pushState({ modal: "ranking" }, "");
-      rankingHistoryActiveRef.current = true;
-    }
+    navigate("/dashboard/ranking");
   }
 
   function closeRanking() {
-    if (history.state?.modal === "ranking") {
-      history.back();
-      return;
-    }
-    setRankingOpen(false);
-    rankingHistoryActiveRef.current = false;
+    navigate("/");
   }
 
-  return { configOpen, sessionsOpen, rankingOpen, openConfig, closeConfig, openSessions, closeSessions, openRanking, closeRanking };
+  return {
+    configOpen,
+    sessionsOpen,
+    rankingOpen,
+    openConfig,
+    closeConfig,
+    openSessions,
+    closeSessions,
+    openRanking,
+    closeRanking,
+  };
 }
