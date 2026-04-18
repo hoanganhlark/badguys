@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import {
   createUser,
   deleteUser,
-  getUsers,
+  subscribeUsers,
   updateUserRole,
 } from "../lib/firebase";
 import { hashMd5 } from "../lib/hash";
@@ -31,25 +31,41 @@ export default function UserManagementPage() {
     [users],
   );
 
-  async function refreshUsers() {
+  useEffect(() => {
     setLoading(true);
     setError("");
+
+    let unsubscribe: (() => void) | null = null;
+
     try {
-      const nextUsers = await getUsers();
-      setUsers(nextUsers);
+      unsubscribe = subscribeUsers(
+        (nextUsers) => {
+          setUsers(nextUsers);
+          setLoading(false);
+        },
+        (loadError) => {
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Không tải được danh sách users.",
+          );
+          setLoading(false);
+        },
+      );
     } catch (loadError) {
       setError(
         loadError instanceof Error
           ? loadError.message
           : "Không tải được danh sách users.",
       );
-    } finally {
       setLoading(false);
     }
-  }
 
-  useEffect(() => {
-    void refreshUsers();
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, []);
 
   async function handleCreateUser(event: FormEvent<HTMLFormElement>) {
@@ -74,7 +90,6 @@ export default function UserManagementPage() {
         role: form.role,
       });
       setForm({ username: "", password: "", role: "member" });
-      await refreshUsers();
     } catch (createError) {
       setError(
         createError instanceof Error
@@ -98,7 +113,6 @@ export default function UserManagementPage() {
 
     try {
       await deleteUser(user.id);
-      await refreshUsers();
     } catch (deleteError) {
       setError(
         deleteError instanceof Error
@@ -113,7 +127,6 @@ export default function UserManagementPage() {
 
     try {
       await updateUserRole(user.id, nextRole);
-      await refreshUsers();
     } catch (updateError) {
       setError(
         updateError instanceof Error

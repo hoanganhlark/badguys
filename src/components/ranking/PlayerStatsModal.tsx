@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown, X } from "react-feather";
 import type { AdvancedStats } from "./types";
 
@@ -22,6 +22,17 @@ export default function PlayerStatsModal({
 }: PlayerStatsModalProps) {
   const [expandedMetric, setExpandedMetric] = useState<string | null>(null);
   const [isSimpleExplainOpen, setIsSimpleExplainOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
 
   const metricItems = [
     {

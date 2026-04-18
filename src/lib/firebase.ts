@@ -8,6 +8,7 @@ import {
   getDocs,
   getFirestore,
   limit,
+  onSnapshot,
   orderBy,
   query,
   serverTimestamp,
@@ -333,6 +334,33 @@ export async function getUsers(): Promise<UserRecord[]> {
     .sort((a, b) => a.username.localeCompare(b.username, "vi"));
 }
 
+export function subscribeUsers(
+  onData: (users: UserRecord[]) => void,
+  onError?: (error: Error) => void,
+): () => void {
+  const context = ensureFirebase();
+  if (!context.db) {
+    throw new Error("Firebase is not configured");
+  }
+
+  const usersRef = collection(context.db, getCollectionPath(USERS_COLLECTION));
+  return onSnapshot(
+    usersRef,
+    (snapshot) => {
+      const users = snapshot.docs
+        .map((userDoc) => mapUserRecord(userDoc))
+        .filter((user) => !!user.username)
+        .sort((a, b) => a.username.localeCompare(b.username, "vi"));
+      onData(users);
+    },
+    (error) => {
+      if (onError) {
+        onError(error);
+      }
+    },
+  );
+}
+
 export async function getUserByUsername(
   username: string,
 ): Promise<UserRecord | null> {
@@ -477,6 +505,33 @@ export async function getMatches(): Promise<MatchRecord[]> {
     .map((matchDoc) => mapMatchRecord(matchDoc))
     .filter((match) => match.playerA && match.playerB && match.score)
     .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+}
+
+export function subscribeMatches(
+  onData: (matches: MatchRecord[]) => void,
+  onError?: (error: Error) => void,
+): () => void {
+  const context = ensureFirebase();
+  if (!context.db) {
+    throw new Error("Firebase is not configured");
+  }
+
+  const matchesRef = collection(context.db, getCollectionPath(MATCHES_COLLECTION));
+  return onSnapshot(
+    matchesRef,
+    (snapshot) => {
+      const matches = snapshot.docs
+        .map((matchDoc) => mapMatchRecord(matchDoc))
+        .filter((match) => match.playerA && match.playerB && match.score)
+        .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+      onData(matches);
+    },
+    (error) => {
+      if (onError) {
+        onError(error);
+      }
+    },
+  );
 }
 
 export async function createMatch(input: {
