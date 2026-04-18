@@ -1,4 +1,23 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, type ComponentType } from "react";
+import {
+  Award,
+  BarChart2,
+  Check,
+  CheckCircle,
+  Clock,
+  Edit2,
+  FileText,
+  Grid,
+  Plus,
+  PlusCircle,
+  Settings,
+  Star,
+  User,
+  UserPlus,
+  Users,
+  X,
+  Trash2,
+} from "react-feather";
 
 interface Member {
   id: number;
@@ -30,6 +49,8 @@ interface RankingPageProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+type RankingView = "dashboard" | "match-form" | "ranking";
 
 const STORAGE_MEMBERS_KEY = "rankingMembers";
 const STORAGE_MATCHES_KEY = "rankingMatches";
@@ -67,7 +88,10 @@ function loadMatchesFromStorage(): Match[] {
         return match as Match;
       }
       // Old format - convert score1/score2 to sets
-      if (typeof match.score1 === 'number' && typeof match.score2 === 'number') {
+      if (
+        typeof match.score1 === "number" &&
+        typeof match.score2 === "number"
+      ) {
         return {
           ...match,
           sets: [`${match.score1}-${match.score2}`],
@@ -98,34 +122,21 @@ function parseScore(score: string): [number, number] | null {
   return [pointFor, pointAgainst];
 }
 
-// Calculate performance for a single match: (PointFor - PointAgainst) / (PointFor + PointAgainst)
-function computeMatchPerformance(sets: string[]): number {
-  let totalPointFor = 0;
-  let totalPointAgainst = 0;
-
-  for (const set of sets) {
-    const parsed = parseScore(set);
-    if (!parsed) continue;
-    totalPointFor += parsed[0];
-    totalPointAgainst += parsed[1];
-  }
-
-  const total = totalPointFor + totalPointAgainst;
-  if (total === 0) return 0;
-  return (totalPointFor - totalPointAgainst) / total;
-}
-
 // Calculate standard deviation
 function calculateStdDev(values: number[]): number {
   if (values.length === 0) return 0;
   const mean = values.reduce((a, b) => a + b, 0) / values.length;
-  const variance = values.reduce((sum, val) => sum + (val - mean) ** 2, 0) / values.length;
+  const variance =
+    values.reduce((sum, val) => sum + (val - mean) ** 2, 0) / values.length;
   return Math.sqrt(variance);
 }
 
-function calculateAdvancedStats(playerName: string, matches: Match[]): AdvancedStats {
+function calculateAdvancedStats(
+  playerName: string,
+  matches: Match[],
+): AdvancedStats {
   const playerMatches = matches.filter(
-    (m) => m.team1.includes(playerName) || m.team2.includes(playerName)
+    (m) => m.team1.includes(playerName) || m.team2.includes(playerName),
   );
 
   const matchCount = playerMatches.length;
@@ -181,12 +192,19 @@ function calculateAdvancedStats(playerName: string, matches: Match[]): AdvancedS
   const stability = Math.max(0, 1 - stdDevPerf);
 
   // 3. Uncertainty: stddev(Performance_i) + 1 / sqrt(NumberOfMatches)
-  const uncertainty = stdDevPerf + (matchCount > 0 ? 1 / Math.sqrt(matchCount) : 1);
+  const uncertainty =
+    stdDevPerf + (matchCount > 0 ? 1 / Math.sqrt(matchCount) : 1);
 
   // 4. Momentum: avg(last 5) - avg(all)
-  const avgAll = performances.length > 0 ? performances.reduce((a, b) => a + b, 0) / performances.length : 0;
+  const avgAll =
+    performances.length > 0
+      ? performances.reduce((a, b) => a + b, 0) / performances.length
+      : 0;
   const recentPerfs = performances.slice(-5);
-  const avgRecent = recentPerfs.length > 0 ? recentPerfs.reduce((a, b) => a + b, 0) / recentPerfs.length : 0;
+  const avgRecent =
+    recentPerfs.length > 0
+      ? recentPerfs.reduce((a, b) => a + b, 0) / recentPerfs.length
+      : 0;
   const momentum = avgRecent - avgAll;
 
   // 5. RankScore: Skill - 2 * Uncertainty * 0.5 * Stability * 0.3 * Momentum
@@ -204,136 +222,83 @@ function calculateAdvancedStats(playerName: string, matches: Match[]): AdvancedS
   };
 }
 
-
-// SVG Icons
-function IconTrophy({ className = "h-5 w-5" }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
-      <path d="M6 9H3v6h3m0 0h12m0 0h3v-6h-3m0 0V5h-2V3m0 0h-6v2m-2 4h0M5 15a1 1 0 001 1h12a1 1 0 001-1v-2H5v2z" />
-    </svg>
-  );
-}
-
-function IconPlus({ className = "h-5 w-5" }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 8v8M8 12h8" />
-    </svg>
-  );
-}
-
-function IconTrash({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
-      <polyline points="3 6 5 6 21 6" />
-      <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-      <line x1="10" y1="11" x2="10" y2="17" />
-      <line x1="14" y1="11" x2="14" y2="17" />
-    </svg>
-  );
-}
-
-function IconEdit({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
-      <path d="M17 3a2.828 2.828 0 114 4L7.5 20.5 2 22l1.5-5.5L21 6.5z" />
-    </svg>
-  );
-}
-
-function IconHistory({ className = "h-5 w-5" }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </svg>
-  );
-}
-
-function IconDashboard({ className = "h-5 w-5" }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
-      <rect x="3" y="3" width="7" height="7" />
-      <rect x="14" y="3" width="7" height="7" />
-      <rect x="14" y="14" width="7" height="7" />
-      <rect x="3" y="14" width="7" height="7" />
-    </svg>
-  );
-}
-
-function IconCheck({ className = "h-5 w-5" }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
-      <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
-      <polyline points="22 4 12 14.01 9 11.01" />
-    </svg>
-  );
-}
-
-function IconUserPlus({ className = "h-5 w-5" }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
-      <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-      <circle cx="8.5" cy="7" r="4" />
-      <line x1="20" y1="8" x2="20" y2="14" />
-      <line x1="23" y1="11" x2="17" y2="11" />
-    </svg>
-  );
-}
-
-function IconClose({ className = "h-5 w-5" }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
-}
-
-function PlayerStatsModal({ stats, onClose }: { stats: AdvancedStats; onClose: () => void }) {
+function PlayerStatsModal({
+  stats,
+  onClose,
+}: {
+  stats: AdvancedStats;
+  onClose: () => void;
+}) {
   return (
     <div className="fixed inset-0 z-[70] bg-black/50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-lg max-w-lg w-full p-6 space-y-4">
         <div className="flex justify-between items-start">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">{stats.name}</h2>
-            <p className="text-sm text-gray-500 mt-1">RankScore: {stats.rankScore.toFixed(3)}</p>
+            <p className="text-sm text-gray-500 mt-1">
+              RankScore: {stats.rankScore.toFixed(3)}
+            </p>
           </div>
           <button
             onClick={onClose}
             className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <IconClose className="h-6 w-6" />
+            <X className="h-6 w-6" />
           </button>
         </div>
 
         <div className="grid grid-cols-2 gap-4 pt-4 border-t">
           <div className="p-3 bg-gray-50 rounded">
-            <p className="text-xs font-semibold text-gray-600 uppercase">Skill</p>
-            <p className="text-xl font-bold text-gray-900 mt-1">{stats.skill.toFixed(3)}</p>
+            <p className="text-xs font-semibold text-gray-600 uppercase">
+              Skill
+            </p>
+            <p className="text-xl font-bold text-gray-900 mt-1">
+              {stats.skill.toFixed(3)}
+            </p>
           </div>
           <div className="p-3 bg-gray-50 rounded">
-            <p className="text-xs font-semibold text-gray-600 uppercase">Stability</p>
-            <p className="text-xl font-bold text-gray-900 mt-1">{stats.stability.toFixed(3)}</p>
+            <p className="text-xs font-semibold text-gray-600 uppercase">
+              Stability
+            </p>
+            <p className="text-xl font-bold text-gray-900 mt-1">
+              {stats.stability.toFixed(3)}
+            </p>
           </div>
           <div className="p-3 bg-gray-50 rounded">
-            <p className="text-xs font-semibold text-gray-600 uppercase">Uncertainty</p>
-            <p className="text-xl font-bold text-gray-900 mt-1">{stats.uncertainty.toFixed(3)}</p>
+            <p className="text-xs font-semibold text-gray-600 uppercase">
+              Uncertainty
+            </p>
+            <p className="text-xl font-bold text-gray-900 mt-1">
+              {stats.uncertainty.toFixed(3)}
+            </p>
           </div>
           <div className="p-3 bg-gray-50 rounded">
-            <p className="text-xs font-semibold text-gray-600 uppercase">Momentum</p>
-            <p className="text-xl font-bold text-gray-900 mt-1">{stats.momentum.toFixed(3)}</p>
+            <p className="text-xs font-semibold text-gray-600 uppercase">
+              Momentum
+            </p>
+            <p className="text-xl font-bold text-gray-900 mt-1">
+              {stats.momentum.toFixed(3)}
+            </p>
           </div>
           <div className="p-3 bg-gray-50 rounded">
-            <p className="text-xs font-semibold text-gray-600 uppercase">Wins</p>
-            <p className="text-xl font-bold text-gray-900 mt-1">{stats.wins}/{stats.matches}</p>
+            <p className="text-xs font-semibold text-gray-600 uppercase">
+              Wins
+            </p>
+            <p className="text-xl font-bold text-gray-900 mt-1">
+              {stats.wins}/{stats.matches}
+            </p>
           </div>
         </div>
 
         <div className="text-xs text-gray-600 pt-2 border-t space-y-1">
-          <p><strong>Formula:</strong> RankScore = Skill - 2×Uncertainty×0.5×Stability×0.3×Momentum</p>
-          <p className="text-gray-500">{stats.skill.toFixed(3)} - 2×{stats.uncertainty.toFixed(3)}×0.5×{stats.stability.toFixed(3)}×0.3×{stats.momentum.toFixed(3)}</p>
+          <p>
+            <strong>Formula:</strong> RankScore = Skill -
+            2×Uncertainty×0.5×Stability×0.3×Momentum
+          </p>
+          <p className="text-gray-500">
+            {stats.skill.toFixed(3)} - 2×{stats.uncertainty.toFixed(3)}×0.5×
+            {stats.stability.toFixed(3)}×0.3×{stats.momentum.toFixed(3)}
+          </p>
         </div>
 
         <button
@@ -354,11 +319,11 @@ function SidebarItem({
   currentView,
   onSetView,
 }: {
-  icon: (props: { className?: string }) => JSX.Element;
+  icon: ComponentType<{ className?: string }>;
   label: string;
-  id: string;
-  currentView: string;
-  onSetView: (view: string) => void;
+  id: RankingView;
+  currentView: RankingView;
+  onSetView: (view: RankingView) => void;
 }) {
   return (
     <button
@@ -376,10 +341,16 @@ function SidebarItem({
 }
 
 export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
-  const [view, setView] = useState<"dashboard" | "match-form" | "ranking">("ranking");
-  const [members, setMembers] = useState<Member[]>(() => loadMembersFromStorage());
-  const [matches, setMatches] = useState<Match[]>(() => loadMatchesFromStorage());
-  const [selectedPlayer, setSelectedPlayer] = useState<AdvancedStats | null>(null);
+  const [view, setView] = useState<RankingView>("ranking");
+  const [members, setMembers] = useState<Member[]>(() =>
+    loadMembersFromStorage(),
+  );
+  const [matches, setMatches] = useState<Match[]>(() =>
+    loadMatchesFromStorage(),
+  );
+  const [selectedPlayer, setSelectedPlayer] = useState<AdvancedStats | null>(
+    null,
+  );
 
   // Member Form State
   const [isEditing, setIsEditing] = useState<number | null>(null);
@@ -407,7 +378,11 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   const handleAddMember = () => {
     if (!newMember.name.trim()) return;
     if (isEditing) {
-      setMembers(members.map((m) => (m.id === isEditing ? { ...newMember, id: isEditing } : m)));
+      setMembers(
+        members.map((m) =>
+          m.id === isEditing ? { ...newMember, id: isEditing } : m,
+        ),
+      );
       setIsEditing(null);
     } else {
       setMembers([...members, { ...newMember, id: Date.now() }]);
@@ -458,27 +433,29 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
         {/* Sidebar */}
         <aside className="w-64 bg-gray-50 border-r border-gray-200 p-6 hidden md:flex flex-col shadow">
           <div className="flex items-center space-x-2 mb-10">
-            <IconTrophy className="h-6 w-6 text-blue-600" />
-            <span className="text-xl font-bold text-gray-900">BADMINTON PRO</span>
+            <Award className="h-6 w-6 text-blue-600" />
+            <span className="text-xl font-bold text-gray-900">
+              BADMINTON PRO
+            </span>
           </div>
 
           <nav className="space-y-2 flex-1">
             <SidebarItem
-              icon={IconDashboard}
+              icon={Grid}
               label="Bảng điều khiển"
               id="dashboard"
               currentView={view}
               onSetView={setView}
             />
             <SidebarItem
-              icon={IconPlus}
+              icon={PlusCircle}
               label="Nhập trận đấu"
               id="match-form"
               currentView={view}
               onSetView={setView}
             />
             <SidebarItem
-              icon={IconTrophy}
+              icon={Award}
               label="Bảng xếp hạng"
               id="ranking"
               currentView={view}
@@ -499,14 +476,26 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
             className="absolute top-4 right-4 md:top-8 md:right-8 z-10 h-8 w-8 rounded border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 transition-colors flex items-center justify-center"
             aria-label="Đóng"
           >
-            <IconClose className="h-5 w-5" />
+            <X className="h-5 w-5" />
           </button>
 
           <header className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">
-              {view === "dashboard" && "⚙️ Quản lý thành viên"}
-              {view === "match-form" && "📊 Ghi nhận kết quả"}
-              {view === "ranking" && "🏆 Bảng xếp hạng câu lạc bộ"}
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+              {view === "dashboard" && (
+                <>
+                  <Settings className="h-8 w-8" /> Quản lý thành viên
+                </>
+              )}
+              {view === "match-form" && (
+                <>
+                  <BarChart2 className="h-8 w-8" /> Ghi nhận kết quả
+                </>
+              )}
+              {view === "ranking" && (
+                <>
+                  <Award className="h-8 w-8" /> Bảng xếp hạng câu lạc bộ
+                </>
+              )}
             </h1>
             <p className="text-gray-500 text-sm mt-1">
               Hệ thống theo dõi trình độ và kết quả thi đấu
@@ -517,8 +506,13 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
           {view === "dashboard" && (
             <div className="max-w-4xl space-y-6">
               <div className="bg-white p-4 rounded border border-gray-200 shadow">
-                <h2 className="text-sm font-semibold uppercase text-gray-700 mb-3">
-                  {isEditing ? "✏️ Cập nhật thành viên" : "➕ Thêm thành viên mới"}
+                <h2 className="text-sm font-semibold uppercase text-gray-700 mb-3 flex items-center gap-2">
+                  {isEditing ? (
+                    <Edit2 className="h-4 w-4" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                  {isEditing ? "Cập nhật thành viên" : "Thêm thành viên mới"}
                 </h2>
                 <div className="flex flex-col md:flex-row gap-3">
                   <input
@@ -526,12 +520,16 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                     placeholder="Họ và tên..."
                     className="flex-1 px-3 py-2 rounded border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={newMember.name}
-                    onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
+                    onChange={(e) =>
+                      setNewMember({ ...newMember, name: e.target.value })
+                    }
                   />
                   <select
                     className="px-3 py-2 rounded border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500"
                     value={newMember.level}
-                    onChange={(e) => setNewMember({ ...newMember, level: e.target.value })}
+                    onChange={(e) =>
+                      setNewMember({ ...newMember, level: e.target.value })
+                    }
                   >
                     <option>Yếu</option>
                     <option>Trung bình</option>
@@ -542,7 +540,11 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                     onClick={handleAddMember}
                     className="bg-blue-600 text-white px-4 py-2 rounded font-medium hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
                   >
-                    {isEditing ? <IconCheck className="h-4 w-4" /> : <IconUserPlus className="h-4 w-4" />}
+                    {isEditing ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <UserPlus className="h-4 w-4" />
+                    )}
                     {isEditing ? "Lưu" : "Thêm"}
                   </button>
                 </div>
@@ -552,14 +554,23 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                 <table className="w-full text-left text-sm">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase">Thành viên</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase">Trình độ</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase text-right">Thao tác</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase">
+                        Thành viên
+                      </th>
+                      <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase">
+                        Trình độ
+                      </th>
+                      <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase text-right">
+                        Thao tác
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {members.map((member) => (
-                      <tr key={member.id} className="hover:bg-gray-50 transition-colors">
+                      <tr
+                        key={member.id}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
                         <td className="px-4 py-3 font-medium">{member.name}</td>
                         <td className="px-4 py-3">
                           <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded font-medium">
@@ -572,13 +583,13 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                               onClick={() => startEdit(member)}
                               className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
                             >
-                              <IconEdit />
+                              <Edit2 className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => deleteMember(member.id)}
                               className="p-1 text-gray-400 hover:text-red-600 transition-colors"
                             >
-                              <IconTrash />
+                              <Trash2 className="h-4 w-4" />
                             </button>
                           </div>
                         </td>
@@ -602,7 +613,9 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                       : "border-gray-200 text-gray-600 hover:border-gray-300"
                   }`}
                 >
-                  🎾 Đánh Đơn
+                  <span className="inline-flex items-center gap-2">
+                    <User className="h-4 w-4" /> Đánh Đơn
+                  </span>
                 </button>
                 <button
                   onClick={() => setMatchType("doubles")}
@@ -612,7 +625,9 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                       : "border-gray-200 text-gray-600 hover:border-gray-300"
                   }`}
                 >
-                  👥 Đánh Đôi
+                  <span className="inline-flex items-center gap-2">
+                    <Users className="h-4 w-4" /> Đánh Đôi
+                  </span>
                 </button>
               </div>
 
@@ -671,7 +686,9 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
               </div>
 
               <div className="mt-6 pt-6 border-t space-y-3">
-                <h3 className="font-bold text-center">Kết quả (Điểm mỗi set: VD: 21-18)</h3>
+                <h3 className="font-bold text-center">
+                  Kết quả (Điểm mỗi set: VD: 21-18)
+                </h3>
                 {matchData.sets.map((set, i) => (
                   <input
                     key={i}
@@ -690,9 +707,9 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
 
               <button
                 onClick={handleSaveMatch}
-                className="w-full mt-6 bg-blue-600 text-white py-2 rounded font-semibold hover:bg-blue-700 transition-all"
+                className="w-full mt-6 bg-blue-600 text-white py-2 rounded font-semibold hover:bg-blue-700 transition-all inline-flex items-center justify-center gap-2"
               >
-                ✅ Lưu kết quả
+                <CheckCircle className="h-4 w-4" /> Lưu kết quả
               </button>
             </div>
           )}
@@ -706,11 +723,21 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                   <table className="w-full text-left text-sm">
                     <thead className="bg-gray-50 border-b border-gray-200">
                       <tr>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase">Hạng</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase">Vận động viên</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase text-center">Trận</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase text-center">Thắng</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase text-right">RankScore</th>
+                        <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase">
+                          Hạng
+                        </th>
+                        <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase">
+                          Vận động viên
+                        </th>
+                        <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase text-center">
+                          Trận
+                        </th>
+                        <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase text-center">
+                          Thắng
+                        </th>
+                        <th className="px-4 py-3 text-xs font-semibold text-gray-700 uppercase text-right">
+                          RankScore
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -722,16 +749,30 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                         >
                           <td className="px-4 py-3 font-semibold">
                             {index < 3 ? (
-                              <span className="text-lg">
-                                {index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"}
+                              <span className="inline-flex">
+                                {index === 0 ? (
+                                  <Award className="h-5 w-5 text-amber-500" />
+                                ) : index === 1 ? (
+                                  <Award className="h-5 w-5 text-slate-400" />
+                                ) : (
+                                  <Star className="h-5 w-5 text-orange-400" />
+                                )}
                               </span>
                             ) : (
-                              <span className="text-gray-500">#{index + 1}</span>
+                              <span className="text-gray-500">
+                                #{index + 1}
+                              </span>
                             )}
                           </td>
-                          <td className="px-4 py-3 font-semibold text-gray-900">{player.name}</td>
-                          <td className="px-4 py-3 text-center text-gray-600">{player.matches}</td>
-                          <td className="px-4 py-3 text-center text-gray-600">{player.wins}</td>
+                          <td className="px-4 py-3 font-semibold text-gray-900">
+                            {player.name}
+                          </td>
+                          <td className="px-4 py-3 text-center text-gray-600">
+                            {player.matches}
+                          </td>
+                          <td className="px-4 py-3 text-center text-gray-600">
+                            {player.wins}
+                          </td>
                           <td className="px-4 py-3 text-right font-bold text-blue-600">
                             {player.rankScore.toFixed(3)}
                           </td>
@@ -745,23 +786,40 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
               {/* Match History */}
               <div className="space-y-3">
                 <h3 className="font-bold flex items-center gap-2">
-                  <IconHistory className="h-5 w-5" /> Lịch sử gần đây
+                  <Clock className="h-5 w-5" /> Lịch sử gần đây
                 </h3>
                 <div className="space-y-2">
                   {matches.length === 0 && (
                     <div className="bg-white p-4 rounded border border-gray-200 text-center">
-                      <p className="text-gray-400 text-sm">📋 Chưa có trận đấu</p>
+                      <p className="text-gray-400 text-sm inline-flex items-center gap-2">
+                        <FileText className="h-4 w-4" /> Chưa có trận đấu
+                      </p>
                     </div>
                   )}
                   {matches.slice(0, 10).map((match) => (
-                    <div key={match.id} className="bg-white p-3 rounded border border-gray-200 shadow-sm text-xs">
-                      <div className="text-gray-500 mb-1">
-                        {match.type === "singles" ? "🎾 Đơn" : "👥 Đôi"} • {match.date}
+                    <div
+                      key={match.id}
+                      className="bg-white p-3 rounded border border-gray-200 shadow-sm text-xs"
+                    >
+                      <div className="text-gray-500 mb-1 inline-flex items-center gap-1.5">
+                        {match.type === "singles" ? (
+                          <User className="h-3.5 w-3.5" />
+                        ) : (
+                          <Users className="h-3.5 w-3.5" />
+                        )}
+                        {match.type === "singles" ? "Đơn" : "Đôi"} •{" "}
+                        {match.date}
                       </div>
                       <div className="space-y-1">
-                        <div className="font-medium text-gray-900">{match.team1.join(" & ")}</div>
-                        <div className="text-gray-500">{match.sets.join(", ")}</div>
-                        <div className="font-medium text-gray-900">{match.team2.join(" & ")}</div>
+                        <div className="font-medium text-gray-900">
+                          {match.team1.join(" & ")}
+                        </div>
+                        <div className="text-gray-500">
+                          {match.sets.join(", ")}
+                        </div>
+                        <div className="font-medium text-gray-900">
+                          {match.team2.join(" & ")}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -773,7 +831,12 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
       </div>
 
       {/* Player Stats Modal */}
-      {selectedPlayer && <PlayerStatsModal stats={selectedPlayer} onClose={() => setSelectedPlayer(null)} />}
+      {selectedPlayer && (
+        <PlayerStatsModal
+          stats={selectedPlayer}
+          onClose={() => setSelectedPlayer(null)}
+        />
+      )}
     </div>
   );
 }

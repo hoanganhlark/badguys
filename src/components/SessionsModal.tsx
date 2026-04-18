@@ -1,4 +1,5 @@
 import { formatK, formatSessionDateLabel, normalizeKLabels } from "../lib/core";
+import { Copy, X } from "react-feather";
 import type { SessionRecord } from "../types";
 
 type Props = {
@@ -39,10 +40,10 @@ export default function SessionsModal({
           </h4>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-700 text-xl leading-none"
+            className="text-slate-400 hover:text-slate-700"
             aria-label="Đóng lịch sử"
           >
-            &times;
+            <X className="h-5 w-5" />
           </button>
         </div>
 
@@ -104,34 +105,7 @@ export default function SessionsModal({
                           onCopyNote(normalizeKLabels(summaryText))
                         }
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="inline h-4 w-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <rect
-                            x="9"
-                            y="9"
-                            width="13"
-                            height="13"
-                            rx="2"
-                            fill="#fff"
-                            stroke="#94a3b8"
-                            strokeWidth="1.5"
-                          />
-                          <rect
-                            x="3"
-                            y="3"
-                            width="13"
-                            height="13"
-                            rx="2"
-                            fill="#fff"
-                            stroke="#64748b"
-                            strokeWidth="1.5"
-                          />
-                        </svg>
+                        <Copy className="inline h-4 w-4" />
                       </button>
                       <pre className="text-xs bg-slate-50 border border-slate-100 rounded-lg p-3 text-slate-600 whitespace-pre-wrap break-words">
                         {summaryText}

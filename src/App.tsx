@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Award, Settings } from "react-feather";
 import ConfigSidebar from "./components/ConfigSidebar";
 import ExpensesSection from "./components/ExpensesSection";
 import PlayersSection from "./components/PlayersSection";
@@ -18,7 +19,11 @@ import {
   parsePlayersBulk,
   playersToBulk,
 } from "./lib/core";
-import { RESET_CONFIRM_TIMEOUT_MS, SESSIONS_FETCH_LIMIT, TOAST_DURATION_MS } from "./lib/constants";
+import {
+  RESET_CONFIRM_TIMEOUT_MS,
+  SESSIONS_FETCH_LIMIT,
+  TOAST_DURATION_MS,
+} from "./lib/constants";
 import {
   getRecentSessions,
   isFirebaseReady,
@@ -64,7 +69,9 @@ export default function App() {
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [toastMessage, setToastMessage] = useState("");
   const [resetArmed, setResetArmed] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(() => readAdminFromUrl() || loadAdminMode());
+  const [isAdmin, setIsAdmin] = useState(
+    () => readAdminFromUrl() || loadAdminMode(),
+  );
 
   const resetTimerRef = useRef<number | null>(null);
   const isAdminRef = useRef(isAdmin);
@@ -97,7 +104,12 @@ export default function App() {
   }, [config]);
 
   useEffect(() => {
-    saveInputDraft({ courtFeeInput, shuttleCountInput, courtCountInput, bulkInput });
+    saveInputDraft({
+      courtFeeInput,
+      shuttleCountInput,
+      courtCountInput,
+      bulkInput,
+    });
   }, [courtFeeInput, shuttleCountInput, courtCountInput, bulkInput]);
 
   useEffect(() => {
@@ -108,7 +120,10 @@ export default function App() {
 
   useEffect(() => {
     if (!toastMessage) return;
-    const timer = window.setTimeout(() => setToastMessage(""), TOAST_DURATION_MS);
+    const timer = window.setTimeout(
+      () => setToastMessage(""),
+      TOAST_DURATION_MS,
+    );
     return () => window.clearTimeout(timer);
   }, [toastMessage]);
 
@@ -296,21 +311,7 @@ export default function App() {
           aria-label="Mở cấu hình"
           className="fixed top-5 left-5 md:top-8 md:left-8 z-30 h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            className="h-5 w-5"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M4.5 12a2.5 2.5 0 0 0 .6 1.62l-.06.14a2 2 0 0 0 .45 2.24l.3.3a2 2 0 0 0 2.24.45l.14-.06a2.5 2.5 0 0 0 3.24 1.47h1.18a2.5 2.5 0 0 0 3.24-1.47l.14.06a2 2 0 0 0 2.24-.45l.3-.3a2 2 0 0 0 .45-2.24l-.06-.14A2.5 2.5 0 0 0 19.5 12a2.5 2.5 0 0 0-.6-1.62l.06-.14a2 2 0 0 0-.45-2.24l-.3-.3a2 2 0 0 0-2.24-.45l-.14.06A2.5 2.5 0 0 0 12.59 5h-1.18a2.5 2.5 0 0 0-3.24 1.47l-.14-.06a2 2 0 0 0-2.24.45l-.3.3a2 2 0 0 0-.45 2.24l.06.14A2.5 2.5 0 0 0 4.5 12Z"
-            />
-            <circle cx="12" cy="12" r="3" />
-          </svg>
+          <Settings className="h-5 w-5" />
         </button>
 
         {isAdmin && (
@@ -319,22 +320,14 @@ export default function App() {
             aria-label="Bảng xếp hạng"
             className="fixed top-5 right-5 md:top-8 md:right-8 z-30 h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              className="h-5 w-5"
-            >
-              <path d="M6 9H3v6h3m0 0h12m0 0h3v-6h-3m0 0V5h-2V3m0 0h-6v2m-2 4h0M5 15a1 1 0 001 1h12a1 1 0 001-1v-2H5v2z" />
-            </svg>
+            <Award className="h-5 w-5" />
           </button>
         )}
 
         <header className="mb-12 text-center">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            {isAdmin ? "@BadGuys" : "BadGuys"}<span className="text-slate-400">.</span>
+            {isAdmin ? "@BadGuys" : "BadGuys"}
+            <span className="text-slate-400">.</span>
           </h1>
         </header>
 
@@ -405,7 +398,9 @@ export default function App() {
 
       {toastMessage ? <Toast message={toastMessage} /> : null}
 
-      <p className="fixed bottom-2 left-0 right-0 text-center text-xs text-slate-400">hoanganh.lark</p>
+      <p className="fixed bottom-2 left-0 right-0 text-center text-xs text-slate-400">
+        hoanganh.lark
+      </p>
     </div>
   );
 }
