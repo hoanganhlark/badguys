@@ -47,6 +47,21 @@ export type SessionRecord = {
 
 export type SessionPayload = Omit<SessionRecord, "id">;
 
+export type RankingMember = {
+  id: number;
+  name: string;
+  level: string;
+};
+
+export type RankingMatch = {
+  id: number;
+  type: "singles" | "doubles";
+  team1: string[];
+  team2: string[];
+  sets: string[];
+  date: string;
+};
+
 export type EnvConfig = {
   telegramBotToken: string;
   telegramGroupChatId: string;
