@@ -1,9 +1,9 @@
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Award, Key, LogOut, Settings, X } from "react-feather";
 import { useLocation, useNavigate } from "react-router-dom";
-import LoginPage from "./components/LoginPage";
 import ConfigSidebar from "./components/ConfigSidebar";
 import ExpensesSection from "./components/ExpensesSection";
+import LoginModal from "./components/LoginModal";
 import PlayersSection from "./components/PlayersSection";
 import RankingPage from "./components/RankingPage";
 import ResultCard from "./components/ResultCard";
@@ -53,6 +53,10 @@ import {
 import { notifyCopyClicked, notifyGuestVisited } from "./lib/telegram";
 import type { AppConfig, Player, SessionRecord } from "./types";
 
+interface LocationState {
+  from?: string;
+}
+
 export default function App() {
   const { currentUser, isAuthenticated, isAdmin, logout } = useAuth();
   const location = useLocation();
@@ -78,6 +82,7 @@ export default function App() {
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [toastMessage, setToastMessage] = useState("");
   const [resetArmed, setResetArmed] = useState(false);
+  const [rankingMenuOpen, setRankingMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [changePasswordError, setChangePasswordError] = useState("");
@@ -90,6 +95,7 @@ export default function App() {
   });
 
   const resetTimerRef = useRef<number | null>(null);
+  const rankingMenuRef = useRef<HTMLDivElement | null>(null);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
 
   const {
@@ -148,6 +154,19 @@ export default function App() {
   }, [isAdmin]);
 
   useEffect(() => {
+    if (!rankingMenuOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!rankingMenuRef.current) return;
+      if (rankingMenuRef.current.contains(event.target as Node)) return;
+      setRankingMenuOpen(false);
+    };
+
+    window.addEventListener("mousedown", handleClickOutside);
+    return () => window.removeEventListener("mousedown", handleClickOutside);
+  }, [rankingMenuOpen]);
+
+  useEffect(() => {
     if (!userMenuOpen) return;
 
     const handleClickOutside = (event: MouseEvent) => {
@@ -171,6 +190,11 @@ export default function App() {
       confirmPassword: "",
     });
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    setRankingMenuOpen(false);
+  }, [currentUser]);
 
   function showToast(message: string) {
     setToastMessage(message);
@@ -397,9 +421,28 @@ export default function App() {
     }
   }
 
-  if (location.pathname === "/login") {
-    return <LoginPage />;
+  function getLoginRedirectTarget(): string {
+    const candidate =
+      (location.state as LocationState | null)?.from || "/dashboard/ranking";
+    return (
+      String(candidate || "/dashboard/ranking").trim() || "/dashboard/ranking"
+    );
   }
+
+  function handleLoginSuccess(target: string) {
+    navigate(target, { replace: true });
+  }
+
+  function closeLoginModal() {
+    if (location.pathname === "/ranking/login") {
+      navigate("/ranking", { replace: true });
+      return;
+    }
+    navigate("/", { replace: true });
+  }
+
+  const loginModalOpen =
+    location.pathname === "/login" || location.pathname === "/ranking/login";
 
   if (location.pathname === "/users") {
     return (
@@ -413,7 +456,17 @@ export default function App() {
     location.pathname === "/ranking" ||
     location.pathname.startsWith("/ranking/")
   ) {
-    return <RankingPage isOpen={true} onClose={() => navigate("/")} />;
+    return (
+      <>
+        <RankingPage isOpen={true} onClose={() => navigate("/")} />
+        <LoginModal
+          open={loginModalOpen}
+          redirectTo={getLoginRedirectTarget()}
+          onClose={closeLoginModal}
+          onSuccess={handleLoginSuccess}
+        />
+      </>
+    );
   }
 
   return (
@@ -427,13 +480,51 @@ export default function App() {
           <Settings className="h-5 w-5" />
         </button>
 
-        <button
-          onClick={openRanking}
-          aria-label="Bảng xếp hạng"
-          className={`${isAuthenticated ? "hidden" : "fixed top-5 right-5 md:top-8 md:right-8"} z-30 h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center`}
-        >
-          <Award className="h-5 w-5" />
-        </button>
+        {!currentUser ? (
+          <div
+            ref={rankingMenuRef}
+            className="fixed top-5 right-5 md:top-8 md:right-8 z-30"
+          >
+            <button
+              type="button"
+              onClick={() => {
+                if (currentUser) return;
+                setRankingMenuOpen((prev) => !prev);
+              }}
+              aria-label="Bảng xếp hạng"
+              className="h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
+            >
+              <Award className="h-5 w-5" />
+            </button>
+
+            {rankingMenuOpen ? (
+              <div className="fixed top-16 right-5 md:top-20 md:right-8 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRankingMenuOpen(false);
+                    openRanking();
+                  }}
+                  className="w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                >
+                  Xem ranking
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRankingMenuOpen(false);
+                    navigate("/login", {
+                      state: { from: "/dashboard/ranking" },
+                    });
+                  }}
+                  className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                >
+                  Đăng nhập
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         {isAuthenticated ? (
           <div
@@ -450,7 +541,7 @@ export default function App() {
             </button>
 
             {userMenuOpen ? (
-              <div className="mt-2 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+              <div className="fixed top-16 right-5 md:top-20 md:right-8 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
                 <p className="px-2 py-1 text-xs font-semibold text-slate-500 truncate">
                   {currentUser?.username}
                 </p>
@@ -479,6 +570,7 @@ export default function App() {
                   onClick={() => {
                     setUserMenuOpen(false);
                     logout();
+                    navigate("/", { replace: true });
                   }}
                   className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-red-600 hover:bg-red-50 inline-flex items-center gap-2"
                 >
@@ -685,6 +777,13 @@ export default function App() {
       ) : null}
 
       {toastMessage ? <Toast message={toastMessage} /> : null}
+
+      <LoginModal
+        open={loginModalOpen}
+        redirectTo={getLoginRedirectTarget()}
+        onClose={closeLoginModal}
+        onSuccess={handleLoginSuccess}
+      />
     </div>
   );
 }
