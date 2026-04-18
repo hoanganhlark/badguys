@@ -27,7 +27,7 @@ import type {
   Member,
   RankingView,
 } from "./ranking/types";
-import { Award, BarChart2, Menu, Settings } from "react-feather";
+import { Award, BarChart2, Settings } from "react-feather";
 
 interface RankingPageProps {
   isOpen: boolean;
@@ -54,7 +54,6 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     null,
   );
   const [isRemoteHydrated, setIsRemoteHydrated] = useState(false);
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Member Form State
   const [isEditing, setIsEditing] = useState<number | null>(null);
@@ -73,7 +72,6 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     mode: "push" | "replace" = "push",
   ) => {
     if (!isOpen) return;
-    setIsMobileSidebarOpen(false);
     navigate(`/dashboard/${nextView}`, { replace: mode === "replace" });
   };
 
@@ -237,84 +235,95 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black/40 flex">
-      <div className="flex flex-col md:flex-row min-h-screen bg-white text-gray-900 font-sans w-full">
+    <div className="fixed inset-0 z-[60] bg-slate-950/40 flex">
+      <div className="flex flex-col md:flex-row min-h-screen w-full text-slate-900 font-sans bg-gradient-to-br from-slate-50 via-sky-50 to-cyan-50">
         {/* Sidebar */}
         <RankingSidebar
           currentView={view}
           onSetView={setViewWithRoute}
           onGoHome={onClose}
-          mobileOpen={isMobileSidebarOpen}
-          onCloseMobile={() => setIsMobileSidebarOpen(false)}
         />
 
         {/* Main Content */}
-        <main className="flex-1 p-4 md:p-8 overflow-auto relative">
-          <button
-            type="button"
-            aria-label="Mở menu dashboard"
-            onClick={() => setIsMobileSidebarOpen(true)}
-            className="md:hidden mb-4 h-10 w-10 rounded border border-gray-200 bg-white text-gray-700 flex items-center justify-center"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
+        <main className="flex-1 px-4 pb-24 pt-4 md:p-8 md:pb-8 overflow-auto relative">
+          <div className="max-w-7xl mx-auto">
+            <header className="mb-5 rounded-2xl border border-white/80 bg-white/85 backdrop-blur px-4 py-4 shadow-sm md:px-6 md:py-5">
+              <h1 className="text-xl md:text-3xl font-bold text-slate-900 flex items-center gap-3">
+                {view === "member" && (
+                  <>
+                    <Settings className="h-6 w-6 md:h-8 md:w-8 text-sky-600" /> Quản
+                    lý thành viên
+                  </>
+                )}
+                {view === "match-form" && (
+                  <>
+                    <BarChart2 className="h-6 w-6 md:h-8 md:w-8 text-sky-600" />
+                    Ghi nhận kết quả
+                  </>
+                )}
+                {view === "ranking" && (
+                  <>
+                    <Award className="h-6 w-6 md:h-8 md:w-8 text-sky-600" /> Bảng
+                    xếp hạng câu lạc bộ
+                  </>
+                )}
+              </h1>
+              <p className="text-slate-500 text-xs md:text-sm mt-1.5">
+                Hệ thống theo dõi trình độ và kết quả thi đấu
+              </p>
+            </header>
 
-          <header className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              {view === "member" && (
-                <>
-                  <Settings className="h-8 w-8" /> Quản lý thành viên
-                </>
-              )}
-              {view === "match-form" && (
-                <>
-                  <BarChart2 className="h-8 w-8" /> Ghi nhận kết quả
-                </>
-              )}
-              {view === "ranking" && (
-                <>
-                  <Award className="h-8 w-8" /> Bảng xếp hạng câu lạc bộ
-                </>
-              )}
-            </h1>
-            <p className="text-gray-500 text-sm mt-1">
-              Hệ thống theo dõi trình độ và kết quả thi đấu
-            </p>
-          </header>
+            <section className="grid grid-cols-3 gap-2 mb-4 md:mb-6 md:max-w-2xl">
+              <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
+                <p className="text-[11px] text-slate-500">Thành viên</p>
+                <p className="text-lg font-bold text-slate-900">{members.length}</p>
+              </div>
+              <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
+                <p className="text-[11px] text-slate-500">Trận đấu</p>
+                <p className="text-lg font-bold text-slate-900">{matches.length}</p>
+              </div>
+              <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
+                <p className="text-[11px] text-slate-500">Top rank</p>
+                <p className="text-sm md:text-base font-bold text-slate-900 truncate">
+                  {rankings[0]?.name ?? "-"}
+                </p>
+              </div>
+            </section>
 
-          {/* View: Dashboard (Members) */}
-          {view === "member" && (
-            <MembersPanel
-              isEditing={isEditing}
-              newMember={newMember}
-              members={members}
-              onSetNewMember={setNewMember}
-              onAddOrUpdateMember={handleAddMember}
-              onStartEdit={startEdit}
-              onDeleteMember={deleteMember}
-            />
-          )}
+            {/* View: Dashboard (Members) */}
+            {view === "member" && (
+              <MembersPanel
+                isEditing={isEditing}
+                newMember={newMember}
+                members={members}
+                onSetNewMember={setNewMember}
+                onAddOrUpdateMember={handleAddMember}
+                onStartEdit={startEdit}
+                onDeleteMember={deleteMember}
+              />
+            )}
 
-          {/* View: Match Form */}
-          {view === "match-form" && (
-            <MatchFormPanel
-              members={members}
-              matchType={matchType}
-              matchData={matchData}
-              onSetMatchType={setMatchType}
-              onSetMatchData={setMatchData}
-              onSaveMatch={handleSaveMatch}
-            />
-          )}
+            {/* View: Match Form */}
+            {view === "match-form" && (
+              <MatchFormPanel
+                members={members}
+                matchType={matchType}
+                matchData={matchData}
+                onSetMatchType={setMatchType}
+                onSetMatchData={setMatchData}
+                onSaveMatch={handleSaveMatch}
+              />
+            )}
 
-          {/* View: Rankings */}
-          {view === "ranking" && (
-            <RankingPanel
-              rankings={rankings}
-              matches={matches}
-              onSelectPlayer={setSelectedPlayer}
-            />
-          )}
+            {/* View: Rankings */}
+            {view === "ranking" && (
+              <RankingPanel
+                rankings={rankings}
+                matches={matches}
+                onSelectPlayer={setSelectedPlayer}
+              />
+            )}
+          </div>
         </main>
       </div>
 

@@ -45,14 +45,14 @@ export default function MatchFormPanel({
   };
 
   return (
-    <div className="max-w-3xl bg-white p-6 rounded-lg border border-gray-200 shadow">
-      <div className="flex gap-4 mb-6">
+    <div className="max-w-4xl bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+      <div className="grid grid-cols-2 gap-2">
         <button
           onClick={() => onSetMatchType("doubles")}
-          className={`flex-1 py-2 rounded border font-semibold transition-all ${
+          className={`py-2.5 rounded-xl border text-sm font-semibold transition-all ${
             matchType === "doubles"
-              ? "bg-blue-600 text-white border-blue-600"
-              : "border-gray-200 text-gray-600 hover:border-gray-300"
+              ? "bg-slate-900 text-white border-slate-900"
+              : "border-slate-200 text-slate-600 hover:border-slate-300"
           }`}
         >
           <span className="inline-flex items-center gap-2">
@@ -61,10 +61,10 @@ export default function MatchFormPanel({
         </button>
         <button
           onClick={() => onSetMatchType("singles")}
-          className={`flex-1 py-2 rounded border font-semibold transition-all ${
+          className={`py-2.5 rounded-xl border text-sm font-semibold transition-all ${
             matchType === "singles"
-              ? "bg-blue-600 text-white border-blue-600"
-              : "border-gray-200 text-gray-600 hover:border-gray-300"
+              ? "bg-slate-900 text-white border-slate-900"
+              : "border-slate-200 text-slate-600 hover:border-slate-300"
           }`}
         >
           <span className="inline-flex items-center gap-2">
@@ -73,14 +73,14 @@ export default function MatchFormPanel({
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="space-y-3">
-          <h3 className="font-bold text-center">Đội A</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 md:p-4">
+          <h3 className="font-bold text-center text-slate-800">Đội A</h3>
           <div className="space-y-2">
             {[...Array(matchType === "singles" ? 1 : 2)].map((_, i) => (
               <select
                 key={i}
-                className="w-full p-2 rounded border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500"
                 onChange={(e) => {
                   const newTeam = [...matchData.team1];
                   newTeam[i] = e.target.value;
@@ -99,13 +99,13 @@ export default function MatchFormPanel({
           </div>
         </div>
 
-        <div className="space-y-3">
-          <h3 className="font-bold text-center">Đội B</h3>
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 md:p-4">
+          <h3 className="font-bold text-center text-slate-800">Đội B</h3>
           <div className="space-y-2">
             {[...Array(matchType === "singles" ? 1 : 2)].map((_, i) => (
               <select
                 key={i}
-                className="w-full p-2 rounded border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500"
                 onChange={(e) => {
                   const newTeam = [...matchData.team2];
                   newTeam[i] = e.target.value;
@@ -125,13 +125,13 @@ export default function MatchFormPanel({
         </div>
       </div>
 
-      <div className="mt-6 pt-6 border-t space-y-3">
+      <div className="pt-5 border-t border-slate-200 space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-bold">Kết quả theo set</h3>
+          <h3 className="font-bold text-slate-900">Kết quả theo set</h3>
           <button
             type="button"
             onClick={addSetInput}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
           >
             <Plus className="h-4 w-4" /> Thêm set
           </button>
@@ -143,7 +143,7 @@ export default function MatchFormPanel({
               min={0}
               inputMode="numeric"
               placeholder={`Set ${i + 1} - Đội A`}
-              className="w-full p-2 rounded border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500"
               value={set.team1Score}
               onChange={(e) => {
                 const newSets = [...matchData.sets];
@@ -159,7 +159,7 @@ export default function MatchFormPanel({
               min={0}
               inputMode="numeric"
               placeholder={`Set ${i + 1} - Đội B`}
-              className="w-full p-2 rounded border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500"
               value={set.team2Score}
               onChange={(e) => {
                 const newSets = [...matchData.sets];
@@ -176,7 +176,7 @@ export default function MatchFormPanel({
 
       <button
         onClick={onSaveMatch}
-        className="w-full mt-6 bg-blue-600 text-white py-2 rounded font-semibold hover:bg-blue-700 transition-all inline-flex items-center justify-center gap-2"
+        className="w-full bg-slate-900 text-white py-2.5 rounded-xl font-semibold hover:bg-slate-800 transition-all inline-flex items-center justify-center gap-2"
       >
         <CheckCircle className="h-4 w-4" /> Lưu kết quả
       </button>

@@ -21,35 +21,49 @@ export default function PlayerStatsModal({
 }: PlayerStatsModalProps) {
   const metricItems = [
     {
-      label: "Skill",
+      label: "Kỹ năng",
       value: stats.skill,
       displayValue: stats.skill.toFixed(3),
       progress: toPercent(stats.skill, -1, 1),
       tone: "bg-blue-500",
+      description:
+        "Chỉ số hiệu quả tổng hợp từ chênh lệch điểm ghi được và điểm bị mất.",
+      progressExplain: "Progress = ((Kỹ năng + 1) / 2) x 100%.",
     },
     {
-      label: "Stability",
+      label: "Độ ổn định",
       value: stats.stability,
       displayValue: stats.stability.toFixed(3),
       progress: toPercent(stats.stability, 0, 1),
       tone: "bg-emerald-500",
+      description:
+        "Độ đều phong độ. Càng gần 1 thì phong độ càng ít lên xuống.",
+      progressExplain:
+        "Progress = Độ ổn định x 100% (vì giá trị nằm trong [0, 1]).",
     },
     {
-      label: "Uncertainty",
+      label: "Độ bất định",
       value: stats.uncertainty,
       displayValue: stats.uncertainty.toFixed(3),
       progress: toPercent(stats.uncertainty, 0, 2),
       tone: "bg-amber-500",
+      description:
+        "Mức độ chưa chắc chắn của thống kê (do dữ liệu ít hoặc kết quả dao động).",
+      progressExplain:
+        "Progress = (Độ bất định / 2) x 100%, giới hạn trong [0, 100]%.",
     },
     {
-      label: "Momentum",
+      label: "Động lực",
       value: stats.momentum,
       displayValue: stats.momentum.toFixed(3),
       progress: toPercent(stats.momentum, -1, 1),
       tone: "bg-violet-500",
+      description:
+        "Xu hướng gần đây so với phong độ trung bình toàn bộ.",
+      progressExplain: "Progress = ((Động lực + 1) / 2) x 100%.",
     },
     {
-      label: "Win rate",
+      label: "Tỷ lệ thắng",
       value: stats.matches === 0 ? 0 : stats.wins / stats.matches,
       displayValue:
         stats.matches === 0
@@ -57,6 +71,8 @@ export default function PlayerStatsModal({
           : `${Math.round((stats.wins / stats.matches) * 100)}% (${stats.wins}/${stats.matches})`,
       progress: stats.matches === 0 ? 0 : (stats.wins / stats.matches) * 100,
       tone: "bg-cyan-500",
+      description: "Tỷ lệ trận thắng trên tổng số trận đã thi đấu.",
+      progressExplain: "Progress = (Số trận thắng / Tổng số trận) x 100%.",
     },
   ];
 
@@ -67,7 +83,7 @@ export default function PlayerStatsModal({
           <div>
             <h2 className="text-2xl font-bold text-gray-900">{stats.name}</h2>
             <p className="text-sm text-gray-500 mt-1">
-              RankScore: {stats.rankScore.toFixed(3)}
+              Điểm xếp hạng: {stats.rankScore.toFixed(3)}
             </p>
           </div>
           <button
@@ -89,24 +105,34 @@ export default function PlayerStatsModal({
                   {item.displayValue}
                 </p>
               </div>
+              <p className="mt-1 text-xs text-gray-500">{item.description}</p>
               <div className="mt-2 h-2 w-full rounded-full bg-gray-200 overflow-hidden">
                 <div
                   className={`h-full ${item.tone} transition-all duration-300`}
                   style={{ width: `${item.progress}%` }}
                 />
               </div>
+              <p className="mt-2 text-[11px] text-gray-500">
+                Progress hiển thị: {item.progress.toFixed(1)}%. {item.progressExplain}
+              </p>
             </div>
           ))}
         </div>
 
-        <div className="text-xs text-gray-600 pt-2 border-t space-y-1">
+        <div className="text-xs text-gray-600 pt-2 border-t space-y-2">
           <p>
-            <strong>Formula:</strong> RankScore = Skill -
-            2×Uncertainty×0.5×Stability×0.3×Momentum
+            <strong>Công thức điểm xếp hạng:</strong> Điểm xếp hạng = Kỹ năng -
+            (Độ bất định x Độ ổn định x 0.3 x Động lực)
           </p>
           <p className="text-gray-500">
-            {stats.skill.toFixed(3)} - 2×{stats.uncertainty.toFixed(3)}×0.5×
-            {stats.stability.toFixed(3)}×0.3×{stats.momentum.toFixed(3)}
+            {stats.skill.toFixed(3)} - ({stats.uncertainty.toFixed(3)} x
+            {stats.stability.toFixed(3)} x 0.3 x {stats.momentum.toFixed(3)})
+          </p>
+          <p className="text-gray-500">
+            Hiểu đơn giản: Kỹ năng là nền tảng. Hệ số điều chỉnh phụ thuộc vào độ
+            bất định, độ ổn định và động lực gần đây. Nếu động lực dương (phong độ
+            đang lên), phần trừ sẽ lớn hơn; nếu động lực âm (phong độ đang giảm),
+            giá trị trừ thành âm nên tổng điểm có thể được cộng bù.
           </p>
         </div>
 

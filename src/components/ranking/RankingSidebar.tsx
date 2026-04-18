@@ -1,13 +1,11 @@
 import type { ComponentType } from "react";
-import { Award, Grid, PlusCircle, X } from "react-feather";
+import { Award, Grid, Home, PlusCircle } from "react-feather";
 import type { RankingView } from "./types";
 
 interface RankingSidebarProps {
   currentView: RankingView;
   onSetView: (view: RankingView) => void;
   onGoHome: () => void;
-  mobileOpen: boolean;
-  onCloseMobile: () => void;
 }
 
 function SidebarItem({
@@ -26,13 +24,13 @@ function SidebarItem({
   return (
     <button
       onClick={() => onSetView(id)}
-      className={`flex items-center space-x-3 w-full p-2 rounded transition-all ${
+      className={`flex items-center space-x-3 w-full px-3 py-2.5 rounded-xl border transition-all ${
         currentView === id
-          ? "bg-blue-600 text-white"
-          : "hover:bg-gray-200 text-gray-600"
+          ? "bg-white text-slate-900 border-white shadow-sm"
+          : "border-white/15 text-slate-200 hover:bg-white/10"
       }`}
     >
-      <Icon />
+      <Icon className="h-4 w-4" />
       <span className="font-medium text-sm">{label}</span>
     </button>
   );
@@ -42,8 +40,6 @@ export default function RankingSidebar({
   currentView,
   onSetView,
   onGoHome,
-  mobileOpen,
-  onCloseMobile,
 }: RankingSidebarProps) {
   const navItems: Array<{
     icon: ComponentType<{ className?: string }>;
@@ -57,74 +53,60 @@ export default function RankingSidebar({
 
   return (
     <>
-      {mobileOpen && (
-        <div className="md:hidden fixed inset-0 z-[75]">
+      <header className="md:hidden sticky top-0 z-20 px-4 py-3 border-b border-slate-200/80 bg-white/90 backdrop-blur">
+        <div className="flex items-center justify-between">
+          <div className="inline-flex items-center gap-2">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-cyan-500 text-white shadow-sm">
+              <Award className="h-4 w-4" />
+            </span>
+            <div>
+              <p className="text-sm font-bold text-slate-900 leading-none">BadGuys</p>
+              <p className="text-[11px] text-slate-500 mt-1">Mobile Dashboard</p>
+            </div>
+          </div>
           <button
             type="button"
-            aria-label="Đóng menu dashboard"
-            onClick={onCloseMobile}
-            className="absolute inset-0 bg-black/40"
-          />
-
-          <aside className="absolute left-0 top-0 h-full w-72 bg-white border-r border-gray-200 p-4 shadow-xl">
-            <div className="flex items-center justify-between mb-6">
-              <button
-                type="button"
-                onClick={() => {
-                  onCloseMobile();
-                  onGoHome();
-                }}
-                className="inline-flex items-center gap-2 text-left"
-              >
-                <Award className="h-5 w-5 text-blue-600" />
-                <span className="text-lg font-bold text-gray-900">BadGuys</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={onCloseMobile}
-                aria-label="Đóng menu"
-                className="h-9 w-9 rounded border border-gray-200 flex items-center justify-center text-gray-600"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <nav className="space-y-2">
-              {navItems.map(({ icon: Icon, label, id }) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => {
-                    onCloseMobile();
-                    onSetView(id);
-                  }}
-                  className={`w-full rounded border px-3 py-2 text-sm font-semibold transition-colors flex items-center gap-2 ${
-                    currentView === id
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "border-gray-200 text-gray-600 bg-white"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{label}</span>
-                </button>
-              ))}
-            </nav>
-          </aside>
+            onClick={onGoHome}
+            className="h-9 px-3 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-semibold inline-flex items-center gap-1.5"
+          >
+            <Home className="h-3.5 w-3.5" /> Trang chủ
+          </button>
         </div>
-      )}
+      </header>
 
-      <aside className="w-64 bg-gray-50 border-r border-gray-200 p-6 hidden md:flex flex-col shadow">
+      <nav className="md:hidden fixed bottom-3 left-3 right-3 z-30 rounded-2xl border border-slate-200 bg-white/95 backdrop-blur p-1.5 shadow-[0_12px_40px_rgba(15,23,42,0.16)]">
+        <div className="grid grid-cols-3 gap-1">
+          {navItems.map(({ icon: Icon, label, id }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => onSetView(id)}
+              className={`rounded-xl px-2 py-2.5 text-[11px] font-semibold transition-all inline-flex flex-col items-center gap-1 ${
+                currentView === id
+                  ? "bg-slate-900 text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              <span>{label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      <aside className="w-72 bg-gradient-to-b from-slate-900 to-slate-800 p-7 hidden md:flex flex-col">
         <button
           type="button"
           onClick={onGoHome}
-          className="flex items-center space-x-2 mb-10 text-left"
+          className="flex items-center space-x-3 mb-10 text-left"
         >
-          <Award className="h-6 w-6 text-blue-600" />
-          <span className="text-xl font-bold text-gray-900">BadGuys</span>
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-cyan-500 text-white shadow">
+            <Award className="h-5 w-5" />
+          </span>
+          <span className="text-2xl font-bold text-white">BadGuys</span>
         </button>
 
-        <nav className="space-y-2 flex-1">
+        <nav className="space-y-2.5 flex-1">
           <SidebarItem
             icon={Grid}
             label="Thành viên"
@@ -148,7 +130,7 @@ export default function RankingSidebar({
           />
         </nav>
 
-        <div className="border-t border-gray-200 pt-4 text-xs text-gray-500">
+        <div className="border-t border-white/20 pt-4 text-xs text-slate-300">
           <p>© BadGuys Ranking 2026</p>
         </div>
       </aside>
