@@ -1,6 +1,6 @@
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Award, Key, LogOut, Settings, X } from "react-feather";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import LoginPage from "./components/LoginPage";
 import ConfigSidebar from "./components/ConfigSidebar";
 import ExpensesSection from "./components/ExpensesSection";
@@ -56,6 +56,7 @@ import type { AppConfig, Player, SessionRecord } from "./types";
 export default function App() {
   const { currentUser, isAuthenticated, isAdmin, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [inputDraft] = useState(() => loadStoredInputDraft());
   const [courtFeeInput, setCourtFeeInput] = useState(inputDraft.courtFeeInput);
@@ -101,7 +102,7 @@ export default function App() {
     closeSessions,
     openRanking,
     closeRanking,
-  } = useHistoryModal(isAuthenticated);
+  } = useHistoryModal();
 
   const courtFee = parseFloat(courtFeeInput) || 0;
   const shuttleCount = parseFloat(shuttleCountInput) || 0;
@@ -408,6 +409,13 @@ export default function App() {
     );
   }
 
+  if (
+    location.pathname === "/ranking" ||
+    location.pathname.startsWith("/ranking/")
+  ) {
+    return <RankingPage isOpen={true} onClose={() => navigate("/")} />;
+  }
+
   return (
     <div className="p-5 md:p-12 relative">
       <div className="max-w-md mx-auto">
@@ -450,7 +458,7 @@ export default function App() {
                   type="button"
                   onClick={() => {
                     setUserMenuOpen(false);
-                    openRanking();
+                    navigate("/dashboard/ranking");
                   }}
                   className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center gap-2"
                 >

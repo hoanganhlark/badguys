@@ -46,9 +46,16 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   const { currentUser, isAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const matchedRoute = matchPath("/dashboard/:tab", location.pathname);
-  const tab = matchedRoute?.params.tab ?? null;
-  const view: RankingView = isRankingView(tab) ? tab : "ranking";
+  const isPublicRankingRoute = location.pathname.startsWith("/ranking");
+  const routeBase = isPublicRankingRoute ? "/ranking" : "/dashboard";
+  const dashboardRoute = matchPath("/dashboard/:tab", location.pathname);
+  const publicRoute = matchPath("/ranking/:tab", location.pathname);
+  const tab = dashboardRoute?.params.tab ?? publicRoute?.params.tab ?? null;
+  const parsedView: RankingView = isRankingView(tab) ? tab : "ranking";
+  const view: RankingView =
+    isPublicRankingRoute && parsedView === "match-form"
+      ? "ranking"
+      : parsedView;
   const [members, setMembers] = useState<Member[]>(() =>
     loadMembersFromStorage(),
   );
@@ -101,14 +108,20 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     mode: "push" | "replace" = "push",
   ) => {
     if (!isOpen) return;
-    navigate(`/dashboard/${nextView}`, { replace: mode === "replace" });
+    const safeView =
+      isPublicRankingRoute && nextView === "match-form" ? "ranking" : nextView;
+    navigate(`${routeBase}/${safeView}`, { replace: mode === "replace" });
   };
 
   useEffect(() => {
     if (!isOpen) return;
+    if (isPublicRankingRoute && tab === "match-form") {
+      navigate(`${routeBase}/ranking`, { replace: true });
+      return;
+    }
     if (tab == null || isRankingView(tab)) return;
-    navigate("/dashboard/ranking", { replace: true });
-  }, [isOpen, navigate, tab]);
+    navigate(`${routeBase}/ranking`, { replace: true });
+  }, [isOpen, isPublicRankingRoute, navigate, routeBase, tab]);
 
   useEffect(() => {
     let mounted = true;
@@ -372,6 +385,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
           onGoHome={onClose}
           isAdmin={isAdmin}
           onGoUsers={() => navigate("/users")}
+          showMatchForm={!isPublicRankingRoute}
         />
 
         {/* Main Content */}
