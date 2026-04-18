@@ -248,9 +248,7 @@ export async function getRankingMatches(): Promise<RankingMatch[]> {
     .map((item): RankingMatch | null => {
       const rawId = item?.id;
       const normalizedId =
-        typeof rawId === "number" || typeof rawId === "string"
-          ? rawId
-          : null;
+        typeof rawId === "number" || typeof rawId === "string" ? rawId : null;
       const type = item?.type === "doubles" ? "doubles" : "singles";
       const team1 = Array.isArray(item?.team1)
         ? item.team1.map((name: unknown) => String(name))

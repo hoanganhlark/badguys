@@ -59,7 +59,7 @@ const DEFAULT_USERS = [
   {
     docId: "seed-admin",
     username: "admin",
-    password: ":loveguitar",
+    password: "loveguitar",
     role: "admin",
   },
   {
@@ -79,11 +79,6 @@ async function seed() {
     const userRef = doc(db, "dev-users", user.docId);
     const existingSnapshot = await getDoc(userRef);
 
-    if (existingSnapshot.exists()) {
-      console.log(`Skip existing user doc: ${user.docId}`);
-      continue;
-    }
-
     await setDoc(userRef, {
       username: user.username,
       usernameKey: user.username.toLowerCase(),
@@ -91,9 +86,13 @@ async function seed() {
       role: user.role,
       createdAt: serverTimestamp(),
       clientCreatedAt: new Date().toISOString(),
-    });
+    }, { merge: true });
 
-    console.log(`Created user: ${user.username} (${user.role})`);
+    if (existingSnapshot.exists()) {
+      console.log(`Updated user: ${user.username} (${user.role})`);
+    } else {
+      console.log(`Created user: ${user.username} (${user.role})`);
+    }
   }
 
   console.log("Seed completed for dev-users.");
