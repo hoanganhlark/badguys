@@ -7,22 +7,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run dev` — Start dev server (base path `/`)
 - `npm run build` — TypeScript check + Vite production build (base path `/badguys/`)
 - `npm run preview` — Preview production build locally
-- `npm test` — Run Vitest test suite
+- `npm test` — Run Vitest test suite in watch mode; use `npm test -- --run` for single run
+- `npm test -- path/to/file.test.ts` — Run a specific test file
+- `npm run seed:users` — Seed dev-users collection in Firestore with default test accounts (requires `.env.local`)
+- `npm run migrate:admin-bi` — Migrate all admin user references to 'bi' username in dev-users and dev-matches collections
 
 ## Architecture
 
-**BadGuys** is a single-page React + TypeScript app for splitting badminton session costs. Includes a ranking tracker modal for tournament results and player rankings (client-side, localStorage-backed). Deployed to GitHub Pages, with Firebase Firestore for session history and Telegram Bot API for notifications.
+**BadGuys** is a single-page React + TypeScript app for splitting badminton session costs. Includes a ranking tracker modal for tournament results and player rankings (client-side, localStorage-backed). Features user authentication, role-based access control (admin/user), and Firebase Firestore for session history, user management, and Telegram Bot API for notifications.
 
 ### Key files
 
-- `src/App.tsx` — Root component; owns all state, wires together calculation and UI
+- `src/App.tsx` — Root component; owns all state, wires together calculation and UI; handles authentication flow
+- `src/context/AuthContext.tsx` — Authentication state management; login, logout, and role/user data
+- `src/components/LoginModal.tsx` — Login form modal; handles username/password authentication
+- `src/components/auth/AdminRoute.tsx` — Protected route component requiring admin role
+- `src/components/auth/ProtectedRoute.tsx` — Protected route component requiring authentication
 - `src/lib/core.ts` — Core business logic: `parsePlayersBulk()`, `calculateResult()`, `buildSummaryText()`, `buildSessionPayload()`
 - `src/types.ts` — Shared types: `Player`, `AppConfig`, `CalcResult`, `SessionRecord`
 - `src/env.ts` — Parses `VITE_*` env vars with fallback defaults
-- `src/lib/firebase.ts` — Firestore init and session CRUD
+- `src/lib/firebase.ts` — Firestore init, session CRUD, user management (auth, password), and subscriptions
 - `src/lib/telegram.ts` — Async Telegram notification (silent failure on error)
 - `src/lib/platform.ts` — localStorage, clipboard, URL params, device detection
-- `src/components/RankingPage.tsx` — Ranking system modal: manages member CRUD, match recording (singles/doubles), and ranking display; uses localStorage for persistence
+- `src/components/RankingPage.tsx` — Ranking system: manages member CRUD, match recording (singles/doubles), and ranking display; supports public guest view and authenticated user access
 - `vite.config.ts` — Base path is `/` in dev, `/badguys/` in production build
 
 ### Cost calculation model
@@ -42,18 +49,54 @@ Single textarea; each line is one player. Supported modifiers:
 - `+10k` suffix → surcharge added on top
 - Numbered lists (`1. Name`, `2/ Name`) are stripped automatically
 
+### Authentication & Routes
+
+User authentication via `AuthContext` (login with username/password, MD5-hashed passwords stored in Firestore).
+
+**Routes:**
+- `/` — Main cost calculator (guest accessible)
+- `/login` — Login form
+- `/dashboard/ranking` — Ranking dashboard (authenticated users only)
+- `/ranking` — Public ranking view (guest accessible, no member/match edit)
+- `/ranking/login` — Login form on public ranking page
+- `/users` — User management page (admin only)
+
+**Roles:**
+- `admin` — Can manage users, edit all members/matches, delete any content
+- `user` — Can record matches, manage own matches, view rankings
+
 ### State management
 
-Pure React hooks (`useState`, `useEffect`, `useMemo`). No external state library. `localStorage` persists config, input drafts, and admin flag across reloads.
+Pure React hooks (`useState`, `useEffect`, `useMemo`). No external state library. `localStorage` persists config, input drafts, members, and matches. Authentication state managed via `AuthContext`.
+
+### Testing
+
+Tests run via Vitest with jsdom environment (allows DOM testing in Node). Test setup imports `@testing-library/jest-dom` for DOM matchers. Currently no existing test files; add tests in `src/` with `.test.ts` or `.test.tsx` suffix.
 
 
 ## Environment variables
 
-Copy `.env.example` to `.env.local` for local development. Required secrets for production (set as GitHub Actions secrets/variables):
-- `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID` — Firestore access
-- `VITE_TELEGRAM_BOT_TOKEN`, `VITE_TELEGRAM_GROUP_CHAT_ID` — Notifications
+Copy `.env.example` to `.env.local` for local development.
 
-Optional overrides: female max fee, tube price, set price, court fee defaults.
+**Required for Firestore access:**
+- `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID` — Firestore authentication and database
+
+**Required for Telegram notifications:**
+- `VITE_TELEGRAM_BOT_TOKEN`, `VITE_TELEGRAM_GROUP_CHAT_ID` — Bot token and target group
+
+**Cost calculation configuration (optional defaults provided):**
+- `VITE_BADGUY_FEMALE_MAX` — Female player cost cap in thousands (default: 60)
+- `VITE_BADGUY_TUBE_PRICE` — Tube price in thousands (default: 290)
+- `VITE_BADGUY_SET_PRICE` — Price per set in thousands (default: 12)
+- `VITE_BADGUY_SHUTTLES_PER_TUBE` — Shuttles per tube for calculations (default: 12)
+
+**Feature toggles:**
+- `VITE_BADGUY_ROUND_RESULT` — Round cost results to nearest 1k (default: true)
+- `VITE_BADGUY_ENABLE_COURT_COUNT` — Show court count input field (default: true)
+- `VITE_BADGUY_ENABLE_TELEGRAM_NOTIFICATION` — Enable Telegram notifications (default: true)
+
+**Other:**
+- `VITE_APP_VERSION` — Version string displayed in UI (auto-generated in CI)
 
 ## Workflow
 

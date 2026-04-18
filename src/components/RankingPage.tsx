@@ -451,23 +451,19 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                   type="button"
                   onClick={() => {
                     setUserMenuOpen(false);
-                    if (isPublicRankingRoute) {
-                      navigate("/dashboard/ranking");
-                      return;
-                    }
                     navigate("/");
                   }}
                   className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center gap-2"
                 >
                   <Award className="h-4 w-4" />
-                  {isPublicRankingRoute ? "Mở dashboard" : "Về trang chủ"}
+                  Về trang chủ
                 </button>
                 <button
                   type="button"
                   onClick={() => {
                     setUserMenuOpen(false);
-                    logout();
                     navigate("/");
+                    logout();
                   }}
                   className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-red-600 hover:bg-red-50 inline-flex items-center gap-2"
                 >

@@ -79,6 +79,7 @@ export default function LoginModal({
               Username
             </label>
             <input
+              autoFocus
               id="username"
               type="text"
               value={username}

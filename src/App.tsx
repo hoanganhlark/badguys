@@ -429,8 +429,27 @@ export default function App() {
     );
   }
 
+  function toDashboardTarget(target: string): string {
+    const normalized = String(target || "").trim() || "/dashboard/ranking";
+
+    if (normalized === "/ranking" || normalized === "/ranking/") {
+      return "/dashboard/ranking";
+    }
+
+    if (normalized.startsWith("/ranking/")) {
+      const suffix = normalized.slice("/ranking/".length);
+      if (!suffix || suffix === "login") return "/dashboard/ranking";
+      if (suffix === "member") return "/dashboard/member";
+      if (suffix === "match-form") return "/dashboard/match-form";
+      if (suffix === "ranking") return "/dashboard/ranking";
+      return "/dashboard/ranking";
+    }
+
+    return normalized;
+  }
+
   function handleLoginSuccess(target: string) {
-    navigate(target, { replace: true });
+    navigate(toDashboardTarget(target), { replace: true });
   }
 
   function closeLoginModal() {
@@ -569,8 +588,8 @@ export default function App() {
                   type="button"
                   onClick={() => {
                     setUserMenuOpen(false);
-                    logout();
                     navigate("/", { replace: true });
+                    logout();
                   }}
                   className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-red-600 hover:bg-red-50 inline-flex items-center gap-2"
                 >
