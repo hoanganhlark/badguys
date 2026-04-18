@@ -1,5 +1,6 @@
 import { initializeApp, type FirebaseApp } from "firebase/app";
 import {
+  addDoc,
   collection,
   deleteDoc,
   doc,
@@ -11,13 +12,18 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  where,
 } from "firebase/firestore";
 import { envConfig } from "../env";
+import { normalizeRankingLevel } from "./rankingLevel";
 import type {
+  MatchRecord,
   RankingMatch,
   RankingMember,
   SessionPayload,
   SessionRecord,
+  UserRecord,
+  UserRole,
 } from "../types";
 
 let app: FirebaseApp | null = null;
@@ -26,6 +32,8 @@ let ready = false;
 const RANKING_MEMBERS_COLLECTION = "ranking-members";
 const RANKING_MATCHES_COLLECTION = "ranking-matches";
 const RANKING_STATE_DOC_ID = "state";
+const USERS_COLLECTION = "dev-users";
+const MATCHES_COLLECTION = "dev-matches";
 
 function getSessionDateKey(now?: Date): string {
   const current = now || new Date();
@@ -68,7 +76,7 @@ function ensureFirebase() {
 function withDevCollectionPrefix(collectionName: string): string {
   const normalized = String(collectionName || "").trim();
   if (!normalized) return normalized;
-  if (import.meta.env.DEV && !normalized.startsWith("dev-")) {
+  if (!normalized.startsWith("dev-")) {
     return `dev-${normalized}`;
   }
   return normalized;
@@ -187,7 +195,7 @@ export async function getRankingMembers(): Promise<RankingMember[]> {
     .map((item) => {
       const id = Number(item?.id);
       const name = String(item?.name || "").trim();
-      const level = String(item?.level || "Trung bình");
+      const level = normalizeRankingLevel(String(item?.level || "Lo"));
 
       if (!Number.isFinite(id) || !name) return null;
       return { id, name, level };
@@ -281,5 +289,249 @@ export async function saveRankingMatches(
       clientUpdatedAt: new Date().toISOString(),
     },
     { merge: true },
+  );
+}
+
+function normalizeUsernameKey(username: string): string {
+  return String(username || "")
+    .trim()
+    .toLowerCase();
+}
+
+function mapUserRecord(userDoc: {
+  id: string;
+  data: () => Record<string, unknown>;
+}): UserRecord {
+  const data = userDoc.data();
+  return {
+    id: userDoc.id,
+    username: String(data.username || ""),
+    usernameKey: String(data.usernameKey || ""),
+    password: String(data.password || ""),
+    role: data.role === "admin" ? "admin" : "member",
+    createdAt:
+      typeof data.clientCreatedAt === "string"
+        ? data.clientCreatedAt
+        : undefined,
+  };
+}
+
+export async function getUsers(): Promise<UserRecord[]> {
+  const context = ensureFirebase();
+  if (!context.db) {
+    throw new Error("Firebase is not configured");
+  }
+
+  const usersRef = collection(context.db, getCollectionPath(USERS_COLLECTION));
+  const usersSnapshot = await getDocs(usersRef);
+
+  return usersSnapshot.docs
+    .map((userDoc) => mapUserRecord(userDoc))
+    .filter((user) => !!user.username)
+    .sort((a, b) => a.username.localeCompare(b.username, "vi"));
+}
+
+export async function getUserByUsername(
+  username: string,
+): Promise<UserRecord | null> {
+  const context = ensureFirebase();
+  if (!context.db) {
+    throw new Error("Firebase is not configured");
+  }
+
+  const usernameKey = normalizeUsernameKey(username);
+  if (!usernameKey) return null;
+
+  const usersRef = collection(context.db, getCollectionPath(USERS_COLLECTION));
+  const usersQuery = query(
+    usersRef,
+    where("usernameKey", "==", usernameKey),
+    limit(1),
+  );
+  const snapshot = await getDocs(usersQuery);
+
+  if (snapshot.empty) return null;
+  return mapUserRecord(snapshot.docs[0]);
+}
+
+export async function createUser(input: {
+  username: string;
+  passwordHash: string;
+  role: UserRole;
+}): Promise<UserRecord> {
+  const context = ensureFirebase();
+  if (!context.db) {
+    throw new Error("Firebase is not configured");
+  }
+
+  const username = String(input.username || "").trim();
+  const usernameKey = normalizeUsernameKey(username);
+  const passwordHash = String(input.passwordHash || "").trim();
+  const role: UserRole = input.role === "admin" ? "admin" : "member";
+
+  if (!username) throw new Error("Username is required");
+  if (!passwordHash) throw new Error("Password hash is required");
+
+  const existingUser = await getUserByUsername(username);
+  if (existingUser) {
+    throw new Error("Username already exists");
+  }
+
+  const usersRef = collection(context.db, getCollectionPath(USERS_COLLECTION));
+  const createdRef = await addDoc(usersRef, {
+    username,
+    usernameKey,
+    password: passwordHash,
+    role,
+    createdAt: serverTimestamp(),
+    clientCreatedAt: new Date().toISOString(),
+  });
+
+  return {
+    id: createdRef.id,
+    username,
+    usernameKey,
+    password: passwordHash,
+    role,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+export async function deleteUser(userId: string): Promise<void> {
+  const context = ensureFirebase();
+  if (!context.db) {
+    throw new Error("Firebase is not configured");
+  }
+
+  const normalizedUserId = String(userId || "").trim();
+  if (!normalizedUserId) throw new Error("Missing user id");
+
+  await deleteDoc(
+    doc(
+      collection(context.db, getCollectionPath(USERS_COLLECTION)),
+      normalizedUserId,
+    ),
+  );
+}
+
+export async function updateUserRole(
+  userId: string,
+  role: UserRole,
+): Promise<void> {
+  const context = ensureFirebase();
+  if (!context.db) {
+    throw new Error("Firebase is not configured");
+  }
+
+  const normalizedUserId = String(userId || "").trim();
+  if (!normalizedUserId) throw new Error("Missing user id");
+
+  const userRef = doc(
+    collection(context.db, getCollectionPath(USERS_COLLECTION)),
+    normalizedUserId,
+  );
+
+  await setDoc(
+    userRef,
+    {
+      role: role === "admin" ? "admin" : "member",
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  );
+}
+
+function mapMatchRecord(matchDoc: {
+  id: string;
+  data: () => Record<string, unknown>;
+}): MatchRecord {
+  const data = matchDoc.data();
+  return {
+    id: matchDoc.id,
+    playerA: String(data.playerA || ""),
+    playerB: String(data.playerB || ""),
+    score: String(data.score || ""),
+    createdBy: String(data.createdBy || ""),
+    createdAt:
+      typeof data.clientCreatedAt === "string"
+        ? data.clientCreatedAt
+        : undefined,
+  };
+}
+
+export async function getMatches(): Promise<MatchRecord[]> {
+  const context = ensureFirebase();
+  if (!context.db) {
+    throw new Error("Firebase is not configured");
+  }
+
+  const matchesRef = collection(
+    context.db,
+    getCollectionPath(MATCHES_COLLECTION),
+  );
+  const snapshot = await getDocs(matchesRef);
+
+  return snapshot.docs
+    .map((matchDoc) => mapMatchRecord(matchDoc))
+    .filter((match) => match.playerA && match.playerB && match.score)
+    .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+}
+
+export async function createMatch(input: {
+  playerA: string;
+  playerB: string;
+  score: string;
+  createdBy: string;
+}): Promise<MatchRecord> {
+  const context = ensureFirebase();
+  if (!context.db) {
+    throw new Error("Firebase is not configured");
+  }
+
+  const playerA = String(input.playerA || "").trim();
+  const playerB = String(input.playerB || "").trim();
+  const score = String(input.score || "").trim();
+  const createdBy = String(input.createdBy || "").trim();
+
+  if (!playerA || !playerB || !score) throw new Error("Invalid match payload");
+  if (!createdBy) throw new Error("Missing creator");
+
+  const matchesRef = collection(
+    context.db,
+    getCollectionPath(MATCHES_COLLECTION),
+  );
+  const createdRef = await addDoc(matchesRef, {
+    playerA,
+    playerB,
+    score,
+    createdBy,
+    createdAt: serverTimestamp(),
+    clientCreatedAt: new Date().toISOString(),
+  });
+
+  return {
+    id: createdRef.id,
+    playerA,
+    playerB,
+    score,
+    createdBy,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+export async function deleteMatch(matchId: string): Promise<void> {
+  const context = ensureFirebase();
+  if (!context.db) {
+    throw new Error("Firebase is not configured");
+  }
+
+  const normalizedMatchId = String(matchId || "").trim();
+  if (!normalizedMatchId) throw new Error("Missing match id");
+
+  await deleteDoc(
+    doc(
+      collection(context.db, getCollectionPath(MATCHES_COLLECTION)),
+      normalizedMatchId,
+    ),
   );
 }

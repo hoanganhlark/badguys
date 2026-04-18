@@ -11,17 +11,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
-**BadGuys** is a single-page React + TypeScript app for splitting badminton session costs. Deployed to GitHub Pages, with Firebase Firestore for session history and Telegram Bot API for notifications.
+**BadGuys** is a single-page React + TypeScript app for splitting badminton session costs and tracking player rankings. Deployed to GitHub Pages, with Firebase Firestore for session history, ranking data, and Telegram Bot API for notifications.
 
 ### Key files
 
 - `src/App.tsx` — Root component; owns all state, wires together calculation and UI
 - `src/lib/core.ts` — Core business logic: `parsePlayersBulk()`, `calculateResult()`, `buildSummaryText()`, `buildSessionPayload()`
-- `src/types.ts` — Shared types: `Player`, `AppConfig`, `CalcResult`, `SessionRecord`
+- `src/types.ts` — Shared types: `Player`, `AppConfig`, `CalcResult`, `SessionRecord`, `RankingMember`, `RankingMatch`, `RankingLevel`
 - `src/env.ts` — Parses `VITE_*` env vars with fallback defaults
-- `src/lib/firebase.ts` — Firestore init and session CRUD
+- `src/lib/firebase.ts` — Firestore init, session CRUD, and ranking data CRUD (members and matches)
 - `src/lib/telegram.ts` — Async Telegram notification (silent failure on error)
 - `src/lib/platform.ts` — localStorage, clipboard, URL params, device detection
+- `src/lib/rankingStats.ts` — Player performance calculations: `calculateAdvancedStats()` for skill, stability, uncertainty, momentum, win rate
+- `src/lib/rankingLevel.ts` — Ranking level utilities: `normalizeRankingLevel()` for legacy Vietnamese name mapping, `getRankingLevelDisplay()`, `sortMembersByLevelAndName()`
+- `src/lib/rankingStorage.ts` — localStorage operations for ranking members and matches (load/save/migrate)
+- `src/components/RankingPage.tsx` — Ranking root component; manages view state (dashboard/match-form/ranking)
+- `src/components/ranking/` — Ranking subsystem components:
+  - `RankingPanel.tsx` — Member ranking table with stats display
+  - `MatchFormPanel.tsx` — Match recording form (singles/doubles with multi-set support)
+  - `MembersPanel.tsx` — Member list management
+  - `PlayerStatsModal.tsx` — Detailed player statistics
+  - `RankingSidebar.tsx` — Navigation sidebar
+  - `types.ts` — Local types: `Member`, `Match`, `AdvancedStats`, `RankingView`, `MatchSetInput`
 - `vite.config.ts` — Base path is `/` in dev, `/badguys/` in production build
 
 ### Cost calculation model
@@ -45,6 +56,18 @@ Single textarea; each line is one player. Supported modifiers:
 
 Pure React hooks (`useState`, `useEffect`, `useMemo`). No external state library. `localStorage` persists config, input drafts, and admin flag across reloads.
 
+### Routing
+
+App uses `react-router-dom` for client-side routing with BrowserRouter wrapper. Routes:
+- `/` — Home page
+- `/config` — Sidebar/config modal
+- `/config/sessions` — Session history modal
+- `/dashboard/ranking` — Ranking view (member list, rankings, match form)
+- `/dashboard/member` — Member management view
+- `/dashboard/match-form` — Match recording form
+
+Navigation is managed by `useHistoryModal()` hook which syncs browser history with modal states.
+
 ### Admin mode
 
 Enabled via URL param `?r=@` or toggled in UI. Unlocks session delete and suppresses Telegram notifications.
@@ -52,7 +75,7 @@ Enabled via URL param `?r=@` or toggled in UI. Unlocks session delete and suppre
 ## Environment variables
 
 Copy `.env.example` to `.env.local` for local development. Required secrets for production (set as GitHub Actions secrets/variables):
-- `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID` — Firestore access
+- `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID` — Firestore access (sessions, ranking members, ranking matches)
 - `VITE_TELEGRAM_BOT_TOKEN`, `VITE_TELEGRAM_GROUP_CHAT_ID` — Notifications
 
 Optional overrides: female max fee, tube price, set price, court fee defaults.

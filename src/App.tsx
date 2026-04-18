@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Award, Settings } from "react-feather";
+import { useLocation } from "react-router-dom";
+import LoginPage from "./components/LoginPage";
 import ConfigSidebar from "./components/ConfigSidebar";
 import ExpensesSection from "./components/ExpensesSection";
 import PlayersSection from "./components/PlayersSection";
@@ -7,6 +9,10 @@ import RankingPage from "./components/RankingPage";
 import ResultCard from "./components/ResultCard";
 import SessionsModal from "./components/SessionsModal";
 import Toast from "./components/Toast";
+import UserManagementPage from "./components/UserManagementPage";
+import AdminRoute from "./components/auth/AdminRoute";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import { useAuth } from "./context/AuthContext";
 import { envConfig } from "./env";
 import { useHistoryModal } from "./hooks/useHistoryModal";
 import {
@@ -34,21 +40,20 @@ import {
   clearInputDraft,
   copyText,
   formatVisitTimestampUTC7,
-  loadAdminMode,
   loadStoredConfig,
   loadStoredInputDraft,
   markVisitNotifiedToday,
-  readAdminFromUrl,
-  saveAdminMode,
   saveConfig,
   saveInputDraft,
   shouldSendVisitNotificationToday,
-  syncAdminToUrl,
 } from "./lib/platform";
 import { notifyCopyClicked, notifyGuestVisited } from "./lib/telegram";
 import type { AppConfig, Player, SessionRecord } from "./types";
 
 export default function App() {
+  const { currentUser, isAuthenticated, isAdmin, logout } = useAuth();
+  const location = useLocation();
+
   const [inputDraft] = useState(() => loadStoredInputDraft());
   const [courtFeeInput, setCourtFeeInput] = useState(inputDraft.courtFeeInput);
   const [shuttleCountInput, setShuttleCountInput] = useState(
@@ -69,12 +74,8 @@ export default function App() {
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [toastMessage, setToastMessage] = useState("");
   const [resetArmed, setResetArmed] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(
-    () => readAdminFromUrl() || loadAdminMode(),
-  );
 
   const resetTimerRef = useRef<number | null>(null);
-  const isAdminRef = useRef(isAdmin);
 
   const {
     configOpen,
@@ -86,7 +87,7 @@ export default function App() {
     closeSessions,
     openRanking,
     closeRanking,
-  } = useHistoryModal();
+  } = useHistoryModal(isAuthenticated);
 
   const courtFee = parseFloat(courtFeeInput) || 0;
   const shuttleCount = parseFloat(shuttleCountInput) || 0;
@@ -113,12 +114,6 @@ export default function App() {
   }, [courtFeeInput, shuttleCountInput, courtCountInput, bulkInput]);
 
   useEffect(() => {
-    isAdminRef.current = isAdmin;
-    saveAdminMode(isAdmin);
-    syncAdminToUrl(isAdmin);
-  }, [isAdmin]);
-
-  useEffect(() => {
     if (!toastMessage) return;
     const timer = window.setTimeout(
       () => setToastMessage(""),
@@ -136,13 +131,6 @@ export default function App() {
       markVisitNotifiedToday();
     })();
   }, [isAdmin]);
-
-  // Re-sync admin URL param after browser back/forward may have cleared it
-  useEffect(() => {
-    const onPopState = () => syncAdminToUrl(isAdminRef.current);
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, []);
 
   function showToast(message: string) {
     setToastMessage(message);
@@ -175,10 +163,6 @@ export default function App() {
       setPrice: Math.max(0, next.setPrice || 0),
       enableCourtCount: !!next.enableCourtCount,
     });
-  }
-
-  function handleToggleAdminMode() {
-    setIsAdmin((prev) => !prev);
   }
 
   async function handleCopySummary() {
@@ -303,6 +287,18 @@ export default function App() {
     }, RESET_CONFIRM_TIMEOUT_MS);
   }
 
+  if (location.pathname === "/login") {
+    return <LoginPage />;
+  }
+
+  if (location.pathname === "/users") {
+    return (
+      <AdminRoute>
+        <UserManagementPage />
+      </AdminRoute>
+    );
+  }
+
   return (
     <div className="p-5 md:p-12 relative">
       <div className="max-w-md mx-auto">
@@ -314,21 +310,24 @@ export default function App() {
           <Settings className="h-5 w-5" />
         </button>
 
-        {isAdmin && (
-          <button
-            onClick={openRanking}
-            aria-label="Bảng xếp hạng"
-            className="fixed top-5 right-5 md:top-8 md:right-8 z-30 h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
-          >
-            <Award className="h-5 w-5" />
-          </button>
-        )}
+        <button
+          onClick={openRanking}
+          aria-label="Bảng xếp hạng"
+          className="fixed top-5 right-5 md:top-8 md:right-8 z-30 h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
+        >
+          <Award className="h-5 w-5" />
+        </button>
 
         <header className="mb-12 text-center">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
             {isAdmin ? "@BadGuys" : "BadGuys"}
             <span className="text-slate-400">.</span>
           </h1>
+          <p className="mt-2 text-xs text-slate-500">
+            {currentUser
+              ? `Đăng nhập: ${currentUser.username} (${currentUser.role})`
+              : "Chưa đăng nhập"}
+          </p>
         </header>
 
         <ExpensesSection
@@ -376,10 +375,11 @@ export default function App() {
         backdropInteractive={!sessionsOpen}
         config={config}
         isAdmin={isAdmin}
+        currentUsername={currentUser?.username || ""}
         onClose={closeConfig}
         onOpenSessions={openSessionsModal}
         onConfigChange={handleConfigChange}
-        onToggleAdmin={handleToggleAdminMode}
+        onLogout={logout}
         appVersion={envConfig.appVersion}
       />
 
@@ -394,13 +394,13 @@ export default function App() {
         onCopyNote={handleCopySessionNote}
       />
 
-      <RankingPage isOpen={rankingOpen} onClose={closeRanking} />
+      {rankingOpen ? (
+        <ProtectedRoute>
+          <RankingPage isOpen={rankingOpen} onClose={closeRanking} />
+        </ProtectedRoute>
+      ) : null}
 
       {toastMessage ? <Toast message={toastMessage} /> : null}
-
-      <p className="fixed bottom-2 left-0 right-0 text-center text-xs text-slate-400">
-        hoanganh.lark
-      </p>
     </div>
   );
 }
