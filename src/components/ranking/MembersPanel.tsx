@@ -126,7 +126,7 @@ export default function MembersPanel({
                 Thành viên
               </th>
               <th className="px-4 py-3 text-xs font-semibold text-slate-700 uppercase">
-                Trình độ
+                Hạng
               </th>
               {canManage ? (
                 <th className="px-4 py-3 text-xs font-semibold text-slate-700 uppercase text-right">

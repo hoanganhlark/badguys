@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { Award, Key, LogOut, Settings, User, X } from "react-feather";
+import { Award, Key, LogOut, Settings, X } from "react-feather";
 import { useLocation } from "react-router-dom";
 import LoginPage from "./components/LoginPage";
 import ConfigSidebar from "./components/ConfigSidebar";
@@ -422,7 +422,7 @@ export default function App() {
         <button
           onClick={openRanking}
           aria-label="Bảng xếp hạng"
-          className={`fixed top-5 ${isAuthenticated ? "right-20 md:right-24" : "right-5 md:right-8"} md:top-8 z-30 h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center`}
+          className={`${isAuthenticated ? "hidden" : "fixed top-5 right-5 md:top-8 md:right-8"} z-30 h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center`}
         >
           <Award className="h-5 w-5" />
         </button>
@@ -436,9 +436,9 @@ export default function App() {
               type="button"
               onClick={() => setUserMenuOpen((prev) => !prev)}
               aria-label="Mở menu tài khoản"
-              className="h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
+              className="h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center text-sm font-bold uppercase"
             >
-              <User className="h-5 w-5" />
+              {currentUser?.username?.charAt(0) || "U"}
             </button>
 
             {userMenuOpen ? (
@@ -446,6 +446,16 @@ export default function App() {
                 <p className="px-2 py-1 text-xs font-semibold text-slate-500 truncate">
                   {currentUser?.username}
                 </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    openRanking();
+                  }}
+                  className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center gap-2"
+                >
+                  <Award className="h-4 w-4" /> Mở dashboard
+                </button>
                 <button
                   type="button"
                   onClick={() => {

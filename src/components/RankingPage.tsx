@@ -314,6 +314,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
         const scoreB = Number.parseInt(set.team2Score, 10);
 
         if (Number.isNaN(scoreA) || Number.isNaN(scoreB)) return null;
+        if (scoreA < 0 || scoreB < 0) return null;
         return `${scoreA}-${scoreB}`;
       })
       .filter((score): score is string => score !== null);

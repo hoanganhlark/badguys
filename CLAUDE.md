@@ -8,40 +8,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run build` — TypeScript check + Vite production build (base path `/badguys/`)
 - `npm run preview` — Preview production build locally
 - `npm test` — Run Vitest test suite
-- `npm run seed:users` — Seed development users to Firestore (requires `.env.local`)
 
 ## Architecture
 
-**BadGuys** is a single-page React + TypeScript app for splitting badminton session costs and tracking player rankings. Deployed to GitHub Pages, with Firebase Firestore for session history, ranking data, and Telegram Bot API for notifications.
+**BadGuys** is a single-page React + TypeScript app for splitting badminton session costs. Includes a ranking tracker modal for tournament results and player rankings (client-side, localStorage-backed). Deployed to GitHub Pages, with Firebase Firestore for session history and Telegram Bot API for notifications.
 
 ### Key files
 
 - `src/App.tsx` — Root component; owns all state, wires together calculation and UI
 - `src/lib/core.ts` — Core business logic: `parsePlayersBulk()`, `calculateResult()`, `buildSummaryText()`, `buildSessionPayload()`
-- `src/types.ts` — Shared types: `Player`, `AppConfig`, `CalcResult`, `SessionRecord`, `AuthUser`, `UserRecord`, `RankingMember`, `RankingMatch`, `RankingLevel`
+- `src/types.ts` — Shared types: `Player`, `AppConfig`, `CalcResult`, `SessionRecord`
 - `src/env.ts` — Parses `VITE_*` env vars with fallback defaults
-- `src/lib/firebase.ts` — Firestore init, session CRUD, ranking data CRUD (members and matches), and user management; provides both async fetch (`getUsers()`, `getMatches()`) and real-time subscriptions (`subscribeUsers()`, `subscribeMatches()` via `onSnapshot`)
-- `src/lib/hash.ts` — MD5 password hashing
+- `src/lib/firebase.ts` — Firestore init and session CRUD
 - `src/lib/telegram.ts` — Async Telegram notification (silent failure on error)
 - `src/lib/platform.ts` — localStorage, clipboard, URL params, device detection
-- `src/lib/rankingStats.ts` — Player performance calculations: `calculateAdvancedStats()` for skill, stability, uncertainty, momentum, win rate
-- `src/lib/rankingLevel.ts` — Ranking level utilities: `normalizeRankingLevel()` for legacy Vietnamese name mapping, `getRankingLevelDisplay()`, `sortMembersByLevelAndName()`
-- `src/lib/rankingStorage.ts` — localStorage operations for ranking members and matches (load/save/migrate)
-- `src/context/AuthContext.tsx` — Auth state management: `useAuth()` hook, login/logout, role-based access
-- `src/components/LoginPage.tsx` — Login form and authentication UI
-- `src/components/UserManagementPage.tsx` — Admin-only page for creating/deleting users and managing roles
-- `src/components/ConfigSidebar.tsx` — Settings sidebar modal for config management and user info
-- `src/components/SessionsModal.tsx` — Modal displaying session history with copy and delete functionality
-- `src/components/auth/ProtectedRoute.tsx` — Wrapper enforcing authenticated access (redirects to `/login`)
-- `src/components/auth/AdminRoute.tsx` — Wrapper enforcing admin-only access
-- `src/components/RankingPage.tsx` — Ranking root component; manages view state (dashboard/match-form/ranking)
-- `src/components/ranking/` — Ranking subsystem components:
-  - `RankingPanel.tsx` — Member ranking table with stats display
-  - `MatchFormPanel.tsx` — Match recording form (singles/doubles with multi-set support)
-  - `MembersPanel.tsx` — Member list management
-  - `PlayerStatsModal.tsx` — Detailed player statistics
-  - `RankingSidebar.tsx` — Navigation sidebar
-  - `types.ts` — Local types: `Member`, `Match`, `AdvancedStats`, `RankingView`, `MatchSetInput`
+- `src/components/RankingPage.tsx` — Ranking system modal: manages member CRUD, match recording (singles/doubles), and ranking display; uses localStorage for persistence
 - `vite.config.ts` — Base path is `/` in dev, `/badguys/` in production build
 
 ### Cost calculation model
@@ -65,23 +46,11 @@ Single textarea; each line is one player. Supported modifiers:
 
 Pure React hooks (`useState`, `useEffect`, `useMemo`). No external state library. `localStorage` persists config, input drafts, and admin flag across reloads.
 
-### Authentication & Authorization
-
-Uses `AuthContext` for client-side session management (stored in localStorage). Users authenticate with username/password (MD5-hashed) against Firestore `dev-users` collection. Two roles: `admin` (manages users, deletes sessions) and `member` (reads-only ranking access).
-
-Routes are protected:
-- `/login` — Login page (public)
-- `/` — Home page (public)
-- `/dashboard/ranking` — Ranking view (requires authentication via `ProtectedRoute`)
-- `/users` — User management (requires admin role via `AdminRoute`)
-
-Navigation is managed by `useHistoryModal()` hook which syncs browser history with modal states.
-
 
 ## Environment variables
 
 Copy `.env.example` to `.env.local` for local development. Required secrets for production (set as GitHub Actions secrets/variables):
-- `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID` — Firestore access (sessions, ranking members, ranking matches)
+- `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID` — Firestore access
 - `VITE_TELEGRAM_BOT_TOKEN`, `VITE_TELEGRAM_GROUP_CHAT_ID` — Notifications
 
 Optional overrides: female max fee, tube price, set price, court fee defaults.
