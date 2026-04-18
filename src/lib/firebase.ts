@@ -3,6 +3,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   getDocs,
   getFirestore,
   limit,
@@ -12,10 +13,19 @@ import {
   setDoc,
 } from "firebase/firestore";
 import { envConfig } from "../env";
-import type { SessionPayload, SessionRecord } from "../types";
+import type {
+  RankingMatch,
+  RankingMember,
+  SessionPayload,
+  SessionRecord,
+} from "../types";
 
 let app: FirebaseApp | null = null;
 let ready = false;
+
+const RANKING_MEMBERS_COLLECTION = "ranking-members";
+const RANKING_MATCHES_COLLECTION = "ranking-matches";
+const RANKING_STATE_DOC_ID = "state";
 
 function getSessionDateKey(now?: Date): string {
   const current = now || new Date();
@@ -55,6 +65,19 @@ function ensureFirebase() {
   return { app, db: getFirestore(app), ready: true };
 }
 
+function withDevCollectionPrefix(collectionName: string): string {
+  const normalized = String(collectionName || "").trim();
+  if (!normalized) return normalized;
+  if (import.meta.env.DEV && !normalized.startsWith("dev-")) {
+    return `dev-${normalized}`;
+  }
+  return normalized;
+}
+
+function getCollectionPath(collectionName: string): string {
+  return withDevCollectionPrefix(collectionName);
+}
+
 export function isFirebaseReady(): boolean {
   ensureFirebase();
   return ready;
@@ -69,10 +92,8 @@ export async function saveDailySummary(
   }
 
   const dateKey = getSessionDateKey();
-  const sessionRef = doc(
-    collection(context.db, envConfig.firebaseCollection),
-    dateKey,
-  );
+  const sessionsCollection = getCollectionPath(envConfig.firebaseCollection);
+  const sessionRef = doc(collection(context.db, sessionsCollection), dateKey);
 
   await setDoc(
     sessionRef,
@@ -106,7 +127,10 @@ export async function getRecentSessions(
     throw new Error("Firebase is not configured");
   }
 
-  const sessionsRef = collection(context.db, envConfig.firebaseCollection);
+  const sessionsRef = collection(
+    context.db,
+    getCollectionPath(envConfig.firebaseCollection),
+  );
   const sessionsQuery = query(
     sessionsRef,
     orderBy("updatedAt", "desc"),
@@ -133,6 +157,129 @@ export async function removeSession(
     throw new Error("Missing session id");
   }
 
-  await deleteDoc(doc(collection(context.db, envConfig.firebaseCollection), id));
+  await deleteDoc(
+    doc(
+      collection(context.db, getCollectionPath(envConfig.firebaseCollection)),
+      id,
+    ),
+  );
   return { id };
+}
+
+export async function getRankingMembers(): Promise<RankingMember[]> {
+  const context = ensureFirebase();
+  if (!context.db) {
+    throw new Error("Firebase is not configured");
+  }
+
+  const stateDocRef = doc(
+    collection(context.db, getCollectionPath(RANKING_MEMBERS_COLLECTION)),
+    RANKING_STATE_DOC_ID,
+  );
+  const snapshot = await getDoc(stateDocRef);
+
+  if (!snapshot.exists()) return [];
+
+  const data = snapshot.data();
+  const membersRaw = Array.isArray(data.members) ? data.members : [];
+
+  return membersRaw
+    .map((item) => {
+      const id = Number(item?.id);
+      const name = String(item?.name || "").trim();
+      const level = String(item?.level || "Trung bình");
+
+      if (!Number.isFinite(id) || !name) return null;
+      return { id, name, level };
+    })
+    .filter((member): member is RankingMember => member !== null);
+}
+
+export async function saveRankingMembers(
+  members: RankingMember[],
+): Promise<void> {
+  const context = ensureFirebase();
+  if (!context.db) {
+    throw new Error("Firebase is not configured");
+  }
+
+  const stateDocRef = doc(
+    collection(context.db, getCollectionPath(RANKING_MEMBERS_COLLECTION)),
+    RANKING_STATE_DOC_ID,
+  );
+
+  await setDoc(
+    stateDocRef,
+    {
+      members,
+      updatedAt: serverTimestamp(),
+      clientUpdatedAt: new Date().toISOString(),
+    },
+    { merge: true },
+  );
+}
+
+export async function getRankingMatches(): Promise<RankingMatch[]> {
+  const context = ensureFirebase();
+  if (!context.db) {
+    throw new Error("Firebase is not configured");
+  }
+
+  const stateDocRef = doc(
+    collection(context.db, getCollectionPath(RANKING_MATCHES_COLLECTION)),
+    RANKING_STATE_DOC_ID,
+  );
+  const snapshot = await getDoc(stateDocRef);
+
+  if (!snapshot.exists()) return [];
+
+  const data = snapshot.data();
+  const matchesRaw = Array.isArray(data.matches) ? data.matches : [];
+
+  return matchesRaw
+    .map((item) => {
+      const id = Number(item?.id);
+      const type = item?.type === "doubles" ? "doubles" : "singles";
+      const team1 = Array.isArray(item?.team1)
+        ? item.team1.map((name: unknown) => String(name))
+        : [];
+      const team2 = Array.isArray(item?.team2)
+        ? item.team2.map((name: unknown) => String(name))
+        : [];
+      const sets = Array.isArray(item?.sets)
+        ? item.sets.map((set: unknown) => String(set))
+        : [];
+      const date = String(item?.date || "");
+
+      if (!Number.isFinite(id) || team1.length === 0 || team2.length === 0) {
+        return null;
+      }
+
+      return { id, type, team1, team2, sets, date };
+    })
+    .filter((match): match is RankingMatch => match !== null);
+}
+
+export async function saveRankingMatches(
+  matches: RankingMatch[],
+): Promise<void> {
+  const context = ensureFirebase();
+  if (!context.db) {
+    throw new Error("Firebase is not configured");
+  }
+
+  const stateDocRef = doc(
+    collection(context.db, getCollectionPath(RANKING_MATCHES_COLLECTION)),
+    RANKING_STATE_DOC_ID,
+  );
+
+  await setDoc(
+    stateDocRef,
+    {
+      matches,
+      updatedAt: serverTimestamp(),
+      clientUpdatedAt: new Date().toISOString(),
+    },
+    { merge: true },
+  );
 }

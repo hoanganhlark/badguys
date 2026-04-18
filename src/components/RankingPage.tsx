@@ -1,5 +1,13 @@
 import { useMemo, useState, useEffect, type ComponentType } from "react";
 import {
+  getRankingMatches,
+  getRankingMembers,
+  isFirebaseReady,
+  saveRankingMatches,
+  saveRankingMembers,
+} from "../lib/firebase";
+import type { RankingMatch, RankingMember } from "../types";
+import {
   Award,
   BarChart2,
   Check,
@@ -19,20 +27,8 @@ import {
   Trash2,
 } from "react-feather";
 
-interface Member {
-  id: number;
-  name: string;
-  level: string;
-}
-
-interface Match {
-  id: number;
-  type: "singles" | "doubles";
-  team1: string[];
-  team2: string[];
-  sets: string[]; // e.g., ["21-18", "15-21", "21-10"]
-  date: string;
-}
+type Member = RankingMember;
+type Match = RankingMatch;
 
 interface AdvancedStats {
   name: string;
@@ -51,6 +47,11 @@ interface RankingPageProps {
 }
 
 type RankingView = "dashboard" | "match-form" | "ranking";
+
+interface MatchSetInput {
+  team1Score: string;
+  team2Score: string;
+}
 
 const STORAGE_MEMBERS_KEY = "rankingMembers";
 const STORAGE_MATCHES_KEY = "rankingMatches";
@@ -110,6 +111,25 @@ function saveMembersToStorage(members: Member[]) {
 
 function saveMatchesToStorage(matches: Match[]) {
   localStorage.setItem(STORAGE_MATCHES_KEY, JSON.stringify(matches));
+}
+
+function buildMembersFromMatches(matches: Match[]): Member[] {
+  const uniqueNames = new Set<string>();
+
+  for (const match of matches) {
+    for (const name of [...match.team1, ...match.team2]) {
+      const normalized = String(name || "").trim();
+      if (normalized) uniqueNames.add(normalized);
+    }
+  }
+
+  return [...uniqueNames]
+    .sort((a, b) => a.localeCompare(b, "vi"))
+    .map((name, index) => ({
+      id: Date.now() + index,
+      name,
+      level: "Trung bình",
+    }));
 }
 
 // Parse a single set score (e.g., "21-18" -> [21, 18])
@@ -351,28 +371,90 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   const [selectedPlayer, setSelectedPlayer] = useState<AdvancedStats | null>(
     null,
   );
+  const [isRemoteHydrated, setIsRemoteHydrated] = useState(false);
 
   // Member Form State
   const [isEditing, setIsEditing] = useState<number | null>(null);
   const [newMember, setNewMember] = useState({ name: "", level: "Trung bình" });
 
   // Match Form State
-  const [matchType, setMatchType] = useState<"singles" | "doubles">("singles");
+  const [matchType, setMatchType] = useState<"singles" | "doubles">("doubles");
   const [matchData, setMatchData] = useState({
     team1: [] as string[],
     team2: [] as string[],
-    sets: ["", ""] as string[],
+    sets: [{ team1Score: "", team2Score: "" }] as MatchSetInput[],
   });
+
+  useEffect(() => {
+    let mounted = true;
+
+    const hydrateRankingData = async () => {
+      if (!isFirebaseReady()) {
+        if (mounted) setIsRemoteHydrated(true);
+        return;
+      }
+
+      try {
+        const [remoteMembers, remoteMatches] = await Promise.all([
+          getRankingMembers(),
+          getRankingMatches(),
+        ]);
+
+        if (!mounted) return;
+
+        const hasRemoteMembers = remoteMembers.length > 0;
+        const fallbackMembers = hasRemoteMembers
+          ? remoteMembers
+          : buildMembersFromMatches(remoteMatches);
+
+        // Use DB as the source of truth when Firestore is reachable.
+        setMembers(fallbackMembers);
+        setMatches(remoteMatches);
+
+        // Auto-repair missing members document based on DB matches.
+        if (!hasRemoteMembers && fallbackMembers.length > 0) {
+          void saveRankingMembers(fallbackMembers).catch((error) => {
+            console.error(
+              "Failed to backfill ranking members from match history",
+              error,
+            );
+          });
+        }
+      } catch (error) {
+        console.error("Failed to load ranking data from Firestore", error);
+      } finally {
+        if (mounted) setIsRemoteHydrated(true);
+      }
+    };
+
+    void hydrateRankingData();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Persist members
   useEffect(() => {
     saveMembersToStorage(members);
-  }, [members]);
+
+    if (!isRemoteHydrated || !isFirebaseReady()) return;
+
+    void saveRankingMembers(members).catch((error) => {
+      console.error("Failed to save ranking members to Firestore", error);
+    });
+  }, [members, isRemoteHydrated]);
 
   // Persist matches
   useEffect(() => {
     saveMatchesToStorage(matches);
-  }, [matches]);
+
+    if (!isRemoteHydrated || !isFirebaseReady()) return;
+
+    void saveRankingMatches(matches).catch((error) => {
+      console.error("Failed to save ranking matches to Firestore", error);
+    });
+  }, [matches, isRemoteHydrated]);
 
   // Logic: Thành viên
   const handleAddMember = () => {
@@ -399,23 +481,70 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     setNewMember({ name: member.name, level: member.level });
   };
 
+  const getSelectableMembers = (team: "team1" | "team2", index: number) => {
+    const currentSelection = matchData[team][index];
+    const selectedInOtherSlots = new Set(
+      [...matchData.team1, ...matchData.team2].filter(
+        (name) => name && name !== currentSelection,
+      ),
+    );
+
+    return members.filter((member) => !selectedInOtherSlots.has(member.name));
+  };
+
+  const addSetInput = () => {
+    setMatchData((prev) => ({
+      ...prev,
+      sets: [...prev.sets, { team1Score: "", team2Score: "" }],
+    }));
+  };
+
   // Logic: Trận đấu
   const handleSaveMatch = () => {
     const { team1, team2, sets } = matchData;
-    if (team1.length === 0 || team2.length === 0) return;
-    if (sets.every((s) => !s.trim())) return;
+
+    const slotCount = matchType === "singles" ? 1 : 2;
+    const selectedTeam1 = team1
+      .slice(0, slotCount)
+      .filter((name) => name?.trim());
+    const selectedTeam2 = team2
+      .slice(0, slotCount)
+      .filter((name) => name?.trim());
+
+    if (
+      selectedTeam1.length !== slotCount ||
+      selectedTeam2.length !== slotCount
+    ) {
+      return;
+    }
+
+    const parsedSets = sets
+      .map((set) => {
+        const scoreA = Number.parseInt(set.team1Score, 10);
+        const scoreB = Number.parseInt(set.team2Score, 10);
+
+        if (Number.isNaN(scoreA) || Number.isNaN(scoreB)) return null;
+        return `${scoreA}-${scoreB}`;
+      })
+      .filter((score): score is string => score !== null);
+
+    if (parsedSets.length === 0) return;
 
     const newMatch: Match = {
       id: Date.now(),
       type: matchType,
-      team1: [...team1],
-      team2: [...team2],
-      sets: sets.filter((s) => s.trim()),
+      team1: selectedTeam1,
+      team2: selectedTeam2,
+      sets: parsedSets,
       date: new Date().toLocaleDateString("vi-VN"),
     };
 
     setMatches([newMatch, ...matches]);
-    setMatchData({ team1: [], team2: [], sets: ["", ""] });
+    setMatchData({
+      team1: [],
+      team2: [],
+      sets: [{ team1Score: "", team2Score: "" }],
+    });
     setView("ranking");
   };
 
@@ -606,18 +735,6 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
             <div className="max-w-3xl bg-white p-6 rounded-lg border border-gray-200 shadow">
               <div className="flex gap-4 mb-6">
                 <button
-                  onClick={() => setMatchType("singles")}
-                  className={`flex-1 py-2 rounded border font-semibold transition-all ${
-                    matchType === "singles"
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "border-gray-200 text-gray-600 hover:border-gray-300"
-                  }`}
-                >
-                  <span className="inline-flex items-center gap-2">
-                    <User className="h-4 w-4" /> Đánh Đơn
-                  </span>
-                </button>
-                <button
                   onClick={() => setMatchType("doubles")}
                   className={`flex-1 py-2 rounded border font-semibold transition-all ${
                     matchType === "doubles"
@@ -627,6 +744,18 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                 >
                   <span className="inline-flex items-center gap-2">
                     <Users className="h-4 w-4" /> Đánh Đôi
+                  </span>
+                </button>
+                <button
+                  onClick={() => setMatchType("singles")}
+                  className={`flex-1 py-2 rounded border font-semibold transition-all ${
+                    matchType === "singles"
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "border-gray-200 text-gray-600 hover:border-gray-300"
+                  }`}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <User className="h-4 w-4" /> Đánh Đơn
                   </span>
                 </button>
               </div>
@@ -648,7 +777,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                         value={matchData.team1[i] || ""}
                       >
                         <option value="">Chọn VĐV...</option>
-                        {members.map((m) => (
+                        {getSelectableMembers("team1", i).map((m) => (
                           <option key={m.id} value={m.name}>
                             {m.name}
                           </option>
@@ -674,7 +803,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                         value={matchData.team2[i] || ""}
                       >
                         <option value="">Chọn VĐV...</option>
-                        {members.map((m) => (
+                        {getSelectableMembers("team2", i).map((m) => (
                           <option key={m.id} value={m.name}>
                             {m.name}
                           </option>
@@ -686,22 +815,51 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
               </div>
 
               <div className="mt-6 pt-6 border-t space-y-3">
-                <h3 className="font-bold text-center">
-                  Kết quả (Điểm mỗi set: VD: 21-18)
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold">Kết quả theo set</h3>
+                  <button
+                    type="button"
+                    onClick={addSetInput}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <Plus className="h-4 w-4" /> Thêm set
+                  </button>
+                </div>
                 {matchData.sets.map((set, i) => (
-                  <input
-                    key={i}
-                    type="text"
-                    placeholder={`Set ${i + 1} (VD: 21-18)`}
-                    className="w-full p-2 rounded border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={set}
-                    onChange={(e) => {
-                      const newSets = [...matchData.sets];
-                      newSets[i] = e.target.value;
-                      setMatchData({ ...matchData, sets: newSets });
-                    }}
-                  />
+                  <div key={i} className="grid grid-cols-2 gap-3">
+                    <input
+                      type="number"
+                      min={0}
+                      inputMode="numeric"
+                      placeholder={`Set ${i + 1} - Đội A`}
+                      className="w-full p-2 rounded border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={set.team1Score}
+                      onChange={(e) => {
+                        const newSets = [...matchData.sets];
+                        newSets[i] = {
+                          ...newSets[i],
+                          team1Score: e.target.value,
+                        };
+                        setMatchData({ ...matchData, sets: newSets });
+                      }}
+                    />
+                    <input
+                      type="number"
+                      min={0}
+                      inputMode="numeric"
+                      placeholder={`Set ${i + 1} - Đội B`}
+                      className="w-full p-2 rounded border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={set.team2Score}
+                      onChange={(e) => {
+                        const newSets = [...matchData.sets];
+                        newSets[i] = {
+                          ...newSets[i],
+                          team2Score: e.target.value,
+                        };
+                        setMatchData({ ...matchData, sets: newSets });
+                      }}
+                    />
+                  </div>
                 ))}
               </div>
 
