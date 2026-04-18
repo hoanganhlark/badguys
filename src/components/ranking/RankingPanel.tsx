@@ -34,8 +34,8 @@ export default function RankingPanel({
   currentUserId,
 }: RankingPanelProps) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-      <div className="lg:col-span-2">
+    <div className="max-w-5xl space-y-4 md:space-y-6">
+      <div>
         <div className="md:hidden space-y-2.5">
           {rankings.map((player, index) => (
             <button
