@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import {
   createMatch,
   deleteMatch,
@@ -6,6 +6,7 @@ import {
   isFirebaseReady,
   saveRankingMembers,
   subscribeMatches,
+  subscribeUsers,
 } from "../lib/firebase";
 import { matchPath, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -30,7 +31,7 @@ import type {
   RankingView,
 } from "./ranking/types";
 import type { MatchRecord, RankingLevel } from "../types";
-import { Award, BarChart2, Settings } from "react-feather";
+import { Award, BarChart2, LogIn, LogOut, Settings } from "react-feather";
 
 interface RankingPageProps {
   isOpen: boolean;
@@ -42,12 +43,19 @@ function isRankingView(value: string | null): value is RankingView {
 }
 
 export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
-  const { currentUser, isAdmin } = useAuth();
+  const { currentUser, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const matchedRoute = matchPath("/dashboard/:tab", location.pathname);
-  const tab = matchedRoute?.params.tab ?? null;
-  const view: RankingView = isRankingView(tab) ? tab : "ranking";
+  const isPublicRankingRoute = location.pathname.startsWith("/ranking");
+  const routeBase = isPublicRankingRoute ? "/ranking" : "/dashboard";
+  const dashboardRoute = matchPath("/dashboard/:tab", location.pathname);
+  const publicRoute = matchPath("/ranking/:tab", location.pathname);
+  const tab = dashboardRoute?.params.tab ?? publicRoute?.params.tab ?? null;
+  const parsedView: RankingView = isRankingView(tab) ? tab : "ranking";
+  const view: RankingView =
+    isPublicRankingRoute && parsedView === "match-form"
+      ? "ranking"
+      : parsedView;
   const [members, setMembers] = useState<Member[]>(() =>
     loadMembersFromStorage(),
   );
@@ -58,6 +66,13 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     null,
   );
   const [isRemoteHydrated, setIsRemoteHydrated] = useState(false);
+  const [usernamesById, setUsernamesById] = useState<Record<string, string>>(
+    {},
+  );
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [guestMenuOpen, setGuestMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
+  const guestMenuRef = useRef<HTMLDivElement | null>(null);
 
   // Member Form State
   const [isEditing, setIsEditing] = useState<number | null>(null);
@@ -97,14 +112,23 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     mode: "push" | "replace" = "push",
   ) => {
     if (!isOpen) return;
-    navigate(`/dashboard/${nextView}`, { replace: mode === "replace" });
+    const safeView =
+      isPublicRankingRoute && nextView === "match-form" ? "ranking" : nextView;
+    navigate(`${routeBase}/${safeView}`, { replace: mode === "replace" });
   };
 
   useEffect(() => {
     if (!isOpen) return;
+    if (isPublicRankingRoute && tab === "login") {
+      return;
+    }
+    if (isPublicRankingRoute && tab === "match-form") {
+      navigate(`${routeBase}/ranking`, { replace: true });
+      return;
+    }
     if (tab == null || isRankingView(tab)) return;
-    navigate("/dashboard/ranking", { replace: true });
-  }, [isOpen, navigate, tab]);
+    navigate(`${routeBase}/ranking`, { replace: true });
+  }, [isOpen, isPublicRankingRoute, navigate, routeBase, tab]);
 
   useEffect(() => {
     let mounted = true;
@@ -177,6 +201,64 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isOpen || !isFirebaseReady()) return;
+
+    const unsubscribe = subscribeUsers(
+      (users) => {
+        const nextMap = users.reduce<Record<string, string>>((acc, user) => {
+          acc[user.id] = user.username;
+          return acc;
+        }, {});
+        setUsernamesById(nextMap);
+      },
+      () => {
+        setUsernamesById({});
+      },
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!userMenuOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!userMenuRef.current) return;
+      if (userMenuRef.current.contains(event.target as Node)) return;
+      setUserMenuOpen(false);
+    };
+
+    window.addEventListener("mousedown", handleClickOutside);
+    return () => window.removeEventListener("mousedown", handleClickOutside);
+  }, [userMenuOpen]);
+
+  useEffect(() => {
+    if (!guestMenuOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!guestMenuRef.current) return;
+      if (guestMenuRef.current.contains(event.target as Node)) return;
+      setGuestMenuOpen(false);
+    };
+
+    window.addEventListener("mousedown", handleClickOutside);
+    return () => window.removeEventListener("mousedown", handleClickOutside);
+  }, [guestMenuOpen]);
+
+  useEffect(() => {
+    if (currentUser) return;
+    setUserMenuOpen(false);
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (currentUser || !isPublicRankingRoute) {
+      setGuestMenuOpen(false);
+    }
+  }, [currentUser, isPublicRankingRoute]);
+
   // Persist members
   useEffect(() => {
     saveMembersToStorage(members);
@@ -212,6 +294,8 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
 
   const deleteMember = (id: number) => {
     if (!isAdmin) return;
+    const confirmed = window.confirm("Bạn có chắc chắn muốn xóa không?");
+    if (!confirmed) return;
     setMembers(members.filter((m) => m.id !== id));
   };
 
@@ -225,9 +309,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     if (!isAdmin) return;
     if (matches.length === 0) return;
 
-    const confirmed = window.confirm(
-      "Bạn có chắc muốn xóa toàn bộ lịch sử trận đấu?",
-    );
+    const confirmed = window.confirm("Bạn có chắc chắn muốn xóa không?");
     if (!confirmed) return;
 
     try {
@@ -249,7 +331,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
       return;
     }
 
-    const confirmed = window.confirm("Bạn có chắc muốn xóa trận này?");
+    const confirmed = window.confirm("Bạn có chắc chắn muốn xóa không?");
     if (!confirmed) return;
 
     try {
@@ -289,6 +371,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
         const scoreB = Number.parseInt(set.team2Score, 10);
 
         if (Number.isNaN(scoreA) || Number.isNaN(scoreB)) return null;
+        if (scoreA < 0 || scoreB < 0) return null;
         return `${scoreA}-${scoreB}`;
       })
       .filter((score): score is string => score !== null);
@@ -301,6 +384,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
         playerB: selectedTeam2.join(" / "),
         score: parsedSets.join(","),
         createdBy: currentUser.userId,
+        createdByUsername: currentUser.username,
       });
 
       const newMatch = mapMatchRecordToRankingMatch(created);
@@ -323,11 +407,120 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     return stats.sort((a, b) => b.rankScore - a.rankScore);
   }, [members, matches]);
 
+  const matchesForDisplay = useMemo(
+    () =>
+      matches.map((match) => ({
+        ...match,
+        createdByUsername:
+          match.createdByUsername || usernamesById[match.createdBy || ""] || "",
+      })),
+    [matches, usernamesById],
+  );
+
+  const currentUserInitial = useMemo(() => {
+    if (!currentUser?.username) return "U";
+    return currentUser.username.charAt(0).toUpperCase();
+  }, [currentUser?.username]);
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[60] bg-slate-950/40 flex">
       <div className="flex flex-col md:flex-row min-h-screen w-full text-slate-900 font-sans bg-gradient-to-br from-slate-50 via-sky-50 to-cyan-50">
+        {currentUser ? (
+          <div
+            ref={userMenuRef}
+            className="fixed top-5 right-5 md:top-8 md:right-8 z-[70]"
+          >
+            <button
+              type="button"
+              onClick={() => setUserMenuOpen((prev) => !prev)}
+              className="h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm inline-flex items-center justify-center text-sm font-bold uppercase hover:bg-slate-50"
+              title={`Đăng nhập: ${currentUser.username}`}
+              aria-label={`Đăng nhập: ${currentUser.username}`}
+            >
+              {currentUserInitial}
+            </button>
+
+            {userMenuOpen ? (
+              <div className="fixed top-16 right-5 md:top-20 md:right-8 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+                <p className="px-2 py-1 text-xs font-semibold text-slate-500 truncate">
+                  {currentUser.username}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    if (isPublicRankingRoute) {
+                      navigate("/dashboard/ranking");
+                      return;
+                    }
+                    navigate("/");
+                  }}
+                  className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center gap-2"
+                >
+                  <Award className="h-4 w-4" />
+                  {isPublicRankingRoute ? "Mở dashboard" : "Về trang chủ"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    logout();
+                    navigate("/");
+                  }}
+                  className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-red-600 hover:bg-red-50 inline-flex items-center gap-2"
+                >
+                  <LogOut className="h-4 w-4" /> Đăng xuất
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {isPublicRankingRoute && !currentUser ? (
+          <div
+            ref={guestMenuRef}
+            className="fixed top-5 right-5 md:top-8 md:right-8 z-[70]"
+          >
+            <button
+              type="button"
+              onClick={() => setGuestMenuOpen((prev) => !prev)}
+              aria-label="Mở menu đăng nhập"
+              className="h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
+            >
+              <LogIn className="h-5 w-5" />
+            </button>
+
+            {guestMenuOpen ? (
+              <div className="fixed top-16 right-5 md:top-20 md:right-8 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGuestMenuOpen(false);
+                    navigate("/");
+                  }}
+                  className="w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                >
+                  Về trang chủ
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGuestMenuOpen(false);
+                    navigate("/ranking/login", {
+                      state: { from: `${location.pathname}${location.search}` },
+                    });
+                  }}
+                  className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                >
+                  Đăng nhập
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
         {/* Sidebar */}
         <RankingSidebar
           currentView={view}
@@ -335,6 +528,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
           onGoHome={onClose}
           isAdmin={isAdmin}
           onGoUsers={() => navigate("/users")}
+          showMatchForm={!isPublicRankingRoute}
         />
 
         {/* Main Content */}
@@ -417,7 +611,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
             {view === "ranking" && (
               <RankingPanel
                 rankings={rankings}
-                matches={matches}
+                matches={matchesForDisplay}
                 onSelectPlayer={setSelectedPlayer}
                 onClearHistory={handleClearHistory}
                 onDeleteMatch={handleDeleteMatch}
@@ -463,6 +657,7 @@ function mapMatchRecordToRankingMatch(record: MatchRecord): Match {
     sets,
     date: formatDateTime(record.createdAt),
     createdBy: record.createdBy,
+    createdByUsername: record.createdByUsername,
   };
 }
 
@@ -472,12 +667,11 @@ function formatDateTime(value?: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
 
-  return date.toLocaleString("vi-VN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
+  const dd = String(date.getDate()).padStart(2, "0");
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const yyyy = date.getFullYear();
+  const hh = String(date.getHours()).padStart(2, "0");
+  const min = String(date.getMinutes()).padStart(2, "0");
+
+  return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
 }

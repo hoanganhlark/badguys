@@ -108,7 +108,7 @@ export default function UserManagementPage() {
       return;
     }
 
-    const confirmed = window.confirm(`Xóa user ${user.username}?`);
+    const confirmed = window.confirm("Bạn có chắc chắn muốn xóa không?");
     if (!confirmed) return;
 
     try {

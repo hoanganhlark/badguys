@@ -146,6 +146,9 @@ export default function MatchFormPanel({
               className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500"
               value={set.team1Score}
               onChange={(e) => {
+                if (e.target.value !== "" && Number(e.target.value) < 0) {
+                  return;
+                }
                 const newSets = [...matchData.sets];
                 newSets[i] = {
                   ...newSets[i],
@@ -162,6 +165,9 @@ export default function MatchFormPanel({
               className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500"
               value={set.team2Score}
               onChange={(e) => {
+                if (e.target.value !== "" && Number(e.target.value) < 0) {
+                  return;
+                }
                 const newSets = [...matchData.sets];
                 newSets[i] = {
                   ...newSets[i],

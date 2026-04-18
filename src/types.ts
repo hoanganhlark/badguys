@@ -63,6 +63,7 @@ export type RankingMatch = {
   sets: string[];
   date: string;
   createdBy?: string;
+  createdByUsername?: string;
 };
 
 export type UserRole = "admin" | "member";
@@ -88,6 +89,7 @@ export type MatchRecord = {
   playerB: string;
   score: string;
   createdBy: string;
+  createdByUsername?: string;
   createdAt?: string;
 };
 

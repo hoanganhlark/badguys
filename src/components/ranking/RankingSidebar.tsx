@@ -8,6 +8,7 @@ interface RankingSidebarProps {
   onGoHome: () => void;
   isAdmin: boolean;
   onGoUsers: () => void;
+  showMatchForm?: boolean;
 }
 
 function SidebarItem({
@@ -44,6 +45,7 @@ export default function RankingSidebar({
   onGoHome,
   isAdmin,
   onGoUsers,
+  showMatchForm = true,
 }: RankingSidebarProps) {
   const navItems: Array<{
     icon: ComponentType<{ className?: string }>;
@@ -51,9 +53,16 @@ export default function RankingSidebar({
     id: RankingView;
   }> = [
     { icon: Grid, label: "Thành viên", id: "member" },
-    { icon: PlusCircle, label: "Nhập trận đấu", id: "match-form" },
     { icon: Award, label: "Bảng xếp hạng", id: "ranking" },
   ];
+
+  if (showMatchForm) {
+    navItems.splice(1, 0, {
+      icon: PlusCircle,
+      label: "Nhập trận đấu",
+      id: "match-form",
+    });
+  }
 
   return (
     <>
@@ -133,13 +142,15 @@ export default function RankingSidebar({
             currentView={currentView}
             onSetView={onSetView}
           />
-          <SidebarItem
-            icon={PlusCircle}
-            label="Nhập trận đấu"
-            id="match-form"
-            currentView={currentView}
-            onSetView={onSetView}
-          />
+          {showMatchForm ? (
+            <SidebarItem
+              icon={PlusCircle}
+              label="Nhập trận đấu"
+              id="match-form"
+              currentView={currentView}
+              onSetView={onSetView}
+            />
+          ) : null}
           <SidebarItem
             icon={Award}
             label="Bảng xếp hạng"

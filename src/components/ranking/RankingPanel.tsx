@@ -21,12 +21,7 @@ interface RankingPanelProps {
 
 function formatMatchDateTime(dateText: string): string {
   if (!dateText) return "--/--/---- --:--";
-
-  // New format already contains hour and minute (e.g. 19/04/2026 21:45)
-  if (/\d{1,2}:\d{2}/.test(dateText)) return dateText;
-
-  // Legacy records only had date, so keep date and mark unknown time.
-  return `${dateText} --:--`;
+  return dateText;
 }
 
 export default function RankingPanel({
@@ -157,14 +152,16 @@ export default function RankingPanel({
           <h3 className="font-bold text-slate-900 flex items-center gap-2">
             <Clock className="h-5 w-5 text-slate-700" /> Lịch sử gần đây
           </h3>
-          <button
-            type="button"
-            onClick={onClearHistory}
-            disabled={matches.length === 0 || !isAdmin}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 text-xs font-semibold hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <Trash2 className="h-3.5 w-3.5" /> Xóa lịch sử
-          </button>
+          {isAdmin ? (
+            <button
+              type="button"
+              onClick={onClearHistory}
+              disabled={matches.length === 0}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 text-xs font-semibold hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Xóa lịch sử
+            </button>
+          ) : null}
         </div>
         <div className="space-y-2">
           {matches.length === 0 && (
@@ -189,16 +186,20 @@ export default function RankingPanel({
                   {match.type === "singles" ? "Đơn" : "Đôi"} •{" "}
                   {formatMatchDateTime(match.date)}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => onDeleteMatch(match.id)}
-                  disabled={!isAdmin && match.createdBy !== currentUserId}
-                  className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-red-600 hover:bg-red-50"
-                  aria-label="Xóa trận này"
-                  title="Xóa trận này"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                {isAdmin || match.createdBy === currentUserId ? (
+                  <button
+                    type="button"
+                    onClick={() => onDeleteMatch(match.id)}
+                    className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-red-600 hover:bg-red-50"
+                    aria-label="Xóa trận này"
+                    title="Xóa trận này"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                ) : null}
+              </div>
+              <div className="mb-1 text-[11px] text-slate-500">
+                Tạo bởi: {match.createdByUsername || match.createdBy || "-"}
               </div>
               <div className="space-y-1">
                 <div className="font-medium text-slate-900">

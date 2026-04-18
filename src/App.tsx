@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Award, Settings } from "react-feather";
-import { useLocation } from "react-router-dom";
-import LoginPage from "./components/LoginPage";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { Award, Key, LogOut, Settings, X } from "react-feather";
+import { useLocation, useNavigate } from "react-router-dom";
 import ConfigSidebar from "./components/ConfigSidebar";
 import ExpensesSection from "./components/ExpensesSection";
+import LoginModal from "./components/LoginModal";
 import PlayersSection from "./components/PlayersSection";
 import RankingPage from "./components/RankingPage";
 import ResultCard from "./components/ResultCard";
@@ -31,11 +31,14 @@ import {
   TOAST_DURATION_MS,
 } from "./lib/constants";
 import {
+  getUserByUsername,
   getRecentSessions,
   isFirebaseReady,
   removeSession,
   saveDailySummary,
+  updateUserPassword,
 } from "./lib/firebase";
+import { hashMd5 } from "./lib/hash";
 import {
   clearInputDraft,
   copyText,
@@ -50,9 +53,14 @@ import {
 import { notifyCopyClicked, notifyGuestVisited } from "./lib/telegram";
 import type { AppConfig, Player, SessionRecord } from "./types";
 
+interface LocationState {
+  from?: string;
+}
+
 export default function App() {
   const { currentUser, isAuthenticated, isAdmin, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [inputDraft] = useState(() => loadStoredInputDraft());
   const [courtFeeInput, setCourtFeeInput] = useState(inputDraft.courtFeeInput);
@@ -74,8 +82,21 @@ export default function App() {
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [toastMessage, setToastMessage] = useState("");
   const [resetArmed, setResetArmed] = useState(false);
+  const [rankingMenuOpen, setRankingMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [changePasswordError, setChangePasswordError] = useState("");
+  const [changePasswordSubmitting, setChangePasswordSubmitting] =
+    useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
 
   const resetTimerRef = useRef<number | null>(null);
+  const rankingMenuRef = useRef<HTMLDivElement | null>(null);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
 
   const {
     configOpen,
@@ -87,7 +108,7 @@ export default function App() {
     closeSessions,
     openRanking,
     closeRanking,
-  } = useHistoryModal(isAuthenticated);
+  } = useHistoryModal();
 
   const courtFee = parseFloat(courtFeeInput) || 0;
   const shuttleCount = parseFloat(shuttleCountInput) || 0;
@@ -132,6 +153,49 @@ export default function App() {
     })();
   }, [isAdmin]);
 
+  useEffect(() => {
+    if (!rankingMenuOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!rankingMenuRef.current) return;
+      if (rankingMenuRef.current.contains(event.target as Node)) return;
+      setRankingMenuOpen(false);
+    };
+
+    window.addEventListener("mousedown", handleClickOutside);
+    return () => window.removeEventListener("mousedown", handleClickOutside);
+  }, [rankingMenuOpen]);
+
+  useEffect(() => {
+    if (!userMenuOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!userMenuRef.current) return;
+      if (userMenuRef.current.contains(event.target as Node)) return;
+      setUserMenuOpen(false);
+    };
+
+    window.addEventListener("mousedown", handleClickOutside);
+    return () => window.removeEventListener("mousedown", handleClickOutside);
+  }, [userMenuOpen]);
+
+  useEffect(() => {
+    if (isAuthenticated) return;
+    setUserMenuOpen(false);
+    setChangePasswordOpen(false);
+    setChangePasswordError("");
+    setPasswordForm({
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    });
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    setRankingMenuOpen(false);
+  }, [currentUser]);
+
   function showToast(message: string) {
     setToastMessage(message);
   }
@@ -150,6 +214,9 @@ export default function App() {
   }
 
   function handleRemovePlayer(index: number) {
+    const confirmed = window.confirm("Bạn có chắc chắn muốn xóa không?");
+    if (!confirmed) return;
+
     const next = players.filter((_, i) => i !== index);
     setPlayers(next);
     setBulkInput(playersToBulk(next));
@@ -240,7 +307,7 @@ export default function App() {
       return;
     }
 
-    const confirmed = window.confirm("Bạn có chắc muốn xóa buổi này?");
+    const confirmed = window.confirm("Bạn có chắc chắn muốn xóa không?");
     if (!confirmed) return;
 
     try {
@@ -287,15 +354,118 @@ export default function App() {
     }, RESET_CONFIRM_TIMEOUT_MS);
   }
 
-  if (location.pathname === "/login") {
-    return <LoginPage />;
+  async function handleSubmitChangePassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!currentUser) {
+      setChangePasswordError("Bạn chưa đăng nhập.");
+      return;
+    }
+
+    const currentPassword = String(passwordForm.currentPassword || "");
+    const newPassword = String(passwordForm.newPassword || "");
+    const confirmPassword = String(passwordForm.confirmPassword || "");
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setChangePasswordError("Vui lòng nhập đầy đủ thông tin.");
+      return;
+    }
+
+    if (newPassword.length < 4) {
+      setChangePasswordError("Mật khẩu mới cần ít nhất 4 ký tự.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setChangePasswordError("Mật khẩu xác nhận không khớp.");
+      return;
+    }
+
+    if (newPassword === currentPassword) {
+      setChangePasswordError("Mật khẩu mới phải khác mật khẩu hiện tại.");
+      return;
+    }
+
+    setChangePasswordSubmitting(true);
+    setChangePasswordError("");
+
+    try {
+      const userRecord = await getUserByUsername(currentUser.username);
+      if (!userRecord || userRecord.id !== currentUser.userId) {
+        throw new Error("Không tìm thấy tài khoản hiện tại.");
+      }
+
+      const currentPasswordHash = hashMd5(currentPassword);
+      if (currentPasswordHash !== userRecord.password) {
+        throw new Error("Mật khẩu hiện tại không đúng.");
+      }
+
+      await updateUserPassword(userRecord.id, hashMd5(newPassword));
+
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      setChangePasswordOpen(false);
+      setUserMenuOpen(false);
+      showToast("Đổi mật khẩu thành công.");
+    } catch (error) {
+      setChangePasswordError(
+        error instanceof Error
+          ? error.message
+          : "Đổi mật khẩu thất bại. Vui lòng thử lại.",
+      );
+    } finally {
+      setChangePasswordSubmitting(false);
+    }
   }
+
+  function getLoginRedirectTarget(): string {
+    const candidate =
+      (location.state as LocationState | null)?.from || "/dashboard/ranking";
+    return (
+      String(candidate || "/dashboard/ranking").trim() || "/dashboard/ranking"
+    );
+  }
+
+  function handleLoginSuccess(target: string) {
+    navigate(target, { replace: true });
+  }
+
+  function closeLoginModal() {
+    if (location.pathname === "/ranking/login") {
+      navigate("/ranking", { replace: true });
+      return;
+    }
+    navigate("/", { replace: true });
+  }
+
+  const loginModalOpen =
+    location.pathname === "/login" || location.pathname === "/ranking/login";
 
   if (location.pathname === "/users") {
     return (
       <AdminRoute>
         <UserManagementPage />
       </AdminRoute>
+    );
+  }
+
+  if (
+    location.pathname === "/ranking" ||
+    location.pathname.startsWith("/ranking/")
+  ) {
+    return (
+      <>
+        <RankingPage isOpen={true} onClose={() => navigate("/")} />
+        <LoginModal
+          open={loginModalOpen}
+          redirectTo={getLoginRedirectTarget()}
+          onClose={closeLoginModal}
+          onSuccess={handleLoginSuccess}
+        />
+      </>
     );
   }
 
@@ -310,13 +480,106 @@ export default function App() {
           <Settings className="h-5 w-5" />
         </button>
 
-        <button
-          onClick={openRanking}
-          aria-label="Bảng xếp hạng"
-          className="fixed top-5 right-5 md:top-8 md:right-8 z-30 h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
-        >
-          <Award className="h-5 w-5" />
-        </button>
+        {!currentUser ? (
+          <div
+            ref={rankingMenuRef}
+            className="fixed top-5 right-5 md:top-8 md:right-8 z-30"
+          >
+            <button
+              type="button"
+              onClick={() => {
+                if (currentUser) return;
+                setRankingMenuOpen((prev) => !prev);
+              }}
+              aria-label="Bảng xếp hạng"
+              className="h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
+            >
+              <Award className="h-5 w-5" />
+            </button>
+
+            {rankingMenuOpen ? (
+              <div className="fixed top-16 right-5 md:top-20 md:right-8 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRankingMenuOpen(false);
+                    openRanking();
+                  }}
+                  className="w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                >
+                  Xem ranking
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRankingMenuOpen(false);
+                    navigate("/login", {
+                      state: { from: "/dashboard/ranking" },
+                    });
+                  }}
+                  className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                >
+                  Đăng nhập
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {isAuthenticated ? (
+          <div
+            ref={userMenuRef}
+            className="fixed top-5 right-5 md:top-8 md:right-8 z-40"
+          >
+            <button
+              type="button"
+              onClick={() => setUserMenuOpen((prev) => !prev)}
+              aria-label="Mở menu tài khoản"
+              className="h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center text-sm font-bold uppercase"
+            >
+              {currentUser?.username?.charAt(0) || "U"}
+            </button>
+
+            {userMenuOpen ? (
+              <div className="fixed top-16 right-5 md:top-20 md:right-8 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+                <p className="px-2 py-1 text-xs font-semibold text-slate-500 truncate">
+                  {currentUser?.username}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    navigate("/dashboard/ranking");
+                  }}
+                  className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center gap-2"
+                >
+                  <Award className="h-4 w-4" /> Mở dashboard
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setChangePasswordOpen(true);
+                    setChangePasswordError("");
+                  }}
+                  className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center gap-2"
+                >
+                  <Key className="h-4 w-4" /> Đổi mật khẩu
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    logout();
+                    navigate("/", { replace: true });
+                  }}
+                  className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-red-600 hover:bg-red-50 inline-flex items-center gap-2"
+                >
+                  <LogOut className="h-4 w-4" /> Đăng xuất
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         <header className="mb-12 text-center">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
@@ -400,7 +663,127 @@ export default function App() {
         </ProtectedRoute>
       ) : null}
 
+      {changePasswordOpen ? (
+        <div
+          className="fixed inset-0 z-[80] bg-black/40 p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="mx-auto mt-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-semibold text-slate-900">
+                Đổi mật khẩu
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setChangePasswordOpen(false);
+                  setChangePasswordError("");
+                }}
+                className="rounded-md p-1 text-slate-400 hover:text-slate-700"
+                aria-label="Đóng đổi mật khẩu"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form
+              className="mt-4 space-y-3"
+              onSubmit={handleSubmitChangePassword}
+            >
+              <div>
+                <label className="block text-xs font-semibold uppercase text-slate-600">
+                  Mật khẩu hiện tại
+                </label>
+                <input
+                  type="password"
+                  value={passwordForm.currentPassword}
+                  onChange={(event) =>
+                    setPasswordForm((prev) => ({
+                      ...prev,
+                      currentPassword: event.target.value,
+                    }))
+                  }
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  autoComplete="current-password"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase text-slate-600">
+                  Mật khẩu mới
+                </label>
+                <input
+                  type="password"
+                  value={passwordForm.newPassword}
+                  onChange={(event) =>
+                    setPasswordForm((prev) => ({
+                      ...prev,
+                      newPassword: event.target.value,
+                    }))
+                  }
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  autoComplete="new-password"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase text-slate-600">
+                  Xác nhận mật khẩu mới
+                </label>
+                <input
+                  type="password"
+                  value={passwordForm.confirmPassword}
+                  onChange={(event) =>
+                    setPasswordForm((prev) => ({
+                      ...prev,
+                      confirmPassword: event.target.value,
+                    }))
+                  }
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  autoComplete="new-password"
+                  required
+                />
+              </div>
+
+              {changePasswordError ? (
+                <p className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {changePasswordError}
+                </p>
+              ) : null}
+
+              <div className="flex items-center justify-end gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setChangePasswordOpen(false);
+                    setChangePasswordError("");
+                  }}
+                  className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={changePasswordSubmitting}
+                  className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
+                >
+                  {changePasswordSubmitting ? "Đang lưu..." : "Lưu mật khẩu"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
       {toastMessage ? <Toast message={toastMessage} /> : null}
+
+      <LoginModal
+        open={loginModalOpen}
+        redirectTo={getLoginRedirectTarget()}
+        onClose={closeLoginModal}
+        onSuccess={handleLoginSuccess}
+      />
     </div>
   );
 }

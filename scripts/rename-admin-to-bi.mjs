@@ -3,13 +3,15 @@ import path from "node:path";
 import process from "node:process";
 import { initializeApp } from "firebase/app";
 import {
-  doc,
-  getDoc,
+  collection,
+  getDocs,
   getFirestore,
+  query,
   serverTimestamp,
   setDoc,
+  where,
+  writeBatch,
 } from "firebase/firestore";
-import md5 from "blueimp-md5";
 
 function loadEnvFile() {
   const localEnvPath = path.resolve(process.cwd(), ".env.local");
@@ -55,54 +57,64 @@ function ensureConfig() {
   };
 }
 
-const DEFAULT_USERS = [
-  {
-    docId: "seed-admin",
-    username: "bi",
-    password: "loveguitar",
-    role: "admin",
-  },
-  {
-    docId: "seed-thien",
-    username: "thien",
-    password: "badguys",
-    role: "member",
-  },
-];
-
-async function seed() {
+async function runMigration() {
   const firebaseConfig = ensureConfig();
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  for (const user of DEFAULT_USERS) {
-    const userRef = doc(db, "dev-users", user.docId);
-    const existingSnapshot = await getDoc(userRef);
+  const usersRef = collection(db, "dev-users");
+  const adminUsersSnapshot = await getDocs(
+    query(usersRef, where("usernameKey", "==", "admin")),
+  );
 
-    await setDoc(
-      userRef,
-      {
-        username: user.username,
-        usernameKey: user.username.toLowerCase(),
-        password: md5(user.password),
-        role: user.role,
-        createdAt: serverTimestamp(),
-        clientCreatedAt: new Date().toISOString(),
-      },
-      { merge: true },
-    );
-
-    if (existingSnapshot.exists()) {
-      console.log(`Updated user: ${user.username} (${user.role})`);
-    } else {
-      console.log(`Created user: ${user.username} (${user.role})`);
+  if (adminUsersSnapshot.empty) {
+    console.log("No user with usernameKey=admin found in dev-users.");
+  } else {
+    for (const userDoc of adminUsersSnapshot.docs) {
+      await setDoc(
+        userDoc.ref,
+        {
+          username: "bi",
+          usernameKey: "bi",
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
+      console.log(`Updated user ${userDoc.id}: admin -> bi`);
     }
   }
 
-  console.log("Seed completed for dev-users.");
+  const matchesRef = collection(db, "dev-matches");
+  const adminMatchesSnapshot = await getDocs(
+    query(matchesRef, where("createdByUsername", "==", "admin")),
+  );
+
+  if (adminMatchesSnapshot.empty) {
+    console.log(
+      "No matches with createdByUsername=admin found in dev-matches.",
+    );
+  } else {
+    const batch = writeBatch(db);
+    for (const matchDoc of adminMatchesSnapshot.docs) {
+      batch.set(
+        matchDoc.ref,
+        {
+          createdByUsername: "bi",
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
+    }
+    await batch.commit();
+    console.log(
+      `Updated ${adminMatchesSnapshot.size} match documents: createdByUsername admin -> bi`,
+    );
+  }
+
+  console.log("Migration completed.");
 }
 
-seed().catch((error) => {
-  console.error("Seed failed:", error);
+runMigration().catch((error) => {
+  console.error("Migration failed:", error);
   process.exitCode = 1;
 });

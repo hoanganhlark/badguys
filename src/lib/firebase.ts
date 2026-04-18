@@ -471,6 +471,36 @@ export async function updateUserRole(
   );
 }
 
+export async function updateUserPassword(
+  userId: string,
+  passwordHash: string,
+): Promise<void> {
+  const context = ensureFirebase();
+  if (!context.db) {
+    throw new Error("Firebase is not configured");
+  }
+
+  const normalizedUserId = String(userId || "").trim();
+  const normalizedPasswordHash = String(passwordHash || "").trim();
+
+  if (!normalizedUserId) throw new Error("Missing user id");
+  if (!normalizedPasswordHash) throw new Error("Missing password hash");
+
+  const userRef = doc(
+    collection(context.db, getCollectionPath(USERS_COLLECTION)),
+    normalizedUserId,
+  );
+
+  await setDoc(
+    userRef,
+    {
+      password: normalizedPasswordHash,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  );
+}
+
 function mapMatchRecord(matchDoc: {
   id: string;
   data: () => Record<string, unknown>;
@@ -482,6 +512,7 @@ function mapMatchRecord(matchDoc: {
     playerB: String(data.playerB || ""),
     score: String(data.score || ""),
     createdBy: String(data.createdBy || ""),
+    createdByUsername: String(data.createdByUsername || ""),
     createdAt:
       typeof data.clientCreatedAt === "string"
         ? data.clientCreatedAt
@@ -516,7 +547,10 @@ export function subscribeMatches(
     throw new Error("Firebase is not configured");
   }
 
-  const matchesRef = collection(context.db, getCollectionPath(MATCHES_COLLECTION));
+  const matchesRef = collection(
+    context.db,
+    getCollectionPath(MATCHES_COLLECTION),
+  );
   return onSnapshot(
     matchesRef,
     (snapshot) => {
@@ -539,6 +573,7 @@ export async function createMatch(input: {
   playerB: string;
   score: string;
   createdBy: string;
+  createdByUsername?: string;
 }): Promise<MatchRecord> {
   const context = ensureFirebase();
   if (!context.db) {
@@ -549,6 +584,7 @@ export async function createMatch(input: {
   const playerB = String(input.playerB || "").trim();
   const score = String(input.score || "").trim();
   const createdBy = String(input.createdBy || "").trim();
+  const createdByUsername = String(input.createdByUsername || "").trim();
 
   if (!playerA || !playerB || !score) throw new Error("Invalid match payload");
   if (!createdBy) throw new Error("Missing creator");
@@ -562,6 +598,7 @@ export async function createMatch(input: {
     playerB,
     score,
     createdBy,
+    createdByUsername,
     createdAt: serverTimestamp(),
     clientCreatedAt: new Date().toISOString(),
   });
@@ -572,6 +609,7 @@ export async function createMatch(input: {
     playerB,
     score,
     createdBy,
+    createdByUsername,
     createdAt: new Date().toISOString(),
   };
 }
