@@ -367,7 +367,7 @@ export default function RankingPanel({
 
                   <div className="mt-2 flex items-center justify-between gap-2">
                     <div className="text-[11px] text-slate-500 truncate">
-                      {t("rankingPanel.createdBy")}: {" "}
+                      {t("rankingPanel.createdBy")}:{" "}
                       {match.createdByUsername || match.createdBy || "-"}
                     </div>
                     {isAdmin || match.createdBy === currentUserId ? (

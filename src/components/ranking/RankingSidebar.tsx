@@ -13,6 +13,7 @@ interface RankingSidebarProps {
   mobileOpen: boolean;
   onMobileClose: () => void;
   usersActive?: boolean;
+  activeView?: RankingView | null;
 }
 
 function SidebarItem({
@@ -53,8 +54,10 @@ export default function RankingSidebar({
   mobileOpen,
   onMobileClose,
   usersActive = false,
+  activeView,
 }: RankingSidebarProps) {
   const { t } = useTranslation();
+  const highlightedView = activeView === undefined ? currentView : activeView;
 
   const navItems: Array<{
     icon: ComponentType<{ className?: string }>;
@@ -140,7 +143,7 @@ export default function RankingSidebar({
                 type="button"
                 onClick={() => handleSelectView(id)}
                 className={`w-full rounded-xl border px-3 py-2.5 text-left text-sm font-semibold inline-flex items-center gap-2 transition-colors ${
-                  currentView === id
+                  highlightedView === id
                     ? "border-slate-900 bg-slate-900 text-white"
                     : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                 }`}
@@ -206,7 +209,7 @@ export default function RankingSidebar({
             icon={Grid}
             label={t("rankingSidebar.members")}
             id="member"
-            currentView={currentView}
+            currentView={highlightedView ?? "ranking"}
             onSetView={onSetView}
           />
           {showMatchForm ? (
@@ -214,7 +217,7 @@ export default function RankingSidebar({
               icon={PlusCircle}
               label={t("rankingSidebar.addMatch")}
               id="match-form"
-              currentView={currentView}
+              currentView={highlightedView ?? "ranking"}
               onSetView={onSetView}
             />
           ) : null}
@@ -222,7 +225,7 @@ export default function RankingSidebar({
             icon={Award}
             label={t("rankingSidebar.ranking")}
             id="ranking"
-            currentView={currentView}
+            currentView={highlightedView ?? "member"}
             onSetView={onSetView}
           />
         </nav>

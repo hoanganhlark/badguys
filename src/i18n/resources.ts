@@ -122,18 +122,23 @@ export const resources = {
         loadingUsers: "Đang tải danh sách người dùng...",
         role: "Vai trò",
         createdAt: "Thời điểm tạo",
+        lastLoginAt: "Thời điểm đăng nhập gần nhất",
         actions: "Thao tác",
         username: "Tên đăng nhập",
         password: "Mật khẩu",
         memberOption: "Thành viên",
         adminOption: "Quản trị viên",
+        lock: "Khóa",
+        unlock: "Mở khóa",
         delete: "Xóa",
         loadUsersFailed: "Không tải được danh sách users.",
         enterUsernamePassword: "Vui lòng nhập tên đăng nhập và mật khẩu.",
         createUserFailed: "Tạo user thất bại.",
         cannotDeleteSelf: "Không thể xóa chính tài khoản đang đăng nhập.",
+        cannotLockSelf: "Không thể khóa chính tài khoản đang đăng nhập.",
         deleteUserFailed: "Xóa user thất bại.",
         updateRoleFailed: "Cập nhật role thất bại.",
+        updateLockFailed: "Cập nhật trạng thái khóa thất bại.",
       },
       adminRoute: {
         noPermissionTitle: "Bạn không có quyền truy cập trang này.",
@@ -173,6 +178,7 @@ export const resources = {
         winRate: "Tỉ lệ thắng",
         onlyDeleteOwnMatch: "Bạn chỉ có thể xóa trận do chính bạn tạo.",
         cannotSaveMatch: "Không thể lưu trận đấu. Vui lòng thử lại.",
+        toastMatchSaved: "Đã lưu kết quả",
       },
       rankingPanel: {
         rank: "Hạng",
@@ -242,16 +248,16 @@ export const resources = {
           "Điểm xếp hạng = Kỹ năng - (Độ bất định x Phong độ ổn định x {{penalty}} x Động lực)",
         simpleExplanation: "Hiểu đơn giản",
         simpleText:
-          "Kỹ năng càng cao thì điểm càng tốt. Độ bất định (RD) cao sẽ bị trừ vì dữ liệu chưa đủ. Vol cao (phong độ thất thường) bị trừ thêm. Động lực thấp làm mức phạt nhẹ hơn.",
+          "Điểm tăng khi kỹ năng cao, giảm khi dữ liệu chưa ổn định (RD/Vol cao). Động lực thấp sẽ giảm mức phạt.",
         descriptionSkill:
-          "Dựa trên Glicko-2 rating. Càng thắng nhiều đối thủ mạnh, rating càng cao. Gốc: 1500.",
+          "Điểm kỹ năng theo Glicko-2. Thắng đối thủ mạnh giúp tăng điểm nhanh hơn.",
         descriptionStability:
-          "Dựa trên Volatility (sigma) Glicko-2. Phong độ càng đều thì sigma càng thấp, điểm càng cao.",
+          "Đo độ ổn định phong độ qua Volatility (sigma). Sigma thấp nghĩa là phong độ ổn định hơn.",
         descriptionUncertainty:
-          "Dựa trên Rating Deviation (RD). Càng ít trận hoặc lâu không thi đấu thì RD cao, điểm thấp.",
+          "Đo độ chắc chắn của dữ liệu qua RD. Ít trận hoặc nghỉ lâu sẽ làm RD tăng.",
         descriptionMotivation:
-          "Tần suất thi đấu gần đây so với trung bình. > 1 = đang tích cực hơn bình thường.",
-        descriptionWinRate: "Số trận thắng / tổng số trận đã thi đấu.",
+          "So sánh tần suất thi đấu gần đây với mức trung bình cá nhân. > 1 là đang thi đấu tích cực hơn.",
+        descriptionWinRate: "Tỉ lệ thắng trên tổng số trận đã đấu.",
       },
       errorBoundary: {
         error: "Đã xảy ra lỗi. Vui lòng tải lại trang.",

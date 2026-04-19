@@ -80,7 +80,7 @@ export default function LoginModal({
               htmlFor="username"
               className="block text-xs font-semibold text-slate-600 uppercase"
             >
-              Username
+              {t("login.username")}
             </label>
             <input
               autoFocus
@@ -99,7 +99,7 @@ export default function LoginModal({
               htmlFor="password"
               className="block text-xs font-semibold text-slate-600 uppercase"
             >
-              Password
+              {t("login.password")}
             </label>
             <input
               id="password"

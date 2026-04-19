@@ -1,7 +1,7 @@
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Award, Key, LogOut, Settings, X } from "react-feather";
 import { useTranslation } from "react-i18next";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import ConfigSidebar from "./components/ConfigSidebar";
 import ExpensesSection from "./components/ExpensesSection";
 import LoginModal from "./components/LoginModal";
@@ -466,6 +466,10 @@ export default function App() {
     passwordForm.newPassword === passwordForm.confirmPassword;
 
   if (location.pathname === "/users") {
+    return <Navigate to="/dashboard/users" replace />;
+  }
+
+  if (location.pathname === "/dashboard/users") {
     return (
       <AdminRoute>
         <UserManagementPage />
@@ -518,29 +522,29 @@ export default function App() {
 
               {rankingMenuOpen ? (
                 <div className="absolute right-0 top-12 z-50 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setRankingMenuOpen(false);
-                    openRanking();
-                  }}
-                  className="w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                >
-                  {t("app.viewRanking")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setRankingMenuOpen(false);
-                    navigate("/login", {
-                      state: { from: "/dashboard/ranking" },
-                    });
-                  }}
-                  className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                >
-                  {t("common.login")}
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRankingMenuOpen(false);
+                      openRanking();
+                    }}
+                    className="w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                  >
+                    {t("app.viewRanking")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRankingMenuOpen(false);
+                      navigate("/login", {
+                        state: { from: "/dashboard/ranking" },
+                      });
+                    }}
+                    className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                  >
+                    {t("common.login")}
+                  </button>
+                </div>
               ) : null}
             </div>
           ) : null}
@@ -558,41 +562,41 @@ export default function App() {
 
               {userMenuOpen ? (
                 <div className="absolute right-0 top-12 z-50 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
-                <p className="px-2 py-1 text-xs font-semibold text-slate-500 truncate">
-                  {currentUser?.username}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUserMenuOpen(false);
-                    navigate("/dashboard/ranking");
-                  }}
-                  className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center gap-2"
-                >
-                  <Award className="h-4 w-4" /> {t("app.openDashboard")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setChangePasswordOpen(true);
-                    setChangePasswordError("");
-                  }}
-                  className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center gap-2"
-                >
-                  <Key className="h-4 w-4" /> {t("app.changePasswordTitle")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUserMenuOpen(false);
-                    navigate("/", { replace: true });
-                    logout();
-                  }}
-                  className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-red-600 hover:bg-red-50 inline-flex items-center gap-2"
-                >
-                  <LogOut className="h-4 w-4" /> {t("common.logout")}
-                </button>
-              </div>
+                  <p className="px-2 py-1 text-xs font-semibold text-slate-500 truncate">
+                    {currentUser?.username}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      navigate("/dashboard/ranking");
+                    }}
+                    className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center gap-2"
+                  >
+                    <Award className="h-4 w-4" /> {t("app.openDashboard")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setChangePasswordOpen(true);
+                      setChangePasswordError("");
+                    }}
+                    className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center gap-2"
+                  >
+                    <Key className="h-4 w-4" /> {t("app.changePasswordTitle")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      navigate("/", { replace: true });
+                      logout();
+                    }}
+                    className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-red-600 hover:bg-red-50 inline-flex items-center gap-2"
+                  >
+                    <LogOut className="h-4 w-4" /> {t("common.logout")}
+                  </button>
+                </div>
               ) : null}
             </div>
           ) : null}
@@ -601,60 +605,61 @@ export default function App() {
 
       <div className="px-5 pb-5 pt-20 md:px-12 md:pb-12">
         <div className="max-w-md mx-auto">
+          <header className="mb-12 text-center">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+              {isAdmin ? "@BadGuys" : "BadGuys"}
+              <span className="text-slate-400">.</span>
+            </h1>
+            {currentUser ? (
+              <p className="mt-2 text-xs text-slate-500">
+                {t("app.loggedIn", {
+                  username: currentUser.username,
+                  role: currentUser.role,
+                })}
+              </p>
+            ) : null}
+          </header>
 
-        <header className="mb-12 text-center">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            {isAdmin ? "@BadGuys" : "BadGuys"}
-            <span className="text-slate-400">.</span>
-          </h1>
-          {currentUser ? (
-            <p className="mt-2 text-xs text-slate-500">
-              {t("app.loggedIn", {
-                username: currentUser.username,
-                role: currentUser.role,
-              })}
-            </p>
-          ) : null}
-        </header>
+          <ExpensesSection
+            courtFee={courtFeeInput}
+            shuttleCount={shuttleCountInput}
+            courtCount={courtCountInput}
+            showCourtCount={config.enableCourtCount}
+            onCourtFeeChange={setCourtFeeInput}
+            onShuttleCountChange={setShuttleCountInput}
+            onCourtCountChange={setCourtCountInput}
+          />
 
-        <ExpensesSection
-          courtFee={courtFeeInput}
-          shuttleCount={shuttleCountInput}
-          courtCount={courtCountInput}
-          showCourtCount={config.enableCourtCount}
-          onCourtFeeChange={setCourtFeeInput}
-          onShuttleCountChange={setShuttleCountInput}
-          onCourtCountChange={setCourtCountInput}
-        />
+          <PlayersSection
+            bulkInput={bulkInput}
+            players={players}
+            onBulkInputChange={handleBulkInputChange}
+            onTogglePlayer={handleTogglePlayer}
+            onRemovePlayer={handleRemovePlayer}
+          />
 
-        <PlayersSection
-          bulkInput={bulkInput}
-          players={players}
-          onBulkInputChange={handleBulkInputChange}
-          onTogglePlayer={handleTogglePlayer}
-          onRemovePlayer={handleRemovePlayer}
-        />
+          <ResultCard
+            visible={showResult}
+            totalLabel={formatK(calc.total)}
+            maleFeeLabel={formatK(calc.mFee)}
+            femaleFeeLabel={formatK(config.femaleMax)}
+            setPriceLabel={formatK(config.setPrice)}
+            onCopy={handleCopySummary}
+          />
 
-        <ResultCard
-          visible={showResult}
-          totalLabel={formatK(calc.total)}
-          maleFeeLabel={formatK(calc.mFee)}
-          femaleFeeLabel={formatK(config.femaleMax)}
-          setPriceLabel={formatK(config.setPrice)}
-          onCopy={handleCopySummary}
-        />
-
-        <div className="flex justify-center gap-8">
-          <button
-            type="button"
-            onClick={handleReset}
-            className={`text-xs font-medium transition-colors uppercase ${
-              resetArmed ? "text-red-600" : "text-slate-400 hover:text-red-500"
-            }`}
-          >
-            {resetArmed ? t("app.resetConfirm") : t("app.resetData")}
-          </button>
-        </div>
+          <div className="flex justify-center gap-8">
+            <button
+              type="button"
+              onClick={handleReset}
+              className={`text-xs font-medium transition-colors uppercase ${
+                resetArmed
+                  ? "text-red-600"
+                  : "text-slate-400 hover:text-red-500"
+              }`}
+            >
+              {resetArmed ? t("app.resetConfirm") : t("app.resetData")}
+            </button>
+          </div>
         </div>
       </div>
 

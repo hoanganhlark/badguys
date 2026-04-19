@@ -6,7 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { getUserByUsername } from "../lib/firebase";
+import { getUserByUsername, updateUserLastLogin } from "../lib/firebase";
 import { hashMd5 } from "../lib/hash";
 import type { AuthUser } from "../types";
 
@@ -65,6 +65,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error("Sai username hoặc password.");
     }
 
+    if (user.isDisabled) {
+      throw new Error("Tài khoản đã bị khóa.");
+    }
+
     const hashedInput = hashMd5(plainPassword);
     if (hashedInput !== user.password) {
       throw new Error("Sai username hoặc password.");
@@ -75,6 +79,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       username: user.username,
       role: user.role,
     };
+
+    await updateUserLastLogin(user.id);
 
     setCurrentUser(authUser);
     saveAuthToStorage(authUser);

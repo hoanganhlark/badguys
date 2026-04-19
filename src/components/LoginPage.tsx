@@ -56,7 +56,7 @@ export default function LoginPage() {
               htmlFor="username"
               className="block text-xs font-semibold text-slate-600 uppercase"
             >
-              Username
+              {t("login.username")}
             </label>
             <input
               id="username"
@@ -74,7 +74,7 @@ export default function LoginPage() {
               htmlFor="password"
               className="block text-xs font-semibold text-slate-600 uppercase"
             >
-              Password
+              {t("login.password")}
             </label>
             <input
               id="password"

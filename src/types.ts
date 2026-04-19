@@ -97,6 +97,8 @@ export type UserRecord = {
   password: string;
   role: UserRole;
   createdAt?: string;
+  lastLoginAt?: string;
+  isDisabled?: boolean;
 };
 
 export type MatchRecord = {
