@@ -10,14 +10,53 @@ import type { RankingView } from "./ranking/types";
 
 type AuditFilterType = "all" | "event" | "route_change";
 
+type StoredAuditFilters = {
+  selectedUser: string;
+  selectedType: AuditFilterType;
+};
+
+const AUDIT_FILTERS_STORAGE_KEY = "auditFilters";
+
+function normalizeAuditFilterType(value: unknown): AuditFilterType {
+  if (value === "event" || value === "route_change" || value === "all") {
+    return value;
+  }
+  return "all";
+}
+
+function getAuditFilterStorageKey(scopeKey?: string): string {
+  const normalizedScope = String(scopeKey || "").trim() || "guest";
+  return `${AUDIT_FILTERS_STORAGE_KEY}:${normalizedScope}`;
+}
+
+function loadStoredAuditFilters(scopeKey?: string): StoredAuditFilters {
+  try {
+    const key = getAuditFilterStorageKey(scopeKey);
+    const raw = localStorage.getItem(key);
+    if (!raw) {
+      return { selectedUser: "all", selectedType: "all" };
+    }
+
+    const parsed = JSON.parse(raw) as Partial<StoredAuditFilters>;
+    const selectedUser = String(parsed.selectedUser || "").trim() || "all";
+    const selectedType = normalizeAuditFilterType(parsed.selectedType);
+
+    return { selectedUser, selectedType };
+  } catch {
+    return { selectedUser: "all", selectedType: "all" };
+  }
+}
+
 export default function AuditPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { currentUser } = useAuth();
 
+  const auditFilterScopeKey = currentUser?.userId || "guest";
   const [events, setEvents] = useState<AuditEventRecord[]>([]);
   const [selectedUser, setSelectedUser] = useState("all");
   const [selectedType, setSelectedType] = useState<AuditFilterType>("all");
+  const [filtersHydrated, setFiltersHydrated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -104,6 +143,27 @@ export default function AuditPage() {
     if (entries.length === 0) return "-";
     return JSON.stringify(value);
   };
+
+  useEffect(() => {
+    setFiltersHydrated(false);
+    const stored = loadStoredAuditFilters(auditFilterScopeKey);
+    setSelectedUser(stored.selectedUser);
+    setSelectedType(stored.selectedType);
+    setFiltersHydrated(true);
+  }, [auditFilterScopeKey]);
+
+  useEffect(() => {
+    if (!filtersHydrated) return;
+
+    const key = getAuditFilterStorageKey(auditFilterScopeKey);
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        selectedUser,
+        selectedType,
+      } satisfies StoredAuditFilters),
+    );
+  }, [auditFilterScopeKey, filtersHydrated, selectedType, selectedUser]);
 
   useEffect(() => {
     setLoading(true);

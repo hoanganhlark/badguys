@@ -104,8 +104,9 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     playedAt: toDateTimeLocal(new Date()),
   });
   const [rankingSettings, setRankingSettings] = useState<RankingSettings>(() =>
-    loadRankingSettingsFromStorage(),
+    loadRankingSettingsFromStorage(currentUser?.userId || "guest"),
   );
+  const rankingSettingsStorageScope = currentUser?.userId || "guest";
 
   useEffect(() => {
     if (!isOpen) return;
@@ -357,8 +358,14 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   }, [matches, isRemoteHydrated]);
 
   useEffect(() => {
-    saveRankingSettingsToStorage(rankingSettings);
-  }, [rankingSettings]);
+    saveRankingSettingsToStorage(rankingSettings, rankingSettingsStorageScope);
+  }, [rankingSettings, rankingSettingsStorageScope]);
+
+  useEffect(() => {
+    setRankingSettings(
+      loadRankingSettingsFromStorage(rankingSettingsStorageScope),
+    );
+  }, [rankingSettingsStorageScope]);
 
   // Logic: Thành viên
   const handleAddMember = () => {
