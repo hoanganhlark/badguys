@@ -5,6 +5,50 @@ body {
   min-height: 100vh;
 }
 
+:root {
+  --mobile-keyboard-inset: 0px;
+}
+
+.dashboard-surface {
+  background-color: #fafafa;
+}
+
+.dashboard-card {
+  border-radius: 1rem;
+  border: 1px solid #f0f0f0;
+  background: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.dashboard-input {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.dashboard-input:focus {
+  outline: none;
+  border-color: #1a1a1a;
+  background-color: #fff;
+}
+
+.dashboard-main-scroll {
+  padding-bottom: calc(6rem + var(--mobile-keyboard-inset));
+}
+
+.mobile-focus-target {
+  scroll-margin-top: 5.5rem;
+  scroll-margin-bottom: 10rem;
+}
+
+@media (min-width: 768px) {
+  .dashboard-main-scroll {
+    padding-bottom: 2rem;
+  }
+}
+
 .card {
   background: #ffffff;
   border: 1px solid #f0f0f0;

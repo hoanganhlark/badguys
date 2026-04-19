@@ -80,7 +80,7 @@ export default function MatchFormPanel({
             {[...Array(matchType === "singles" ? 1 : 2)].map((_, i) => (
               <select
                 key={i}
-                className="w-full p-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="mobile-focus-target dashboard-input w-full"
                 onChange={(e) => {
                   const newTeam = [...matchData.team1];
                   newTeam[i] = e.target.value;
@@ -105,7 +105,7 @@ export default function MatchFormPanel({
             {[...Array(matchType === "singles" ? 1 : 2)].map((_, i) => (
               <select
                 key={i}
-                className="w-full p-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="mobile-focus-target dashboard-input w-full"
                 onChange={(e) => {
                   const newTeam = [...matchData.team2];
                   newTeam[i] = e.target.value;
@@ -143,7 +143,7 @@ export default function MatchFormPanel({
               min={0}
               inputMode="numeric"
               placeholder={`Set ${i + 1} - Đội A`}
-              className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500"
+              className="mobile-focus-target dashboard-input w-full"
               value={set.team1Score}
               onChange={(e) => {
                 if (e.target.value !== "" && Number(e.target.value) < 0) {
@@ -162,7 +162,7 @@ export default function MatchFormPanel({
               min={0}
               inputMode="numeric"
               placeholder={`Set ${i + 1} - Đội B`}
-              className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500"
+              className="mobile-focus-target dashboard-input w-full"
               value={set.team2Score}
               onChange={(e) => {
                 if (e.target.value !== "" && Number(e.target.value) < 0) {

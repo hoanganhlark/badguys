@@ -31,7 +31,7 @@ import type {
   RankingView,
 } from "./ranking/types";
 import type { MatchRecord, RankingLevel } from "../types";
-import { Award, BarChart2, LogIn, LogOut, Settings } from "react-feather";
+import { Award, BarChart2, LogIn, LogOut, Menu, Settings } from "react-feather";
 
 interface RankingPageProps {
   isOpen: boolean;
@@ -73,6 +73,8 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   const [guestMenuOpen, setGuestMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
   const guestMenuRef = useRef<HTMLDivElement | null>(null);
+  const mainContentRef = useRef<HTMLElement | null>(null);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Member Form State
   const [isEditing, setIsEditing] = useState<number | null>(null);
@@ -259,6 +261,69 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     }
   }, [currentUser, isPublicRankingRoute]);
 
+  useEffect(() => {
+    setMobileSidebarOpen(false);
+  }, [view, location.pathname]);
+
+  useEffect(() => {
+    const container = mainContentRef.current;
+    if (!container) return;
+
+    const handleFocusIn = (event: FocusEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+      if (
+        !(
+          target instanceof HTMLInputElement ||
+          target instanceof HTMLSelectElement ||
+          target instanceof HTMLTextAreaElement
+        )
+      ) {
+        return;
+      }
+
+      window.setTimeout(() => {
+        target.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+          inline: "nearest",
+        });
+      }, 220);
+    };
+
+    container.addEventListener("focusin", handleFocusIn);
+    return () => container.removeEventListener("focusin", handleFocusIn);
+  }, []);
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+
+    const updateKeyboardInset = () => {
+      const keyboardInset = Math.max(
+        0,
+        window.innerHeight - viewport.height - viewport.offsetTop,
+      );
+      document.documentElement.style.setProperty(
+        "--mobile-keyboard-inset",
+        `${keyboardInset}px`,
+      );
+    };
+
+    viewport.addEventListener("resize", updateKeyboardInset);
+    viewport.addEventListener("scroll", updateKeyboardInset);
+    updateKeyboardInset();
+
+    return () => {
+      viewport.removeEventListener("resize", updateKeyboardInset);
+      viewport.removeEventListener("scroll", updateKeyboardInset);
+      document.documentElement.style.setProperty(
+        "--mobile-keyboard-inset",
+        "0px",
+      );
+    };
+  }, []);
+
   // Persist members
   useEffect(() => {
     saveMembersToStorage(members);
@@ -426,7 +491,16 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
 
   return (
     <div className="fixed inset-0 z-[60] bg-slate-950/40 flex">
-      <div className="flex flex-col md:flex-row min-h-screen w-full text-slate-900 font-sans bg-gradient-to-br from-slate-50 via-sky-50 to-cyan-50">
+      <div className="dashboard-surface flex flex-col md:flex-row min-h-screen w-full text-slate-900 font-sans">
+        <button
+          type="button"
+          onClick={() => setMobileSidebarOpen(true)}
+          className="md:hidden fixed top-5 left-5 z-[70] h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm inline-flex items-center justify-center hover:bg-slate-50"
+          aria-label="Mở menu dashboard"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+
         {currentUser ? (
           <div
             ref={userMenuRef}
@@ -525,12 +599,17 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
           isAdmin={isAdmin}
           onGoUsers={() => navigate("/users")}
           showMatchForm={!isPublicRankingRoute}
+          mobileOpen={mobileSidebarOpen}
+          onMobileClose={() => setMobileSidebarOpen(false)}
         />
 
         {/* Main Content */}
-        <main className="flex-1 px-4 pb-24 pt-4 md:p-8 md:pb-8 overflow-auto relative">
+        <main
+          ref={mainContentRef}
+          className="dashboard-main-scroll flex-1 px-4 pt-4 md:p-8 overflow-auto relative"
+        >
           <div className="max-w-7xl mx-auto">
-            <header className="mb-5 rounded-2xl border border-white/80 bg-white/85 backdrop-blur px-4 py-4 shadow-sm md:px-6 md:py-5">
+            <header className="mb-5 rounded-2xl border border-slate-200 bg-white px-4 py-4 md:px-6 md:py-5">
               <h1 className="text-xl md:text-3xl font-bold text-slate-900 flex items-center gap-3">
                 {view === "member" && (
                   <>

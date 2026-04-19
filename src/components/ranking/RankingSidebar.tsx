@@ -1,5 +1,5 @@
-import type { ComponentType } from "react";
-import { Award, Grid, Home, PlusCircle, Shield } from "react-feather";
+import { useEffect, type ComponentType } from "react";
+import { Award, Grid, Home, PlusCircle, Shield, X } from "react-feather";
 import type { RankingView } from "./types";
 
 interface RankingSidebarProps {
@@ -9,6 +9,9 @@ interface RankingSidebarProps {
   isAdmin: boolean;
   onGoUsers: () => void;
   showMatchForm?: boolean;
+  mobileOpen: boolean;
+  onMobileClose: () => void;
+  usersActive?: boolean;
 }
 
 function SidebarItem({
@@ -29,8 +32,8 @@ function SidebarItem({
       onClick={() => onSetView(id)}
       className={`flex items-center space-x-3 w-full px-3 py-2.5 rounded-xl border transition-all ${
         currentView === id
-          ? "bg-white text-slate-900 border-white shadow-sm"
-          : "border-white/15 text-slate-200 hover:bg-white/10"
+          ? "border-slate-900 bg-slate-900 text-white"
+          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
       }`}
     >
       <Icon className="h-4 w-4" />
@@ -46,6 +49,9 @@ export default function RankingSidebar({
   isAdmin,
   onGoUsers,
   showMatchForm = true,
+  mobileOpen,
+  onMobileClose,
+  usersActive = false,
 }: RankingSidebarProps) {
   const navItems: Array<{
     icon: ComponentType<{ className?: string }>;
@@ -64,74 +70,130 @@ export default function RankingSidebar({
     });
   }
 
+  useEffect(() => {
+    if (!mobileOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onMobileClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [mobileOpen, onMobileClose]);
+
+  const handleSelectView = (nextView: RankingView) => {
+    onSetView(nextView);
+    onMobileClose();
+  };
+
   return (
     <>
-      <header className="md:hidden sticky top-0 z-20 px-4 py-3 border-b border-slate-200/80 bg-white/90 backdrop-blur">
-        <div className="flex items-center justify-between">
-          <div className="inline-flex items-center gap-2">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-cyan-500 text-white shadow-sm">
-              <Award className="h-4 w-4" />
-            </span>
-            <div>
-              <p className="text-sm font-bold text-slate-900 leading-none">
-                BadGuys
-              </p>
-              <p className="text-[11px] text-slate-500 mt-1">
-                Mobile Dashboard
-              </p>
-            </div>
+      <div
+        onClick={onMobileClose}
+        className={`${mobileOpen ? "" : "hidden"} fixed inset-0 panel-backdrop z-40 md:hidden`}
+      />
+
+      <aside
+        className={`${mobileOpen ? "translate-x-0" : "-translate-x-full"} fixed left-0 top-0 z-50 h-full w-full max-w-sm sidebar-panel p-5 overflow-y-auto transition-transform duration-200 ease-out md:hidden`}
+      >
+        <div className="min-h-full flex flex-col">
+          <div className="flex items-center justify-between mb-6">
+            <button
+              type="button"
+              onClick={() => {
+                onGoHome();
+                onMobileClose();
+              }}
+              className="inline-flex items-center gap-2.5"
+            >
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-sm">
+                <Award className="h-5 w-5" />
+              </span>
+              <span>
+                <p className="text-base font-bold text-slate-900 leading-none">
+                  BadGuys
+                </p>
+                <p className="text-[11px] text-slate-500 mt-1">Dashboard</p>
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={onMobileClose}
+              className="text-slate-400 hover:text-slate-700"
+              aria-label="Đóng menu"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
-          <div className="flex items-center gap-1.5">
+
+          <nav className="space-y-2">
+            {navItems.map(({ icon: Icon, label, id }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => handleSelectView(id)}
+                className={`w-full rounded-xl border px-3 py-2.5 text-left text-sm font-semibold inline-flex items-center gap-2 transition-colors ${
+                  currentView === id
+                    ? "border-slate-900 bg-slate-900 text-white"
+                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{label}</span>
+              </button>
+            ))}
+          </nav>
+
+          <div className="mt-6 space-y-2">
             {isAdmin ? (
               <button
                 type="button"
-                onClick={onGoUsers}
-                className="h-9 px-3 rounded-xl border border-sky-200 bg-sky-50 text-sky-700 text-xs font-semibold inline-flex items-center gap-1.5"
+                onClick={() => {
+                  onGoUsers();
+                  onMobileClose();
+                }}
+                className={`w-full rounded-xl border px-3 py-2.5 text-left text-sm font-semibold inline-flex items-center gap-2 transition-colors ${
+                  usersActive
+                    ? "border-slate-900 bg-slate-900 text-white"
+                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                }`}
               >
-                <Shield className="h-3.5 w-3.5" /> Users
+                <Shield className="h-4 w-4" />
+                <span>Quản lý user</span>
               </button>
             ) : null}
+
             <button
               type="button"
-              onClick={onGoHome}
-              className="h-9 px-3 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-semibold inline-flex items-center gap-1.5"
+              onClick={() => {
+                onGoHome();
+                onMobileClose();
+              }}
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 inline-flex items-center gap-2"
             >
-              <Home className="h-3.5 w-3.5" /> Trang chủ
+              <Home className="h-4 w-4" />
+              <span>Trang chủ</span>
             </button>
           </div>
-        </div>
-      </header>
 
-      <nav className="md:hidden fixed bottom-3 left-3 right-3 z-30 rounded-2xl border border-slate-200 bg-white/95 backdrop-blur p-1.5 shadow-[0_12px_40px_rgba(15,23,42,0.16)]">
-        <div className="grid grid-cols-3 gap-1">
-          {navItems.map(({ icon: Icon, label, id }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => onSetView(id)}
-              className={`rounded-xl px-2 py-2.5 text-[11px] font-semibold transition-all inline-flex flex-col items-center gap-1 ${
-                currentView === id
-                  ? "bg-slate-900 text-white"
-                  : "text-slate-600 hover:bg-slate-100"
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              <span>{label}</span>
-            </button>
-          ))}
+          <div className="mt-auto pt-8 text-[11px] text-slate-400">
+            © BadGuys
+          </div>
         </div>
-      </nav>
+      </aside>
 
-      <aside className="w-72 bg-gradient-to-b from-slate-900 to-slate-800 p-7 hidden md:flex flex-col">
+      <aside className="w-72 sidebar-panel p-7 hidden md:flex flex-col">
         <button
           type="button"
           onClick={onGoHome}
           className="flex items-center space-x-3 mb-10 text-left"
         >
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-cyan-500 text-white shadow">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-sm">
             <Award className="h-5 w-5" />
           </span>
-          <span className="text-2xl font-bold text-white">BadGuys</span>
+          <span className="text-2xl font-bold text-slate-900">BadGuys</span>
         </button>
 
         <nav className="space-y-2.5 flex-1">
@@ -164,13 +226,17 @@ export default function RankingSidebar({
           <button
             type="button"
             onClick={onGoUsers}
-            className="mb-4 flex items-center gap-2 rounded-xl border border-sky-300/40 bg-sky-500/10 px-3 py-2 text-sm font-semibold text-sky-100 hover:bg-sky-500/20"
+            className={`mb-4 flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors ${
+              usersActive
+                ? "border-slate-900 bg-slate-900 text-white"
+                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+            }`}
           >
-            <Shield className="h-4 w-4" /> User Management
+            <Shield className="h-4 w-4" /> Quản lý user
           </button>
         ) : null}
 
-        <div className="border-t border-white/20 pt-4 text-xs text-slate-300">
+        <div className="border-t border-slate-200 pt-4 text-xs text-slate-500">
           <p>© BadGuys Ranking 2026</p>
         </div>
       </aside>
