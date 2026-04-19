@@ -50,7 +50,7 @@ export default function RankingPanel({
       <div>
         <div className="md:hidden space-y-2.5">
           {rankings.map((player, index) => {
-            const winRate = getWinRate(player.matches, player.wins);
+            const winRate = getWinRate(player.totalMatches, player.wins);
             const progressTone = getWinRateTone(winRate);
 
             return (
@@ -106,7 +106,7 @@ export default function RankingPanel({
                     />
                   </div>
                   <p className="mt-1.5 text-[11px] text-slate-500">
-                    {player.wins}/{player.matches} trận thắng
+                    {player.wins}/{player.totalMatches} trận thắng
                   </p>
                 </div>
               </button>
@@ -134,7 +134,7 @@ export default function RankingPanel({
             </thead>
             <tbody className="divide-y divide-slate-200">
               {rankings.map((player, index) => {
-                const winRate = getWinRate(player.matches, player.wins);
+                const winRate = getWinRate(player.totalMatches, player.wins);
                 const progressTone = getWinRateTone(winRate);
 
                 return (
@@ -166,7 +166,7 @@ export default function RankingPanel({
                         <div className="flex items-center justify-between text-[11px] font-medium text-slate-600">
                           <span>{Math.round(winRate)}%</span>
                           <span>
-                            {player.wins}/{player.matches}
+                            {player.wins}/{player.totalMatches}
                           </span>
                         </div>
                         <div
