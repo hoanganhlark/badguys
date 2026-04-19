@@ -30,6 +30,19 @@ import type { UserRecord, UserRole } from "../types";
 import RankingSidebar from "./ranking/RankingSidebar";
 import type { RankingView } from "./ranking/types";
 
+const DASHBOARD_APPBAR_STYLE = {
+  position: "sticky" as const,
+  top: 0,
+  zIndex: 55,
+  height: 56,
+  lineHeight: "56px",
+  padding: "0 16px",
+  borderBottom: "1px solid #e2e8f0",
+  background: "rgba(250, 250, 250, 0.92)",
+  backdropFilter: "blur(8px)",
+  boxShadow: "0 2px 12px rgba(15, 23, 42, 0.08)",
+};
+
 export default function UserManagementPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -223,6 +236,35 @@ export default function UserManagementPage() {
     return () => container.removeEventListener("focusin", handleFocusIn);
   }, []);
 
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+
+    const updateKeyboardInset = () => {
+      const keyboardInset = Math.max(
+        0,
+        window.innerHeight - viewport.height - viewport.offsetTop,
+      );
+      document.documentElement.style.setProperty(
+        "--mobile-keyboard-inset",
+        `${keyboardInset}px`,
+      );
+    };
+
+    viewport.addEventListener("resize", updateKeyboardInset);
+    viewport.addEventListener("scroll", updateKeyboardInset);
+    updateKeyboardInset();
+
+    return () => {
+      viewport.removeEventListener("resize", updateKeyboardInset);
+      viewport.removeEventListener("scroll", updateKeyboardInset);
+      document.documentElement.style.setProperty(
+        "--mobile-keyboard-inset",
+        "0px",
+      );
+    };
+  }, []);
+
   const handleSetDashboardView = (view: RankingView) => {
     navigate(`/dashboard/${view}`);
   };
@@ -311,20 +353,7 @@ export default function UserManagementPage() {
 
   return (
     <Layout style={{ minHeight: "100vh", background: "transparent" }}>
-      <Layout.Header
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 55,
-          height: 56,
-          lineHeight: "56px",
-          padding: "0 16px",
-          borderBottom: "1px solid #e2e8f0",
-          background: "rgba(250, 250, 250, 0.92)",
-          backdropFilter: "blur(8px)",
-          boxShadow: "0 2px 12px rgba(15, 23, 42, 0.08)",
-        }}
-      >
+      <Layout.Header style={DASHBOARD_APPBAR_STYLE}>
         <div className="flex h-14 items-center justify-between">
           <div>
             {!mobileSidebarOpen ? (

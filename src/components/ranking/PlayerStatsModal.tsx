@@ -145,7 +145,7 @@ export default function PlayerStatsModal({
       }
     >
       <Space direction="vertical" size={16} style={{ width: "100%" }}>
-        <Collapse items={metricPanels} />
+        <Collapse items={metricPanels} defaultActiveKey={[]} />
 
         <Space direction="vertical" size={4} style={{ width: "100%" }}>
           <Typography.Text strong>
@@ -164,6 +164,7 @@ export default function PlayerStatsModal({
         </Space>
 
         <Collapse
+          defaultActiveKey={[]}
           items={[
             {
               key: "simple",

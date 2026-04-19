@@ -54,6 +54,19 @@ interface RankingPageProps {
   onClose: () => void;
 }
 
+const DASHBOARD_APPBAR_STYLE: React.CSSProperties = {
+  position: "sticky",
+  top: 0,
+  zIndex: 55,
+  height: 56,
+  lineHeight: "56px",
+  padding: "0 16px",
+  borderBottom: "1px solid #e2e8f0",
+  background: "rgba(250, 250, 250, 0.92)",
+  backdropFilter: "blur(8px)",
+  boxShadow: "0 2px 12px rgba(15, 23, 42, 0.08)",
+};
+
 function isRankingView(value: string | null): value is RankingView {
   return value === "member" || value === "match-form" || value === "ranking";
 }
@@ -541,7 +554,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] bg-slate-950/40 flex">
+    <div className="min-h-screen">
       <Layout
         className="min-h-screen w-full text-slate-900 font-sans"
         style={{ background: "transparent" }}
@@ -552,24 +565,14 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
               ? "opacity-0 pointer-events-none md:opacity-100 md:pointer-events-auto"
               : ""
           }`}
-          style={{
-            position: "sticky",
-            top: 0,
-            zIndex: 55,
-            height: 56,
-            lineHeight: "56px",
-            paddingInline: 0,
-            borderBottom: "1px solid #e2e8f0",
-            background: "rgba(250, 250, 250, 0.92)",
-            backdropFilter: "blur(8px)",
-            boxShadow: "0 2px 12px rgba(15, 23, 42, 0.08)",
-          }}
+          style={DASHBOARD_APPBAR_STYLE}
         >
-          <div className="flex h-14 items-center justify-between px-4 md:px-6">
+          <div className="flex h-14 items-center justify-between">
             <div>
               {!mobileSidebarOpen ? (
                 <Button
-                  type="text"
+                  type="default"
+                  shape="circle"
                   onClick={() => setMobileSidebarOpen(true)}
                   className="md:hidden"
                   aria-label={t("rankingPage.menu")}
