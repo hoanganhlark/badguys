@@ -1,15 +1,21 @@
 import {
   CheckCircleOutlined,
+  ClockCircleOutlined,
+  DeleteOutlined,
   PlusOutlined,
   UserOutlined,
   UsergroupAddOutlined,
 } from "@ant-design/icons";
 import {
+  Alert,
   Button,
   Card,
+  Col,
   DatePicker,
+  Divider,
   Form,
   InputNumber,
+  Row,
   Radio,
   Select,
   Space,
@@ -88,167 +94,258 @@ export default function MatchFormPanel({
     });
   };
 
+  const removeSetInput = (index: number) => {
+    if (matchData.sets.length <= 1) return;
+    const nextSets = matchData.sets.filter((_, i) => i !== index);
+    onSetMatchData({
+      ...matchData,
+      sets: nextSets,
+    });
+  };
+
+  const updateTeamSelection = (
+    team: "team1" | "team2",
+    index: number,
+    value?: string,
+  ) => {
+    const nextTeam = [...matchData[team]];
+    nextTeam[index] = value || "";
+    onSetMatchData({ ...matchData, [team]: nextTeam });
+  };
+
+  const updateSetValue = (
+    index: number,
+    key: "team1Score" | "team2Score" | "minutes",
+    value: number | null,
+  ) => {
+    if (value !== null && value < 0) return;
+    const nextSets = [...matchData.sets];
+    nextSets[index] = {
+      ...nextSets[index],
+      [key]: value === null ? "" : String(value),
+    };
+    onSetMatchData({ ...matchData, sets: nextSets });
+  };
+
   const playedAtValue = dayjs(matchData.playedAt);
   const playedAt = playedAtValue.isValid() ? playedAtValue : null;
 
   return (
     <Card style={{ maxWidth: 920 }}>
-      <Space direction="vertical" size={16} style={{ width: "100%" }}>
-        <Radio.Group
-          value={matchType}
-          buttonStyle="solid"
-          onChange={(event) => onSetMatchType(event.target.value)}
-        >
-          <Radio.Button value="doubles">
-            <Space>
-              <UsergroupAddOutlined />
-              {t("matchForm.doubles")}
-            </Space>
-          </Radio.Button>
-          <Radio.Button value="singles">
-            <Space>
-              <UserOutlined />
-              {t("matchForm.singles")}
-            </Space>
-          </Radio.Button>
-        </Radio.Group>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card size="small" title={t("matchForm.teamA")}>
-            <Space direction="vertical" size={8} style={{ width: "100%" }}>
-              {[...Array(slotCount)].map((_, i) => (
-                <Select
-                  key={`teamA-${i}`}
-                  placeholder={t("matchForm.choosePlayer")}
-                  value={matchData.team1[i] || undefined}
-                  allowClear
-                  options={getSelectableMembers("team1", i).map((member) => ({
-                    value: member.name,
-                    label: member.name,
-                  }))}
-                  onChange={(value) => {
-                    const nextTeam = [...matchData.team1];
-                    nextTeam[i] = value || "";
-                    onSetMatchData({ ...matchData, team1: nextTeam });
-                  }}
-                />
-              ))}
-            </Space>
-          </Card>
-
-          <Card size="small" title={t("matchForm.teamB")}>
-            <Space direction="vertical" size={8} style={{ width: "100%" }}>
-              {[...Array(slotCount)].map((_, i) => (
-                <Select
-                  key={`teamB-${i}`}
-                  placeholder={t("matchForm.choosePlayer")}
-                  value={matchData.team2[i] || undefined}
-                  allowClear
-                  options={getSelectableMembers("team2", i).map((member) => ({
-                    value: member.name,
-                    label: member.name,
-                  }))}
-                  onChange={(value) => {
-                    const nextTeam = [...matchData.team2];
-                    nextTeam[i] = value || "";
-                    onSetMatchData({ ...matchData, team2: nextTeam });
-                  }}
-                />
-              ))}
-            </Space>
-          </Card>
-        </div>
-
+      <Space direction="vertical" size={20} style={{ width: "100%" }}>
         <Form layout="vertical" requiredMark={false}>
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-end">
-            <Form.Item
-              label={t("matchForm.setResults")}
-              style={{ marginBottom: 0 }}
-            >
-              <Typography.Text type="secondary">
-                {t("matchForm.playedAt")}
-              </Typography.Text>
-            </Form.Item>
-            <Form.Item
-              label={t("matchForm.playedAt")}
-              style={{ marginBottom: 0 }}
-            >
-              <DatePicker
-                showTime
-                format="DD/MM/YYYY HH:mm"
-                value={playedAt}
-                onChange={(value) => {
-                  const nextPlayedAt = value
-                    ? value.format("YYYY-MM-DDTHH:mm")
-                    : "";
-                  onSetMatchData({
-                    ...matchData,
-                    playedAt: nextPlayedAt,
-                  });
-                }}
-              />
-            </Form.Item>
-          </div>
+          <Row gutter={[12, 12]} align="bottom">
+            <Col xs={24} md={14}>
+              <Form.Item
+                label={t("rankingPage.recordResult")}
+                style={{ marginBottom: 0 }}
+              >
+                <Radio.Group
+                  value={matchType}
+                  buttonStyle="solid"
+                  onChange={(event) => onSetMatchType(event.target.value)}
+                >
+                  <Radio.Button value="doubles">
+                    <Space>
+                      <UsergroupAddOutlined />
+                      {t("matchForm.doubles")}
+                    </Space>
+                  </Radio.Button>
+                  <Radio.Button value="singles">
+                    <Space>
+                      <UserOutlined />
+                      {t("matchForm.singles")}
+                    </Space>
+                  </Radio.Button>
+                </Radio.Group>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={10}>
+              <Form.Item
+                label={t("matchForm.playedAt")}
+                style={{ marginBottom: 0 }}
+              >
+                <DatePicker
+                  showTime
+                  format="DD/MM/YYYY HH:mm"
+                  value={playedAt}
+                  style={{ width: "100%" }}
+                  suffixIcon={<ClockCircleOutlined />}
+                  onChange={(value) => {
+                    const nextPlayedAt = value
+                      ? value.format("YYYY-MM-DDTHH:mm")
+                      : "";
+                    onSetMatchData({
+                      ...matchData,
+                      playedAt: nextPlayedAt,
+                    });
+                  }}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
         </Form>
 
-        <Button icon={<PlusOutlined />} onClick={addSetInput}>
-          {t("matchForm.addSet")}
-        </Button>
+        <Row gutter={[12, 12]}>
+          <Col xs={24} md={12}>
+            <Card size="small" title={t("matchForm.teamA")}>
+              <Space direction="vertical" size={10} style={{ width: "100%" }}>
+                {[...Array(slotCount)].map((_, i) => (
+                  <Form.Item
+                    key={`teamA-player-${i}`}
+                    label={
+                      slotCount === 1
+                        ? t("matchForm.teamA")
+                        : `${t("matchForm.teamA")} ${i + 1}`
+                    }
+                    style={{ marginBottom: 0 }}
+                  >
+                    <Select
+                      placeholder={t("matchForm.choosePlayer")}
+                      value={matchData.team1[i] || undefined}
+                      allowClear
+                      options={getSelectableMembers("team1", i).map(
+                        (member) => ({
+                          value: member.name,
+                          label: member.name,
+                        }),
+                      )}
+                      onChange={(value) =>
+                        updateTeamSelection("team1", i, value)
+                      }
+                    />
+                  </Form.Item>
+                ))}
+              </Space>
+            </Card>
+          </Col>
 
-        <Space direction="vertical" size={8} style={{ width: "100%" }}>
+          <Col xs={24} md={12}>
+            <Card size="small" title={t("matchForm.teamB")}>
+              <Space direction="vertical" size={10} style={{ width: "100%" }}>
+                {[...Array(slotCount)].map((_, i) => (
+                  <Form.Item
+                    key={`teamB-player-${i}`}
+                    label={
+                      slotCount === 1
+                        ? t("matchForm.teamB")
+                        : `${t("matchForm.teamB")} ${i + 1}`
+                    }
+                    style={{ marginBottom: 0 }}
+                  >
+                    <Select
+                      placeholder={t("matchForm.choosePlayer")}
+                      value={matchData.team2[i] || undefined}
+                      allowClear
+                      options={getSelectableMembers("team2", i).map(
+                        (member) => ({
+                          value: member.name,
+                          label: member.name,
+                        }),
+                      )}
+                      onChange={(value) =>
+                        updateTeamSelection("team2", i, value)
+                      }
+                    />
+                  </Form.Item>
+                ))}
+              </Space>
+            </Card>
+          </Col>
+        </Row>
+
+        <Divider style={{ margin: 0 }} />
+
+        <Space direction="vertical" size={12} style={{ width: "100%" }}>
+          <Space style={{ justifyContent: "space-between", width: "100%" }}>
+            <Typography.Title level={5} style={{ margin: 0 }}>
+              {t("matchForm.setResults")}
+            </Typography.Title>
+            <Button icon={<PlusOutlined />} onClick={addSetInput}>
+              {t("matchForm.addSet")}
+            </Button>
+          </Space>
+
           {matchData.sets.map((set, i) => (
-            <div
+            <Card
               key={`set-${i}`}
-              className="grid grid-cols-1 md:grid-cols-3 gap-3"
+              size="small"
+              title={`Set ${i + 1}`}
+              extra={
+                <Button
+                  type="text"
+                  icon={<DeleteOutlined />}
+                  onClick={() => removeSetInput(i)}
+                  disabled={matchData.sets.length <= 1}
+                  aria-label={`Remove set ${i + 1}`}
+                />
+              }
             >
-              <InputNumber
-                min={0}
-                placeholder={t("matchForm.setTeamA", { index: i + 1 })}
-                value={set.team1Score === "" ? null : Number(set.team1Score)}
-                onChange={(value) => {
-                  if (value !== null && value < 0) return;
-                  const nextSets = [...matchData.sets];
-                  nextSets[i] = {
-                    ...nextSets[i],
-                    team1Score: value === null ? "" : String(value),
-                  };
-                  onSetMatchData({ ...matchData, sets: nextSets });
-                }}
-                style={{ width: "100%" }}
-              />
-              <InputNumber
-                min={0}
-                placeholder={t("matchForm.setTeamB", { index: i + 1 })}
-                value={set.team2Score === "" ? null : Number(set.team2Score)}
-                onChange={(value) => {
-                  if (value !== null && value < 0) return;
-                  const nextSets = [...matchData.sets];
-                  nextSets[i] = {
-                    ...nextSets[i],
-                    team2Score: value === null ? "" : String(value),
-                  };
-                  onSetMatchData({ ...matchData, sets: nextSets });
-                }}
-                style={{ width: "100%" }}
-              />
-              <InputNumber
-                min={0}
-                placeholder={t("matchForm.setMinutes", { index: i + 1 })}
-                value={set.minutes === "" ? null : Number(set.minutes)}
-                onChange={(value) => {
-                  if (value !== null && value < 0) return;
-                  const nextSets = [...matchData.sets];
-                  nextSets[i] = {
-                    ...nextSets[i],
-                    minutes: value === null ? "" : String(value),
-                  };
-                  onSetMatchData({ ...matchData, sets: nextSets });
-                }}
-                style={{ width: "100%" }}
-              />
-            </div>
+              <Row gutter={[10, 10]}>
+                <Col xs={24} md={8}>
+                  <Form.Item
+                    label={t("matchForm.setTeamA")}
+                    style={{ marginBottom: 0 }}
+                  >
+                    <InputNumber
+                      min={0}
+                      placeholder={t("matchForm.setTeamA")}
+                      value={
+                        set.team1Score === "" ? null : Number(set.team1Score)
+                      }
+                      onChange={(value) =>
+                        updateSetValue(i, "team1Score", value)
+                      }
+                      style={{ width: "100%" }}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={8}>
+                  <Form.Item
+                    label={t("matchForm.setTeamB")}
+                    style={{ marginBottom: 0 }}
+                  >
+                    <InputNumber
+                      min={0}
+                      placeholder={t("matchForm.setTeamB")}
+                      value={
+                        set.team2Score === "" ? null : Number(set.team2Score)
+                      }
+                      onChange={(value) =>
+                        updateSetValue(i, "team2Score", value)
+                      }
+                      style={{ width: "100%" }}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={8}>
+                  <Form.Item
+                    label={t("matchForm.setMinutes")}
+                    style={{ marginBottom: 0 }}
+                  >
+                    <InputNumber
+                      min={0}
+                      placeholder={t("matchForm.setMinutes")}
+                      value={set.minutes === "" ? null : Number(set.minutes)}
+                      onChange={(value) => updateSetValue(i, "minutes", value)}
+                      style={{ width: "100%" }}
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+            </Card>
           ))}
         </Space>
+
+        <Alert
+          type={canSaveMatch ? "success" : "info"}
+          showIcon
+          message={
+            canSaveMatch
+              ? t("matchForm.saveResult")
+              : t("rankingPage.cannotSaveMatch")
+          }
+        />
 
         <Button
           type="primary"
@@ -256,6 +353,7 @@ export default function MatchFormPanel({
           disabled={!canSaveMatch}
           onClick={onSaveMatch}
           block
+          size="large"
         >
           {t("matchForm.saveResult")}
         </Button>
