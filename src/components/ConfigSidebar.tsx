@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import type { AppConfig } from "../types";
 import { X } from "react-feather";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   open: boolean;
@@ -32,6 +33,8 @@ export default function ConfigSidebar({
   onLogout,
   appVersion,
 }: Props) {
+  const { t } = useTranslation();
+
   useEffect(() => {
     if (!open) return;
 
@@ -57,12 +60,12 @@ export default function ConfigSidebar({
         <div className="min-h-full flex flex-col">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wider">
-              Cấu hình
+              {t("configSidebar.title")}
             </h3>
             <button
               onClick={onClose}
               className="text-slate-400 hover:text-slate-700"
-              aria-label="Đóng cấu hình"
+              aria-label={t("configSidebar.close")}
             >
               <X className="h-5 w-5" />
             </button>
@@ -74,7 +77,7 @@ export default function ConfigSidebar({
                 htmlFor="cfgEnableCourtCount"
                 className="block text-xs text-slate-500 mb-2"
               >
-                Hiển thị ô nhập số sân
+                {t("configSidebar.enableCourtCount")}
               </label>
               <label className="inline-flex items-center cursor-pointer">
                 <input
@@ -89,7 +92,9 @@ export default function ConfigSidebar({
                     })
                   }
                 />
-                <span className="ml-2 text-xs text-slate-500">Bật</span>
+                <span className="ml-2 text-xs text-slate-500">
+                  {t("configSidebar.on")}
+                </span>
               </label>
             </div>
 
@@ -98,7 +103,7 @@ export default function ConfigSidebar({
                 htmlFor="cfgRoundResult"
                 className="block text-xs text-slate-500 mb-2"
               >
-                Làm tròn kết quả
+                {t("configSidebar.roundResult")}
               </label>
               <label className="inline-flex items-center cursor-pointer">
                 <input
@@ -110,7 +115,9 @@ export default function ConfigSidebar({
                     onConfigChange({ ...config, roundResult: e.target.checked })
                   }
                 />
-                <span className="ml-2 text-xs text-slate-500">Bật</span>
+                <span className="ml-2 text-xs text-slate-500">
+                  {t("configSidebar.on")}
+                </span>
               </label>
             </div>
 
@@ -119,7 +126,7 @@ export default function ConfigSidebar({
                 htmlFor="cfgFemaleMax"
                 className="block text-xs text-slate-500 mb-2"
               >
-                Giá cố định cho nữ (k / buổi)
+                {t("configSidebar.femaleMax")}
               </label>
               <input
                 type="number"
@@ -149,7 +156,7 @@ export default function ConfigSidebar({
                 htmlFor="cfgTubePrice"
                 className="block text-xs text-slate-500 mb-2"
               >
-                Giá 1 ống cầu (12 trái) (k / ống)
+                {t("configSidebar.tubePrice")}
               </label>
               <input
                 type="number"
@@ -178,7 +185,7 @@ export default function ConfigSidebar({
                 htmlFor="cfgSetPrice"
                 className="block text-xs text-slate-500 mb-2"
               >
-                Giá đánh theo set (k / set)
+                {t("configSidebar.setPrice")}
               </label>
               <input
                 type="number"
@@ -204,8 +211,7 @@ export default function ConfigSidebar({
           </div>
 
           <p className="text-xs text-slate-400 mt-6 leading-relaxed">
-            Trường "Số cầu" ngoài màn hình chính sẽ tự quy đổi ra tiền cầu theo
-            giá ống hiện tại.
+            {t("configSidebar.note")}
           </p>
 
           <button
@@ -213,7 +219,7 @@ export default function ConfigSidebar({
             onClick={onOpenSessions}
             className="mt-5 w-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 py-3 rounded-xl text-sm font-semibold transition-colors"
           >
-            Lịch sử buổi gần đây
+            {t("configSidebar.recentSessions")}
           </button>
 
           <div className="mt-auto pt-8 space-y-2">
@@ -223,7 +229,7 @@ export default function ConfigSidebar({
                 onClick={onLogout}
                 className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
               >
-                Đăng xuất ({currentUsername})
+                {t("common.logout")} ({currentUsername})
               </button>
             ) : null}
             <p className="text-[11px] text-slate-300 tracking-wide">

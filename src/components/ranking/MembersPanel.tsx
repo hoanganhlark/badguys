@@ -1,4 +1,5 @@
 import { Check, Edit2, Plus, Trash2, UserPlus } from "react-feather";
+import { useTranslation } from "react-i18next";
 import type { Member } from "./types";
 import type { RankingLevel } from "../../types";
 import {
@@ -29,6 +30,7 @@ export default function MembersPanel({
   onStartEdit,
   onDeleteMember,
 }: MembersPanelProps) {
+  const { t } = useTranslation();
   const sortedMembers = sortMembersByLevelAndName(members);
 
   return (
@@ -41,12 +43,14 @@ export default function MembersPanel({
             ) : (
               <Plus className="h-4 w-4" />
             )}
-            {isEditing ? "Cập nhật thành viên" : "Thêm thành viên mới"}
+            {isEditing
+              ? t("membersPanel.updateMember")
+              : t("membersPanel.addMember")}
           </h2>
           <div className="flex flex-col md:flex-row gap-2.5 md:gap-3">
             <input
               type="text"
-              placeholder="Họ và tên..."
+              placeholder={t("membersPanel.fullNamePlaceholder")}
               className="flex-1 px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500"
               value={newMember.name}
               onChange={(e) =>
@@ -76,7 +80,7 @@ export default function MembersPanel({
               ) : (
                 <UserPlus className="h-4 w-4" />
               )}
-              {isEditing ? "Lưu" : "Thêm"}
+              {isEditing ? t("membersPanel.save") : t("membersPanel.add")}
             </button>
           </div>
         </div>
@@ -123,14 +127,14 @@ export default function MembersPanel({
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
               <th className="px-4 py-3 text-xs font-semibold text-slate-700 uppercase">
-                Thành viên
+                {t("membersPanel.member")}
               </th>
               <th className="px-4 py-3 text-xs font-semibold text-slate-700 uppercase">
-                Hạng
+                {t("membersPanel.rank")}
               </th>
               {canManage ? (
                 <th className="px-4 py-3 text-xs font-semibold text-slate-700 uppercase text-right">
-                  Thao tác
+                  {t("membersPanel.action")}
                 </th>
               ) : null}
             </tr>

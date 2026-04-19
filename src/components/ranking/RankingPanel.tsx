@@ -7,6 +7,7 @@ import {
   User,
   Users,
 } from "react-feather";
+import { useTranslation } from "react-i18next";
 import type { AdvancedStats, Match } from "./types";
 
 interface RankingPanelProps {
@@ -54,6 +55,8 @@ export default function RankingPanel({
   isAdmin,
   currentUserId,
 }: RankingPanelProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="max-w-5xl space-y-4 md:space-y-6">
       <div>
@@ -97,7 +100,7 @@ export default function RankingPanel({
                 <div className="mt-3 rounded-lg bg-slate-50 px-2.5 py-2.5">
                   <div className="flex items-center justify-between text-[11px]">
                     <p className="font-semibold uppercase tracking-wide text-slate-500">
-                      Tỉ lệ thắng
+                      {t("rankingPanel.winRate")}
                     </p>
                     <p className="font-bold text-slate-700">
                       {Math.round(winRate)}%
@@ -106,7 +109,7 @@ export default function RankingPanel({
                   <div
                     className="mt-2 h-2.5 overflow-hidden rounded-full bg-slate-200"
                     role="progressbar"
-                    aria-label={`Tỉ lệ thắng của ${player.name}`}
+                    aria-label={`${t("rankingPanel.winRate")} ${player.name}`}
                     aria-valuemin={0}
                     aria-valuemax={100}
                     aria-valuenow={Math.round(winRate)}
@@ -117,7 +120,10 @@ export default function RankingPanel({
                     />
                   </div>
                   <p className="mt-1.5 text-[11px] text-slate-500">
-                    {player.wins}/{player.totalMatches} trận thắng
+                    {t("rankingPanel.winsOutOfMatches", {
+                      wins: player.wins,
+                      matches: player.totalMatches,
+                    })}
                   </p>
                 </div>
               </button>
@@ -130,13 +136,13 @@ export default function RankingPanel({
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
                 <th className="px-4 py-3 text-xs font-semibold text-slate-700 uppercase">
-                  Hạng
+                  {t("rankingPanel.rank")}
                 </th>
                 <th className="px-4 py-3 text-xs font-semibold text-slate-700 uppercase">
-                  Vận động viên
+                  {t("rankingPanel.athlete")}
                 </th>
                 <th className="px-4 py-3 text-xs font-semibold text-slate-700 uppercase text-center">
-                  Tỉ lệ thắng
+                  {t("rankingPanel.winRate")}
                 </th>
                 <th className="px-4 py-3 text-xs font-semibold text-slate-700 uppercase text-right">
                   RankScore
@@ -183,7 +189,7 @@ export default function RankingPanel({
                         <div
                           className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-200"
                           role="progressbar"
-                          aria-label={`Tỉ lệ thắng của ${player.name}`}
+                          aria-label={`${t("rankingPanel.winRate")} ${player.name}`}
                           aria-valuemin={0}
                           aria-valuemax={100}
                           aria-valuenow={Math.round(winRate)}
@@ -209,7 +215,8 @@ export default function RankingPanel({
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2">
           <h3 className="font-bold text-slate-900 flex items-center gap-2">
-            <Clock className="h-5 w-5 text-slate-700" /> Lịch sử gần đây
+            <Clock className="h-5 w-5 text-slate-700" />{" "}
+            {t("rankingPanel.recentHistory")}
           </h3>
           {isAdmin ? (
             <button
@@ -218,7 +225,8 @@ export default function RankingPanel({
               disabled={matches.length === 0}
               className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 text-xs font-semibold hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <Trash2 className="h-3.5 w-3.5" /> Xóa lịch sử
+              <Trash2 className="h-3.5 w-3.5" />{" "}
+              {t("rankingPanel.clearHistory")}
             </button>
           ) : null}
         </div>
@@ -226,7 +234,7 @@ export default function RankingPanel({
           {matches.length === 0 && (
             <div className="p-4 rounded-lg border border-slate-100 bg-slate-50 text-center">
               <p className="text-slate-400 text-sm inline-flex items-center gap-2">
-                <FileText className="h-4 w-4" /> Chưa có trận đấu
+                <FileText className="h-4 w-4" /> {t("rankingPanel.noMatches")}
               </p>
             </div>
           )}
@@ -242,7 +250,9 @@ export default function RankingPanel({
                   ) : (
                     <Users className="h-3.5 w-3.5" />
                   )}
-                  {match.type === "singles" ? "Đơn" : "Đôi"}
+                  {match.type === "singles"
+                    ? t("rankingPanel.singles")
+                    : t("rankingPanel.doubles")}
                 </div>
                 <div className="text-[11px] text-slate-500">
                   {formatMatchDateTime(match.date)}
@@ -263,15 +273,16 @@ export default function RankingPanel({
 
               <div className="mt-2 flex items-center justify-between gap-2">
                 <div className="text-[11px] text-slate-500 truncate">
-                  Tạo bởi: {match.createdByUsername || match.createdBy || "-"}
+                  {t("rankingPanel.createdBy")}:{" "}
+                  {match.createdByUsername || match.createdBy || "-"}
                 </div>
                 {isAdmin || match.createdBy === currentUserId ? (
                   <button
                     type="button"
                     onClick={() => onDeleteMatch(match.id)}
                     className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-red-600 hover:bg-red-50"
-                    aria-label="Xóa trận này"
-                    title="Xóa trận này"
+                    aria-label={t("rankingPanel.deleteThisMatch")}
+                    title={t("rankingPanel.deleteThisMatch")}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>

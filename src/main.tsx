@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { AuthProvider } from "./context/AuthContext";
+import "./i18n";
 import "./styles.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

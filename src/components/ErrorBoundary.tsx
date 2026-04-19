@@ -1,4 +1,5 @@
 import React from "react";
+import i18n from "../i18n";
 
 type State = { hasError: boolean };
 
@@ -24,13 +25,13 @@ export default class ErrorBoundary extends React.Component<
       return (
         <div className="p-8 text-center">
           <p className="text-slate-600 text-sm">
-            Đã xảy ra lỗi. Vui lòng tải lại trang.
+            {i18n.t("errorBoundary.error")}
           </p>
           <button
             onClick={() => window.location.reload()}
             className="mt-4 text-xs text-slate-500 underline"
           >
-            Tải lại
+            {i18n.t("errorBoundary.reload")}
           </button>
         </div>
       );

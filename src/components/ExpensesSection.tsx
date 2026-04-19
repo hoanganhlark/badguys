@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 type Props = {
   courtFee: string;
   shuttleCount: string;
@@ -17,15 +19,22 @@ export default function ExpensesSection({
   onShuttleCountChange,
   onCourtCountChange,
 }: Props) {
+  const { t } = useTranslation();
+
   return (
     <section className="mb-8">
-      <h2 className="text-sm font-semibold text-slate-500 mb-4 uppercase tracking-wider">Chi phí (k)</h2>
+      <h2 className="text-sm font-semibold text-slate-500 mb-4 uppercase tracking-wider">
+        {t("expenses.title")}
+      </h2>
       <div
         className={`grid ${showCourtCount ? "grid-cols-3" : "grid-cols-2"} gap-3`}
       >
         <div>
-          <label htmlFor="courtFee" className="block text-xs text-slate-500 mb-2">
-            Tiền sân (k)
+          <label
+            htmlFor="courtFee"
+            className="block text-xs text-slate-500 mb-2"
+          >
+            {t("expenses.courtFee")}
           </label>
           <input
             type="number"
@@ -37,8 +46,11 @@ export default function ExpensesSection({
         </div>
         {showCourtCount ? (
           <div>
-            <label htmlFor="courtCount" className="block text-xs text-slate-500 mb-2">
-              Số sân
+            <label
+              htmlFor="courtCount"
+              className="block text-xs text-slate-500 mb-2"
+            >
+              {t("expenses.courtCount")}
             </label>
             <input
               type="number"
@@ -51,8 +63,11 @@ export default function ExpensesSection({
           </div>
         ) : null}
         <div>
-          <label htmlFor="shuttleCount" className="block text-xs text-slate-500 mb-2">
-            Số cầu
+          <label
+            htmlFor="shuttleCount"
+            className="block text-xs text-slate-500 mb-2"
+          >
+            {t("expenses.shuttleCount")}
           </label>
           <input
             type="number"

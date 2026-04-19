@@ -31,6 +31,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `src/lib/platform.ts` — localStorage, clipboard, URL params, device detection
 - `src/lib/rankingStats.ts` — Glicko2-based rating calculations for tournament rankings; computes skill rating, rating deviation, volatility, and activity metrics
 - `src/components/RankingPage.tsx` — Ranking system: manages member CRUD, match recording (singles/doubles), and ranking display; supports public guest view and authenticated user access
+- `src/i18n/index.ts` — i18next configuration; manages language initialization, fallback (Vietnamese), and localStorage persistence
+- `src/i18n/resources.ts` — Internationalization strings for supported languages (Vietnamese, English)
 - `vite.config.ts` — Base path is `/` in dev, `/badguys/` in production build
 
 ### Cost calculation model
@@ -72,11 +74,11 @@ Player ratings use the **Glicko2** algorithm (a Bayesian rating system accountin
 
 ### State management
 
-Pure React hooks (`useState`, `useEffect`, `useMemo`). No external state library. `localStorage` persists config, input drafts, members, and matches. Authentication state managed via `AuthContext`.
+Pure React hooks (`useState`, `useEffect`, `useMemo`) with i18next for internationalization. `localStorage` persists config, input drafts, members, matches, and language preference. Authentication state managed via `AuthContext`. Language defaults to browser language if Vietnamese or English, otherwise Vietnamese.
 
 ### Testing
 
-Tests run via Vitest with jsdom environment (allows DOM testing in Node). Test setup imports `@testing-library/jest-dom` for DOM matchers. Currently no existing test files; add tests in `src/` with `.test.ts` or `.test.tsx` suffix.
+Tests run via Vitest with jsdom environment (allows DOM testing in Node). Test setup imports `@testing-library/jest-dom` for DOM matchers. Add tests in `src/` with `.test.ts` or `.test.tsx` suffix.
 
 
 ## Environment variables

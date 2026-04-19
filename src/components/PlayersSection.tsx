@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 import { X } from "react-feather";
+import { useTranslation } from "react-i18next";
 import type { Player } from "../types";
 
 type Props = {
@@ -17,6 +18,7 @@ export default function PlayersSection({
   onTogglePlayer,
   onRemovePlayer,
 }: Props) {
+  const { t } = useTranslation();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const normalizeName = (name: string) => name.trim().toLowerCase();
@@ -55,10 +57,10 @@ export default function PlayersSection({
     <section className="mb-8">
       <div className="flex justify-between items-center mb-4 px-1">
         <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
-          Danh sách
+          {t("players.title")}
         </h2>
         <span className="text-xs font-medium text-slate-400">
-          {players.length} người
+          {t("players.count", { count: players.length })}
         </span>
       </div>
 
@@ -66,22 +68,21 @@ export default function PlayersSection({
         htmlFor="bulkInput"
         className="block text-xs text-slate-500 mb-2 px-1"
       >
-        Nhập tên mỗi người một dòng. Thêm: n (nữ), 2s (set), 30k (riêng), +10k
-        (phụ thu)
+        {t("players.help")}
       </label>
       <textarea
         ref={textareaRef}
         id="bulkInput"
         rows={2}
         className="input-minimal w-full px-4 py-3 text-sm mb-4 resize-none overflow-hidden"
-        placeholder={"Bi\nKhang 2s\nThiện 30k\nPhượng n"}
+        placeholder={t("players.placeholder")}
         value={bulkInput}
         onChange={(e) => onBulkInputChange(e.target.value)}
       />
 
       {hasDuplicateNames ? (
         <p className="text-xs text-amber-700 mb-3 px-1">
-          Có tên bị trùng. Vui lòng kiểm tra lại danh sách.
+          {t("players.duplicateWarning")}
         </p>
       ) : null}
 
@@ -119,7 +120,7 @@ export default function PlayersSection({
                   onRemovePlayer(index);
                 }}
                 className="ml-2 opacity-40 hover:opacity-100"
-                aria-label={`Xóa ${player.name}`}
+                aria-label={t("players.removeLabel", { name: player.name })}
               >
                 <X className="h-3.5 w-3.5" />
               </button>

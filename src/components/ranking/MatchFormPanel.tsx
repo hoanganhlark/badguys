@@ -1,4 +1,5 @@
 import { CheckCircle, Plus, User, Users } from "react-feather";
+import { useTranslation } from "react-i18next";
 import type { MatchSetInput, Member } from "./types";
 
 interface MatchFormPanelProps {
@@ -28,6 +29,8 @@ export default function MatchFormPanel({
   onSetMatchData,
   onSaveMatch,
 }: MatchFormPanelProps) {
+  const { t } = useTranslation();
+
   const getSelectableMembers = (team: "team1" | "team2", index: number) => {
     const currentSelection = matchData[team][index];
     const selectedInOtherSlots = new Set(
@@ -61,7 +64,7 @@ export default function MatchFormPanel({
           }`}
         >
           <span className="inline-flex items-center gap-2">
-            <Users className="h-4 w-4" /> Đánh Đôi
+            <Users className="h-4 w-4" /> {t("matchForm.doubles")}
           </span>
         </button>
         <button
@@ -73,14 +76,16 @@ export default function MatchFormPanel({
           }`}
         >
           <span className="inline-flex items-center gap-2">
-            <User className="h-4 w-4" /> Đánh Đơn
+            <User className="h-4 w-4" /> {t("matchForm.singles")}
           </span>
         </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 md:p-4">
-          <h3 className="font-bold text-center text-slate-800">Đội A</h3>
+          <h3 className="font-bold text-center text-slate-800">
+            {t("matchForm.teamA")}
+          </h3>
           <div className="space-y-2">
             {[...Array(matchType === "singles" ? 1 : 2)].map((_, i) => (
               <select
@@ -93,7 +98,7 @@ export default function MatchFormPanel({
                 }}
                 value={matchData.team1[i] || ""}
               >
-                <option value="">Chọn VĐV...</option>
+                <option value="">{t("matchForm.choosePlayer")}</option>
                 {getSelectableMembers("team1", i).map((m) => (
                   <option key={m.id} value={m.name}>
                     {m.name}
@@ -105,7 +110,9 @@ export default function MatchFormPanel({
         </div>
 
         <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 md:p-4">
-          <h3 className="font-bold text-center text-slate-800">Đội B</h3>
+          <h3 className="font-bold text-center text-slate-800">
+            {t("matchForm.teamB")}
+          </h3>
           <div className="space-y-2">
             {[...Array(matchType === "singles" ? 1 : 2)].map((_, i) => (
               <select
@@ -118,7 +125,7 @@ export default function MatchFormPanel({
                 }}
                 value={matchData.team2[i] || ""}
               >
-                <option value="">Chọn VĐV...</option>
+                <option value="">{t("matchForm.choosePlayer")}</option>
                 {getSelectableMembers("team2", i).map((m) => (
                   <option key={m.id} value={m.name}>
                     {m.name}
@@ -132,7 +139,9 @@ export default function MatchFormPanel({
 
       <div className="pt-5 border-t border-slate-200 space-y-3">
         <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2.5 md:items-center">
-          <h3 className="font-bold text-slate-900">Kết quả theo set</h3>
+          <h3 className="font-bold text-slate-900">
+            {t("matchForm.setResults")}
+          </h3>
           <input
             type="datetime-local"
             className="mobile-focus-target dashboard-input w-full md:w-auto"
@@ -143,19 +152,16 @@ export default function MatchFormPanel({
                 playedAt: e.target.value,
               })
             }
-            aria-label="Thời điểm thi đấu"
+            aria-label={t("matchForm.playedAt")}
           />
         </div>
         <div className="flex items-center justify-between">
-          <p className="text-xs text-slate-500">
-            Ô phút là tuỳ chọn, dùng cho công thức động lực.
-          </p>
           <button
             type="button"
             onClick={addSetInput}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
           >
-            <Plus className="h-4 w-4" /> Thêm set
+            <Plus className="h-4 w-4" /> {t("matchForm.addSet")}
           </button>
         </div>
         {matchData.sets.map((set, i) => (
@@ -164,7 +170,7 @@ export default function MatchFormPanel({
               type="number"
               min={0}
               inputMode="numeric"
-              placeholder={`Set ${i + 1} - Đội A`}
+              placeholder={t("matchForm.setTeamA", { index: i + 1 })}
               className="mobile-focus-target dashboard-input w-full"
               value={set.team1Score}
               onChange={(e) => {
@@ -183,7 +189,7 @@ export default function MatchFormPanel({
               type="number"
               min={0}
               inputMode="numeric"
-              placeholder={`Set ${i + 1} - Đội B`}
+              placeholder={t("matchForm.setTeamB", { index: i + 1 })}
               className="mobile-focus-target dashboard-input w-full"
               value={set.team2Score}
               onChange={(e) => {
@@ -202,7 +208,7 @@ export default function MatchFormPanel({
               type="number"
               min={0}
               inputMode="numeric"
-              placeholder={`Set ${i + 1} - Phút`}
+              placeholder={t("matchForm.setMinutes", { index: i + 1 })}
               className="mobile-focus-target dashboard-input w-full"
               value={set.minutes || ""}
               onChange={(e) => {
@@ -225,7 +231,7 @@ export default function MatchFormPanel({
         onClick={onSaveMatch}
         className="w-full bg-slate-900 text-white py-2.5 rounded-xl font-semibold hover:bg-slate-800 transition-all inline-flex items-center justify-center gap-2"
       >
-        <CheckCircle className="h-4 w-4" /> Lưu kết quả
+        <CheckCircle className="h-4 w-4" /> {t("matchForm.saveResult")}
       </button>
     </div>
   );
