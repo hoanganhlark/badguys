@@ -51,7 +51,17 @@ import {
   saveInputDraft,
   shouldSendVisitNotificationToday,
 } from "./lib/platform";
-import { initAnalytics, trackEvent, trackPageView } from "./lib/analytics";
+import {
+  AnalyticsEventName,
+  AnalyticsNotificationType,
+  AnalyticsParamKey,
+  AnalyticsStatus,
+  AnalyticsUserPropertyKey,
+  initAnalytics,
+  setUserProperties,
+  trackEvent,
+  trackPageView,
+} from "./lib/analytics";
 import { notifyCopyClicked, notifyGuestVisited } from "./lib/telegram";
 import type { AppConfig, Player, SessionRecord } from "./types";
 
@@ -153,16 +163,24 @@ export default function App() {
   }, [location.pathname, location.search, location.hash]);
 
   useEffect(() => {
+    setUserProperties({
+      [AnalyticsUserPropertyKey.IsAuthenticated]: isAuthenticated,
+      [AnalyticsUserPropertyKey.Role]: currentUser?.role || "guest",
+      [AnalyticsUserPropertyKey.Username]: currentUser?.username || "guest",
+    });
+  }, [isAuthenticated, currentUser?.role, currentUser?.username]);
+
+  useEffect(() => {
     if (!calculationTrackingKey) return;
     if (lastCalculationTrackedRef.current === calculationTrackingKey) return;
 
     lastCalculationTrackedRef.current = calculationTrackingKey;
 
-    trackEvent("calculate_session", {
-      players_count: players.length,
-      male_count: calc.malesCount,
-      female_count: calc.femalesCount,
-      total_fee_k: calc.total,
+    trackEvent(AnalyticsEventName.CalculateSession, {
+      [AnalyticsParamKey.PlayersCount]: players.length,
+      [AnalyticsParamKey.MaleCount]: calc.malesCount,
+      [AnalyticsParamKey.FemaleCount]: calc.femalesCount,
+      [AnalyticsParamKey.TotalFeeK]: calc.total,
     });
   }, [
     calculationTrackingKey,
@@ -200,8 +218,9 @@ export default function App() {
 
     (async () => {
       await notifyGuestVisited(formatVisitTimestampUTC7());
-      trackEvent("send_telegram_notification", {
-        notification_type: "guest_visit",
+      trackEvent(AnalyticsEventName.SendTelegramNotification, {
+        [AnalyticsParamKey.NotificationType]:
+          AnalyticsNotificationType.GuestVisit,
       });
       markVisitNotifiedToday();
     })();
@@ -314,17 +333,22 @@ export default function App() {
     }
 
     if (!isAdmin) {
-      trackEvent("send_telegram_notification", {
-        notification_type: "copy_clicked",
+      trackEvent(AnalyticsEventName.SendTelegramNotification, {
+        [AnalyticsParamKey.NotificationType]:
+          AnalyticsNotificationType.CopyClicked,
       });
       void notifyCopyClicked(summaryText);
       void saveDailySummary(payload)
         .then(() => {
-          trackEvent("save_session", { status: "success" });
+          trackEvent(AnalyticsEventName.SaveSession, {
+            [AnalyticsParamKey.Status]: AnalyticsStatus.Success,
+          });
         })
         .catch((error) => {
           console.warn("Save daily session failed", error);
-          trackEvent("save_session", { status: "failed" });
+          trackEvent(AnalyticsEventName.SaveSession, {
+            [AnalyticsParamKey.Status]: AnalyticsStatus.Failed,
+          });
         });
     }
   }

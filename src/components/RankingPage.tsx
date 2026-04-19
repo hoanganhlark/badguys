@@ -13,7 +13,11 @@ import { TOAST_DURATION_MS } from "../lib/constants";
 import { matchPath, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { calculateRankingStats } from "../lib/rankingStats";
-import { trackEvent } from "../lib/analytics";
+import {
+  AnalyticsEventName,
+  AnalyticsParamKey,
+  trackEvent,
+} from "../lib/analytics";
 import {
   buildMembersFromMatches,
   loadMatchesFromStorage,
@@ -488,10 +492,11 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
         sets: [{ team1Score: "", team2Score: "", minutes: "" }],
         playedAt: toDateTimeLocal(new Date()),
       });
-      trackEvent("record_match", {
-        match_type: matchType,
-        set_count: parsedSets.length,
-        duration_minutes: totalMinutes > 0 ? totalMinutes : 0,
+      trackEvent(AnalyticsEventName.RecordMatch, {
+        [AnalyticsParamKey.MatchType]: matchType,
+        [AnalyticsParamKey.SetCount]: parsedSets.length,
+        [AnalyticsParamKey.DurationMinutes]:
+          totalMinutes > 0 ? totalMinutes : 0,
       });
       setToastMessage(t("rankingPage.toastMatchSaved"));
     } catch (error) {

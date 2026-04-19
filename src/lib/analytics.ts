@@ -1,13 +1,49 @@
 import ReactGA from "react-ga4";
 import { envConfig } from "../env";
 
+export enum AnalyticsEventName {
+  CalculateSession = "calculate_session",
+  SaveSession = "save_session",
+  RecordMatch = "record_match",
+  SendTelegramNotification = "send_telegram_notification",
+}
+
+export enum AnalyticsParamKey {
+  PlayersCount = "players_count",
+  MaleCount = "male_count",
+  FemaleCount = "female_count",
+  TotalFeeK = "total_fee_k",
+  NotificationType = "notification_type",
+  Status = "status",
+  MatchType = "match_type",
+  SetCount = "set_count",
+  DurationMinutes = "duration_minutes",
+}
+
+export enum AnalyticsStatus {
+  Success = "success",
+  Failed = "failed",
+}
+
+export enum AnalyticsNotificationType {
+  GuestVisit = "guest_visit",
+  CopyClicked = "copy_clicked",
+}
+
+export enum AnalyticsUserPropertyKey {
+  Username = "username",
+  Role = "role",
+  IsAuthenticated = "is_authenticated",
+}
+
+type AnalyticsScalar = string | number | boolean | null | undefined;
 type AnalyticsEventParams =
-  | Record<string, string | number | boolean | undefined>
+  | Record<AnalyticsParamKey | string, AnalyticsScalar>
   | undefined;
 
 type UserProperties = Record<
-  string,
-  string | number | boolean | null | undefined
+  AnalyticsUserPropertyKey | string,
+  AnalyticsScalar
 >;
 
 let initialized = false;
