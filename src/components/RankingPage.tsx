@@ -663,7 +663,10 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
           <Layout.Content>
             <main
               ref={mainContentRef}
-              className="dashboard-main-scroll flex-1 overflow-auto px-4 py-4 md:p-8 relative"
+              className="flex-1 overflow-auto px-4 py-4 md:p-8 relative"
+              style={{
+                paddingBottom: "calc(6rem + var(--mobile-keyboard-inset, 0px))",
+              }}
             >
               <div className="max-w-7xl mx-auto">
                 <header className="mb-5 rounded-2xl border border-slate-200 bg-white px-4 py-4 md:px-6 md:py-5">

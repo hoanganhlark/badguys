@@ -365,7 +365,10 @@ export default function UserManagementPage() {
 
         <Layout.Content
           ref={mainContentRef}
-          className="dashboard-main-scroll flex-1 overflow-auto px-4 py-4 md:p-8"
+          className="flex-1 overflow-auto px-4 py-4 md:p-8"
+          style={{
+            paddingBottom: "calc(6rem + var(--mobile-keyboard-inset, 0px))",
+          }}
         >
           <div className="mx-auto max-w-7xl space-y-5 md:space-y-6">
             <header className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm md:px-6 md:py-5">

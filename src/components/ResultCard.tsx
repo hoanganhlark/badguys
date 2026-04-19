@@ -23,7 +23,7 @@ export default function ResultCard({
   if (!visible) return null;
 
   return (
-    <section className="animate-fade mb-10">
+    <section className="mb-10">
       <Card style={{ marginBottom: 16 }}>
         <Flex align="end" justify="space-between" gap={16}>
           <Statistic title={t("resultCard.total")} value={totalLabel} />

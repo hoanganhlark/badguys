@@ -99,7 +99,6 @@ export default function PlayersSection({
             <Tag
               key={`${player.name}-${index}`}
               color={duplicateIndexes.has(index) ? "gold" : color}
-              className="animate-fade"
               closable
               onClose={(event) => {
                 event.preventDefault();
