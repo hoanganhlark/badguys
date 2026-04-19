@@ -594,6 +594,18 @@ export default function App() {
   }
 
   if (
+    location.pathname === "/dashboard" ||
+    location.pathname === "/dashboard/" ||
+    location.pathname.startsWith("/dashboard/")
+  ) {
+    return (
+      <ProtectedRoute>
+        <RankingPage isOpen={true} onClose={() => navigate("/")} />
+      </ProtectedRoute>
+    );
+  }
+
+  if (
     location.pathname === "/ranking" ||
     location.pathname.startsWith("/ranking/")
   ) {

@@ -156,7 +156,16 @@ export default function RankingSidebar({
         width={280}
         className="hidden md:block"
         theme="light"
-        style={{ borderRight: "1px solid rgba(5, 5, 5, 0.06)", padding: 16 }}
+        style={{
+          borderRight: "1px solid rgba(5, 5, 5, 0.06)",
+          padding: 16,
+          position: "fixed",
+          left: 0,
+          top: 56,
+          bottom: 0,
+          zIndex: 40,
+          overflowY: "auto",
+        }}
       >
         <Space direction="vertical" size={16} style={{ width: "100%" }}>
           <Button type="text" onClick={onGoHome} style={{ textAlign: "left" }}>
@@ -173,6 +182,11 @@ export default function RankingSidebar({
           />
         </Space>
       </Layout.Sider>
+      <div
+        className="hidden md:block"
+        style={{ width: 280, flex: "0 0 280px" }}
+        aria-hidden="true"
+      />
     </>
   );
 }

@@ -235,6 +235,8 @@ export const resources = {
         setTeamA: "Đội A",
         setTeamB: "Đội B",
         setMinutes: "Phút (không bắt buộc)",
+        completeRequiredFields:
+          "Chọn đủ người chơi và nhập ít nhất 1 set hợp lệ để lưu.",
         saveResult: "Lưu kết quả",
       },
       membersPanel: {

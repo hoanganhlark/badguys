@@ -18,31 +18,6 @@ function toPercent(value: number): number {
   return clamp(value, 0, 1) * 100;
 }
 
-function getVolBadge(vol: number, t: (key: string) => string): string {
-  if (vol <= 0.05) return t("playerStats.veryStable");
-  if (vol <= 0.07) return t("playerStats.normal");
-  if (vol < 0.1) return t("playerStats.volatile");
-  return t("playerStats.hardToPredict");
-}
-
-function getUncertaintyBadge(
-  uncertaintyNorm: number,
-  t: (key: string) => string,
-): string {
-  if (uncertaintyNorm > 1.2) return t("playerStats.veryLittleData");
-  if (uncertaintyNorm >= 1.0) return t("playerStats.roughEstimate");
-  if (uncertaintyNorm >= 0.7) return t("playerStats.becomingReliable");
-  if (uncertaintyNorm >= 0.4) return t("playerStats.fairlyCertain");
-  return t("playerStats.veryCertain");
-}
-
-function getSkillBadge(rating: number, t: (key: string) => string): string {
-  if (rating < 1300) return t("playerStats.notDistinguishable");
-  if (rating < 1500) return t("playerStats.slightlyBetter");
-  if (rating <= 1700) return t("playerStats.clearlyBetter");
-  return t("playerStats.differentClass");
-}
-
 export default function PlayerStatsModal({
   stats,
   penaltyCoefficient,
@@ -60,7 +35,6 @@ export default function PlayerStatsModal({
     {
       id: "skill",
       label: t("playerStats.skill"),
-      displayValue: `${stats.rating.toFixed(2)} (${getSkillBadge(stats.rating, t)})`,
       progress: toPercent(skillProgress),
       tone: "#3b82f6",
       description: t("playerStats.descriptionSkill"),
@@ -68,7 +42,6 @@ export default function PlayerStatsModal({
     {
       id: "stability",
       label: t("playerStats.stability"),
-      displayValue: `${stats.vol.toFixed(4)} (${getVolBadge(stats.vol, t)})`,
       progress: toPercent(stabilityProgress),
       tone: "#10b981",
       description: t("playerStats.descriptionStability"),
@@ -76,7 +49,6 @@ export default function PlayerStatsModal({
     {
       id: "uncertainty",
       label: t("playerStats.uncertainty"),
-      displayValue: `${stats.uncertaintyNorm.toFixed(3)} (${getUncertaintyBadge(stats.uncertaintyNorm, t)})`,
       progress: toPercent(uncertaintyProgress),
       tone: "#f59e0b",
       description: t("playerStats.descriptionUncertainty"),
@@ -84,7 +56,6 @@ export default function PlayerStatsModal({
     {
       id: "motivation",
       label: t("playerStats.motivation"),
-      displayValue: stats.motivation.toFixed(3),
       progress: toPercent(motivationProgress),
       tone: "#8b5cf6",
       description: t("playerStats.descriptionMotivation"),
@@ -92,7 +63,6 @@ export default function PlayerStatsModal({
     {
       id: "winRate",
       label: t("playerStats.winRate"),
-      displayValue: `${Math.round(stats.winRate * 100)}% (${stats.wins}/${stats.totalMatches})`,
       progress: toPercent(stats.winRate),
       tone: "#06b6d4",
       description: t("playerStats.descriptionWinRate"),
@@ -103,24 +73,19 @@ export default function PlayerStatsModal({
 
   const metricPanels = metricItems.map((item) => ({
     key: item.id,
-    label: item.label,
-    children: (
-      <Space direction="vertical" size={8} style={{ width: "100%" }}>
+    label: (
+      <Space direction="vertical" size={6} style={{ width: "100%" }}>
+        <Typography.Text strong>{item.label}</Typography.Text>
         <Progress
           percent={Number(item.progress.toFixed(1))}
           strokeColor={item.tone}
+          size="small"
         />
+      </Space>
+    ),
+    children: (
+      <Space direction="vertical" size={8} style={{ width: "100%" }}>
         <Typography.Text type="secondary">{item.description}</Typography.Text>
-        <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-          {t("playerStats.currentValue", {
-            value: item.displayValue,
-          })}
-        </Typography.Text>
-        <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-          {t("playerStats.progressShown", {
-            value: item.progress.toFixed(1),
-          })}
-        </Typography.Text>
       </Space>
     ),
   }));

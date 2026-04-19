@@ -147,12 +147,22 @@ export default function RankingPanel({
     winRate: getWinRate(player.totalMatches, player.wins),
   }));
 
+  const athleteFilters = useMemo(
+    () =>
+      rankings
+        .map((player) => player.name)
+        .sort((a, b) => a.localeCompare(b, "vi"))
+        .map((name) => ({ text: name, value: name })),
+    [rankings],
+  );
+
   const rankingColumns: TableColumnsType<(typeof rankingRows)[number]> = [
     {
       title: t("rankingPanel.rank"),
       dataIndex: "rank",
       key: "rank",
       width: 90,
+      sorter: (a, b) => a.rank - b.rank,
       render: (rank: number) => {
         if (rank === 1) {
           return <Award className="h-5 w-5 text-amber-500" />;
@@ -171,6 +181,10 @@ export default function RankingPanel({
       title: t("rankingPanel.athlete"),
       dataIndex: ["player", "name"],
       key: "name",
+      filters: athleteFilters,
+      filterSearch: true,
+      onFilter: (value, record) => record.player.name === value,
+      sorter: (a, b) => a.player.name.localeCompare(b.player.name, "vi"),
       render: (name: string) => (
         <Typography.Text strong>{name}</Typography.Text>
       ),
@@ -179,6 +193,17 @@ export default function RankingPanel({
       title: t("rankingPanel.winRate"),
       key: "winRate",
       width: 240,
+      filters: [
+        { text: ">= 70%", value: "high" },
+        { text: "50% - 69%", value: "mid" },
+        { text: "< 50%", value: "low" },
+      ],
+      onFilter: (value, record) => {
+        if (value === "high") return record.winRate >= 70;
+        if (value === "mid") return record.winRate >= 50 && record.winRate < 70;
+        return record.winRate < 50;
+      },
+      sorter: (a, b) => a.winRate - b.winRate,
       render: (_, row) => (
         <div>
           <div className="flex items-center justify-between text-[11px] font-medium text-slate-600">
@@ -201,6 +226,7 @@ export default function RankingPanel({
       key: "rankScore",
       width: 130,
       align: "right",
+      sorter: (a, b) => a.player.rankScore - b.player.rankScore,
       render: (_, row) => (
         <Typography.Text strong style={{ color: "#0369a1" }}>
           {row.player.rankScore.toFixed(3)}
@@ -222,7 +248,15 @@ export default function RankingPanel({
           <Table
             columns={rankingColumns}
             dataSource={rankingRows}
-            pagination={false}
+            pagination={{
+              defaultPageSize: 5,
+              pageSizeOptions: ["5", "10", "20", "50"],
+              showSizeChanger: true,
+              showQuickJumper: true,
+              hideOnSinglePage: false,
+              position: ["bottomCenter"],
+              showTotal: (total, range) => `${range[0]}-${range[1]} / ${total}`,
+            }}
             scroll={{ x: 600 }}
             onRow={(row) => ({
               onClick: () => onSelectPlayer(row.player),

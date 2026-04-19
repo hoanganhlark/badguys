@@ -10,7 +10,6 @@ import {
   Popconfirm,
   Select,
   Spin,
-  Statistic,
   Table,
   Typography,
   type TableColumnsType,
@@ -76,6 +75,22 @@ export default function UserManagementPage() {
     form.password.trim().length > 0 &&
     !saving;
 
+  const usernameFilters = useMemo(
+    () =>
+      sortedUsers.map((user) => ({
+        text: user.username,
+        value: user.username,
+      })),
+    [sortedUsers],
+  );
+
+  const getDateSortValue = (value?: string): number => {
+    if (!value) return 0;
+    const date = new Date(value);
+    const timestamp = date.getTime();
+    return Number.isFinite(timestamp) ? timestamp : 0;
+  };
+
   const formatLocalDateTime = (value?: string): string => {
     if (!value) return "-";
 
@@ -95,12 +110,22 @@ export default function UserManagementPage() {
       title: t("userManagement.username"),
       dataIndex: "username",
       key: "username",
+      sorter: (a, b) => a.username.localeCompare(b.username, "vi"),
+      filters: usernameFilters,
+      filterSearch: true,
+      onFilter: (value, record) => record.username === value,
       render: (username: string) => <strong>{username}</strong>,
     },
     {
       title: t("userManagement.role"),
       dataIndex: "role",
       key: "role",
+      filters: [
+        { text: t("userManagement.memberOption"), value: "member" },
+        { text: t("userManagement.adminOption"), value: "admin" },
+      ],
+      onFilter: (value, record) => record.role === value,
+      sorter: (a, b) => a.role.localeCompare(b.role, "vi"),
       render: (_, user) => (
         <Select
           value={user.role}
@@ -118,12 +143,16 @@ export default function UserManagementPage() {
       title: t("userManagement.createdAt"),
       key: "createdAt",
       width: 170,
+      sorter: (a, b) =>
+        getDateSortValue(a.createdAt) - getDateSortValue(b.createdAt),
       render: (_, user) => formatLocalDateTime(user.createdAt),
     },
     {
       title: t("userManagement.lastLoginAt"),
       key: "lastLoginAt",
       width: 170,
+      sorter: (a, b) =>
+        getDateSortValue(a.lastLoginAt) - getDateSortValue(b.lastLoginAt),
       render: (_, user) => formatLocalDateTime(user.lastLoginAt),
     },
     {
@@ -410,25 +439,29 @@ export default function UserManagementPage() {
               </p>
             </header>
 
-            <section className="grid grid-cols-1 gap-3 md:grid-cols-3 md:max-w-3xl">
-              <Card>
-                <Statistic
-                  title={t("userManagement.totalUsers")}
-                  value={sortedUsers.length}
-                />
-              </Card>
-              <Card>
-                <Statistic
-                  title={t("userManagement.admin")}
-                  value={adminCount}
-                />
-              </Card>
-              <Card>
-                <Statistic
-                  title={t("userManagement.member")}
-                  value={Math.max(0, sortedUsers.length - adminCount)}
-                />
-              </Card>
+            <section className="grid grid-cols-3 gap-2 mb-4 md:mb-6 md:max-w-2xl">
+              <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
+                <p className="text-[11px] text-slate-500">
+                  {t("userManagement.totalUsers")}
+                </p>
+                <p className="text-lg font-bold text-slate-900">
+                  {sortedUsers.length}
+                </p>
+              </div>
+              <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
+                <p className="text-[11px] text-slate-500">
+                  {t("userManagement.admin")}
+                </p>
+                <p className="text-lg font-bold text-slate-900">{adminCount}</p>
+              </div>
+              <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
+                <p className="text-[11px] text-slate-500">
+                  {t("userManagement.member")}
+                </p>
+                <p className="text-lg font-bold text-slate-900">
+                  {Math.max(0, sortedUsers.length - adminCount)}
+                </p>
+              </div>
             </section>
 
             <Card title={t("userManagement.createTitle")}>
@@ -536,7 +569,16 @@ export default function UserManagementPage() {
                   columns={userColumns}
                   dataSource={sortedUsers}
                   scroll={{ x: 900 }}
-                  pagination={{ pageSize: 20 }}
+                  pagination={{
+                    defaultPageSize: 10,
+                    pageSizeOptions: ["5", "10", "20", "50"],
+                    showSizeChanger: true,
+                    showQuickJumper: true,
+                    hideOnSinglePage: false,
+                    position: ["bottomCenter"],
+                    showTotal: (total, range) =>
+                      `${range[0]}-${range[1]} / ${total}`,
+                  }}
                 />
               )}
             </Card>

@@ -193,11 +193,6 @@ export default function MatchFormPanel({
                 {[...Array(slotCount)].map((_, i) => (
                   <Form.Item
                     key={`teamA-player-${i}`}
-                    label={
-                      slotCount === 1
-                        ? t("matchForm.teamA")
-                        : `${t("matchForm.teamA")} ${i + 1}`
-                    }
                     style={{ marginBottom: 0 }}
                   >
                     <Select
@@ -226,11 +221,6 @@ export default function MatchFormPanel({
                 {[...Array(slotCount)].map((_, i) => (
                   <Form.Item
                     key={`teamB-player-${i}`}
-                    label={
-                      slotCount === 1
-                        ? t("matchForm.teamB")
-                        : `${t("matchForm.teamB")} ${i + 1}`
-                    }
                     style={{ marginBottom: 0 }}
                   >
                     <Select
@@ -343,7 +333,7 @@ export default function MatchFormPanel({
           message={
             canSaveMatch
               ? t("matchForm.saveResult")
-              : t("rankingPage.cannotSaveMatch")
+              : t("matchForm.completeRequiredFields")
           }
         />
 

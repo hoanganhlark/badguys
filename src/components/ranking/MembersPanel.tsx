@@ -56,6 +56,7 @@ export default function MembersPanel({
       title: t("membersPanel.member"),
       dataIndex: "name",
       key: "name",
+      sorter: (a, b) => a.name.localeCompare(b.name, "vi"),
       render: (name: string) => (
         <Typography.Text strong>{name}</Typography.Text>
       ),
@@ -64,6 +65,22 @@ export default function MembersPanel({
       title: t("membersPanel.rank"),
       key: "level",
       dataIndex: "level",
+      filters: ["Yo", "Lo", "Nè"].map((level) => ({
+        text: getRankingLevelDisplay(level as RankingLevel),
+        value: level,
+      })),
+      onFilter: (value, record) => record.level === value,
+      sorter: (a, b) => {
+        if (a.level === b.level) {
+          return a.name.localeCompare(b.name, "vi");
+        }
+        const rankOrder: Record<RankingLevel, number> = {
+          Yo: 0,
+          Lo: 1,
+          "Nè": 2,
+        };
+        return rankOrder[a.level] - rankOrder[b.level];
+      },
       render: (level: RankingLevel) => (
         <Tag color={getRankingLevelColor(level)}>
           {getRankingLevelDisplay(level)}
@@ -175,7 +192,15 @@ export default function MembersPanel({
           rowKey="id"
           columns={columns}
           dataSource={sortedMembers}
-          pagination={false}
+          pagination={{
+            defaultPageSize: 5,
+            pageSizeOptions: ["5", "10", "20", "50"],
+            showSizeChanger: true,
+            showQuickJumper: true,
+            hideOnSinglePage: false,
+            position: ["bottomCenter"],
+            showTotal: (total, range) => `${range[0]}-${range[1]} / ${total}`,
+          }}
           scroll={{ x: 560 }}
         />
       </Card>

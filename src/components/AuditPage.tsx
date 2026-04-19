@@ -8,7 +8,6 @@ import {
   Layout,
   Select,
   Spin,
-  Statistic,
   Table,
   Typography,
   type TableColumnsType,
@@ -73,6 +72,13 @@ function loadStoredAuditFilters(scopeKey?: string): StoredAuditFilters {
   }
 }
 
+function getEventTypeKey(event: AuditEventRecord): AuditFilterType {
+  if (event.eventType === "route_change") return "route_change";
+  if (event.eventType === "event") return "event";
+  if (event.eventName === "route_change") return "route_change";
+  return "event";
+}
+
 export default function AuditPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -114,17 +120,56 @@ export default function AuditPage() {
     );
   }, [events]);
 
+  const eventNameFilters = useMemo(
+    () =>
+      Array.from(new Set(events.map((item) => item.eventName)))
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, "vi"))
+        .map((eventName) => ({
+          text: eventName,
+          value: eventName,
+        })),
+    [events],
+  );
+
+  const tableUserFilters = useMemo(
+    () =>
+      userFilterOptions.map((username) => ({
+        text: username,
+        value: username,
+      })),
+    [userFilterOptions],
+  );
+
+  const roleFilters = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          events.map((item) =>
+            String(item.userProperties?.role || "guest").trim(),
+          ),
+        ),
+      )
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, "vi"))
+        .map((role) => ({
+          text: role,
+          value: role,
+        })),
+    [events],
+  );
+
+  const getDateSortValue = (value?: string): number => {
+    if (!value) return 0;
+    const date = new Date(value);
+    const timestamp = date.getTime();
+    return Number.isFinite(timestamp) ? timestamp : 0;
+  };
+
   const filteredEvents = useMemo(() => {
     return events.filter((item) => {
       const username = String(item.userProperties?.username || "guest").trim();
-      const eventType =
-        item.eventType === "route_change"
-          ? "route_change"
-          : item.eventType === "event"
-            ? "event"
-            : item.eventName === "route_change"
-              ? "route_change"
-              : "event";
+      const eventType = getEventTypeKey(item);
 
       const userMatches = selectedUser === "all" || username === selectedUser;
       const typeMatches = selectedType === "all" || eventType === selectedType;
@@ -133,14 +178,7 @@ export default function AuditPage() {
   }, [events, selectedType, selectedUser]);
 
   const getEventTypeLabel = (event: AuditEventRecord): string => {
-    const eventType =
-      event.eventType === "route_change"
-        ? "route_change"
-        : event.eventType === "event"
-          ? "event"
-          : event.eventName === "route_change"
-            ? "route_change"
-            : "event";
+    const eventType = getEventTypeKey(event);
 
     return eventType === "route_change"
       ? t("auditPage.typeRouteChange")
@@ -175,12 +213,20 @@ export default function AuditPage() {
       title: t("auditPage.time"),
       key: "time",
       width: 170,
+      sorter: (a, b) =>
+        getDateSortValue(a.createdAt) - getDateSortValue(b.createdAt),
       render: (_, record) => formatLocalDateTime(record.createdAt),
     },
     {
       title: t("auditPage.type"),
       key: "type",
       width: 140,
+      filters: [
+        { text: t("auditPage.typeEvent"), value: "event" },
+        { text: t("auditPage.typeRouteChange"), value: "route_change" },
+      ],
+      onFilter: (value, record) => getEventTypeKey(record) === value,
+      sorter: (a, b) => getEventTypeKey(a).localeCompare(getEventTypeKey(b)),
       render: (_, record) => getEventTypeLabel(record),
     },
     {
@@ -188,17 +234,37 @@ export default function AuditPage() {
       dataIndex: "eventName",
       key: "eventName",
       width: 180,
+      filters: eventNameFilters,
+      filterSearch: true,
+      onFilter: (value, record) => record.eventName === value,
+      sorter: (a, b) => a.eventName.localeCompare(b.eventName, "vi"),
     },
     {
       title: t("auditPage.user"),
       key: "username",
       width: 130,
+      filters: tableUserFilters,
+      filterSearch: true,
+      onFilter: (value, record) =>
+        String(record.userProperties?.username || "guest").trim() === value,
+      sorter: (a, b) =>
+        String(a.userProperties?.username || "guest")
+          .trim()
+          .localeCompare(String(b.userProperties?.username || "guest").trim(), "vi"),
       render: (_, record) => String(record.userProperties?.username || "guest"),
     },
     {
       title: t("auditPage.role"),
       key: "role",
       width: 130,
+      filters: roleFilters,
+      filterSearch: true,
+      onFilter: (value, record) =>
+        String(record.userProperties?.role || "guest").trim() === value,
+      sorter: (a, b) =>
+        String(a.userProperties?.role || "guest")
+          .trim()
+          .localeCompare(String(b.userProperties?.role || "guest").trim(), "vi"),
       render: (_, record) => String(record.userProperties?.role || "guest"),
     },
     {
@@ -206,6 +272,8 @@ export default function AuditPage() {
       dataIndex: "pagePath",
       key: "pagePath",
       width: 220,
+      sorter: (a, b) =>
+        String(a.pagePath || "").localeCompare(String(b.pagePath || ""), "vi"),
       render: (value?: string) => value || "-",
     },
     {
@@ -392,25 +460,29 @@ export default function AuditPage() {
               </p>
             </header>
 
-            <section className="grid grid-cols-1 gap-3 md:grid-cols-3 md:max-w-3xl">
-              <Card>
-                <Statistic
-                  title={t("auditPage.totalEvents")}
-                  value={events.length}
-                />
-              </Card>
-              <Card>
-                <Statistic
-                  title={t("auditPage.uniqueEvents")}
-                  value={uniqueEventsCount}
-                />
-              </Card>
-              <Card>
-                <Statistic
-                  title={t("auditPage.uniqueUsers")}
-                  value={uniqueUsersCount}
-                />
-              </Card>
+            <section className="grid grid-cols-3 gap-2 mb-4 md:mb-6 md:max-w-2xl">
+              <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
+                <p className="text-[11px] text-slate-500">
+                  {t("auditPage.totalEvents")}
+                </p>
+                <p className="text-lg font-bold text-slate-900">{events.length}</p>
+              </div>
+              <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
+                <p className="text-[11px] text-slate-500">
+                  {t("auditPage.uniqueEvents")}
+                </p>
+                <p className="text-lg font-bold text-slate-900">
+                  {uniqueEventsCount}
+                </p>
+              </div>
+              <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
+                <p className="text-[11px] text-slate-500">
+                  {t("auditPage.uniqueUsers")}
+                </p>
+                <p className="text-lg font-bold text-slate-900">
+                  {uniqueUsersCount}
+                </p>
+              </div>
             </section>
 
             <Card>
@@ -464,7 +536,16 @@ export default function AuditPage() {
                   columns={columns}
                   dataSource={filteredEvents}
                   scroll={{ x: 980 }}
-                  pagination={{ pageSize: 20 }}
+                  pagination={{
+                    defaultPageSize: 10,
+                    pageSizeOptions: ["5", "10", "20", "50"],
+                    showSizeChanger: true,
+                    showQuickJumper: true,
+                    hideOnSinglePage: false,
+                    position: ["bottomCenter"],
+                    showTotal: (total, range) =>
+                      `${range[0]}-${range[1]} / ${total}`,
+                  }}
                   locale={{ emptyText: t("auditPage.noLogs") }}
                 />
               )}
