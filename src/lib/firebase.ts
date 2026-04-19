@@ -308,21 +308,45 @@ function normalizeUsernameKey(username: string): string {
     .toLowerCase();
 }
 
+function resolveDateLikeToIso(value: unknown): string | undefined {
+  if (typeof value === "string" && value.trim()) {
+    return value;
+  }
+
+  if (value && typeof value === "object") {
+    const maybeTimestamp = value as { toDate?: () => Date };
+    if (typeof maybeTimestamp.toDate === "function") {
+      const date = maybeTimestamp.toDate();
+      if (!Number.isNaN(date.getTime())) {
+        return date.toISOString();
+      }
+    }
+  }
+
+  return undefined;
+}
+
 function mapUserRecord(userDoc: {
   id: string;
   data: () => Record<string, unknown>;
 }): UserRecord {
   const data = userDoc.data();
+  const createdAt =
+    resolveDateLikeToIso(data.clientCreatedAt) ??
+    resolveDateLikeToIso(data.createdAt);
+  const lastLoginAt =
+    resolveDateLikeToIso(data.clientLastLoginAt) ??
+    resolveDateLikeToIso(data.lastLoginAt);
+
   return {
     id: userDoc.id,
     username: String(data.username || ""),
     usernameKey: String(data.usernameKey || ""),
     password: String(data.password || ""),
     role: data.role === "admin" ? "admin" : "member",
-    createdAt:
-      typeof data.clientCreatedAt === "string"
-        ? data.clientCreatedAt
-        : undefined,
+    createdAt,
+    lastLoginAt,
+    isDisabled: Boolean(data.isDisabled),
   };
 }
 
@@ -420,6 +444,9 @@ export async function createUser(input: {
     usernameKey,
     password: passwordHash,
     role,
+    isDisabled: false,
+    lastLoginAt: null,
+    clientLastLoginAt: null,
     createdAt: serverTimestamp(),
     clientCreatedAt: new Date().toISOString(),
   });
@@ -430,8 +457,64 @@ export async function createUser(input: {
     usernameKey,
     password: passwordHash,
     role,
+    isDisabled: false,
+    lastLoginAt: undefined,
     createdAt: new Date().toISOString(),
   };
+}
+
+export async function setUserDisabled(
+  userId: string,
+  disabled: boolean,
+): Promise<void> {
+  const context = ensureFirebase();
+  if (!context.db) {
+    throw new Error("Firebase is not configured");
+  }
+
+  const normalizedUserId = String(userId || "").trim();
+  if (!normalizedUserId) throw new Error("Missing user id");
+
+  const userRef = doc(
+    collection(context.db, getCollectionPath(USERS_COLLECTION)),
+    normalizedUserId,
+  );
+
+  await setDoc(
+    userRef,
+    {
+      isDisabled: !!disabled,
+      updatedAt: serverTimestamp(),
+      clientUpdatedAt: new Date().toISOString(),
+    },
+    { merge: true },
+  );
+}
+
+export async function updateUserLastLogin(userId: string): Promise<void> {
+  const context = ensureFirebase();
+  if (!context.db) {
+    throw new Error("Firebase is not configured");
+  }
+
+  const normalizedUserId = String(userId || "").trim();
+  if (!normalizedUserId) throw new Error("Missing user id");
+
+  const userRef = doc(
+    collection(context.db, getCollectionPath(USERS_COLLECTION)),
+    normalizedUserId,
+  );
+
+  await setDoc(
+    userRef,
+    {
+      lastLoginAt: serverTimestamp(),
+      clientLastLoginAt: new Date().toISOString(),
+      updatedAt: serverTimestamp(),
+      clientUpdatedAt: new Date().toISOString(),
+    },
+    { merge: true },
+  );
 }
 
 export async function deleteUser(userId: string): Promise<void> {

@@ -32,7 +32,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `src/lib/rankingStats.ts` — Glicko2-based rating calculations for tournament rankings; computes skill rating, rating deviation, volatility, and activity metrics
 - `src/components/RankingPage.tsx` — Ranking system: manages member CRUD, match recording (singles/doubles), and ranking display; supports public guest view and authenticated user access
 - `src/i18n/index.ts` — i18next configuration; manages language initialization, fallback (Vietnamese), and localStorage persistence
-- `src/i18n/resources.ts` — Internationalization strings for supported languages (Vietnamese, English)
+- `src/i18n/resources.ts` — Internationalization strings (Vietnamese only)
 - `vite.config.ts` — Base path is `/` in dev, `/badguys/` in production build
 
 ### Cost calculation model
@@ -72,9 +72,11 @@ User authentication via `AuthContext` (login with username/password, MD5-hashed 
 
 Player ratings use the **Glicko2** algorithm (a Bayesian rating system accounting for rating deviation and volatility). Matches are processed periodically to update ratings. Match records include `playedAt` (timestamp) and `durationMinutes` (optional match length) for more accurate rating updates. Configurable via `RankingSettings`: tau parameter (player rating volatility) and penaltyCoefficient (activity-based penalties).
 
+**Firestore collections** are automatically prefixed with "dev-" in development mode (when `MODE=development`). Collection names: `ranking-members`, `ranking-matches`, `users`, `matches`. In production, collections use plain names without prefix.
+
 ### State management
 
-Pure React hooks (`useState`, `useEffect`, `useMemo`) with i18next for internationalization. `localStorage` persists config, input drafts, members, matches, and language preference. Authentication state managed via `AuthContext`. Language defaults to browser language if Vietnamese or English, otherwise Vietnamese.
+Pure React hooks (`useState`, `useEffect`, `useMemo`) with i18next for internationalization. `localStorage` persists config, input drafts, members, matches, and language preference. Authentication state managed via `AuthContext`. App language is fixed to Vietnamese; language switching is not supported.
 
 ### Testing
 
@@ -87,6 +89,7 @@ Copy `.env.example` to `.env.local` for local development.
 
 **Required for Firestore access:**
 - `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID` — Firestore authentication and database
+- `VITE_FIREBASE_COLLECTION_SESSIONS` — Sessions collection name (default: "sessions"; auto-prefixed with "dev-" in development mode)
 
 **Required for Telegram notifications:**
 - `VITE_TELEGRAM_BOT_TOKEN`, `VITE_TELEGRAM_GROUP_CHAT_ID` — Bot token and target group

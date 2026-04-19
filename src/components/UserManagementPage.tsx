@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import {
   createUser,
   deleteUser,
+  setUserDisabled,
   subscribeUsers,
   updateUserRole,
 } from "../lib/firebase";
@@ -46,6 +47,20 @@ export default function UserManagementPage() {
     form.username.trim().length > 0 &&
     form.password.trim().length > 0 &&
     !saving;
+
+  const formatLocalDateTime = (value?: string): string => {
+    if (!value) return "-";
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "-";
+
+    const dd = String(date.getDate()).padStart(2, "0");
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const yyyy = date.getFullYear();
+    const hh = String(date.getHours()).padStart(2, "0");
+    const min = String(date.getMinutes()).padStart(2, "0");
+    return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -186,6 +201,24 @@ export default function UserManagementPage() {
     }
   }
 
+  async function handleToggleLockUser(user: UserRecord) {
+    if (!isAdmin) return;
+    if (user.id === currentUser?.userId) {
+      setError(t("userManagement.cannotLockSelf"));
+      return;
+    }
+
+    try {
+      await setUserDisabled(user.id, !user.isDisabled);
+    } catch (updateError) {
+      setError(
+        updateError instanceof Error
+          ? updateError.message
+          : t("userManagement.updateLockFailed"),
+      );
+    }
+  }
+
   return (
     <div className="min-h-screen dashboard-surface text-slate-900 font-sans">
       <header
@@ -220,11 +253,12 @@ export default function UserManagementPage() {
           onSetView={handleSetDashboardView}
           onGoHome={() => navigate("/")}
           isAdmin={isAdmin}
-          onGoUsers={() => navigate("/users")}
+          onGoUsers={() => navigate("/dashboard/users")}
           showMatchForm={true}
           mobileOpen={mobileSidebarOpen}
           onMobileClose={() => setMobileSidebarOpen(false)}
           usersActive={true}
+          activeView={null}
         />
 
         <main
@@ -311,8 +345,12 @@ export default function UserManagementPage() {
                   }
                   className="mobile-focus-target dashboard-input"
                 >
-                  <option value="member">{t("userManagement.memberOption")}</option>
-                  <option value="admin">{t("userManagement.adminOption")}</option>
+                  <option value="member">
+                    {t("userManagement.memberOption")}
+                  </option>
+                  <option value="admin">
+                    {t("userManagement.adminOption")}
+                  </option>
                 </select>
                 <button
                   type="submit"
@@ -349,12 +387,17 @@ export default function UserManagementPage() {
                   <table className="w-full min-w-[600px] text-left text-sm">
                     <thead>
                       <tr className="border-b border-slate-200 text-xs uppercase text-slate-500">
-                        <th className="px-2 py-3">{t("userManagement.username")}</th>
+                        <th className="px-2 py-3">
+                          {t("userManagement.username")}
+                        </th>
                         <th className="px-2 py-3">
                           {t("userManagement.role")}
                         </th>
                         <th className="px-2 py-3">
                           {t("userManagement.createdAt")}
+                        </th>
+                        <th className="px-2 py-3">
+                          {t("userManagement.lastLoginAt")}
                         </th>
                         <th className="px-2 py-3 text-right">
                           {t("userManagement.actions")}
@@ -381,24 +424,49 @@ export default function UserManagementPage() {
                               disabled={!isAdmin}
                               className="dashboard-input py-1.5 text-xs"
                             >
-                              <option value="member">{t("userManagement.memberOption")}</option>
-                              <option value="admin">{t("userManagement.adminOption")}</option>
+                              <option value="member">
+                                {t("userManagement.memberOption")}
+                              </option>
+                              <option value="admin">
+                                {t("userManagement.adminOption")}
+                              </option>
                             </select>
                           </td>
                           <td className="px-2 py-3 text-slate-600">
-                            {user.createdAt || "-"}
+                            {formatLocalDateTime(user.createdAt)}
+                          </td>
+                          <td className="px-2 py-3 text-slate-600">
+                            {formatLocalDateTime(user.lastLoginAt)}
                           </td>
                           <td className="px-2 py-3 text-right">
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteUser(user)}
-                              disabled={
-                                !isAdmin || user.id === currentUser?.userId
-                              }
-                              className="rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
-                            >
-                              {t("userManagement.delete")}
-                            </button>
+                            <div className="inline-flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleLockUser(user)}
+                                disabled={
+                                  !isAdmin || user.id === currentUser?.userId
+                                }
+                                className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold disabled:opacity-50 ${
+                                  user.isDisabled
+                                    ? "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                                    : "border-amber-200 text-amber-700 hover:bg-amber-50"
+                                }`}
+                              >
+                                {user.isDisabled
+                                  ? t("userManagement.unlock")
+                                  : t("userManagement.lock")}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteUser(user)}
+                                disabled={
+                                  !isAdmin || user.id === currentUser?.userId
+                                }
+                                className="rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                              >
+                                {t("userManagement.delete")}
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}

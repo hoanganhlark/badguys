@@ -9,6 +9,7 @@ import {
   subscribeMatches,
   subscribeUsers,
 } from "../lib/firebase";
+import { TOAST_DURATION_MS } from "../lib/constants";
 import { matchPath, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { calculateRankingStats } from "../lib/rankingStats";
@@ -26,6 +27,7 @@ import MembersPanel from "./ranking/MembersPanel";
 import PlayerStatsModal from "./ranking/PlayerStatsModal";
 import RankingPanel from "./ranking/RankingPanel";
 import RankingSidebar from "./ranking/RankingSidebar";
+import Toast from "./Toast";
 import type {
   AdvancedStats,
   Match,
@@ -79,6 +81,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   const guestMenuRef = useRef<HTMLDivElement | null>(null);
   const mainContentRef = useRef<HTMLElement | null>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
 
   // Member Form State
   const [isEditing, setIsEditing] = useState<number | null>(null);
@@ -484,7 +487,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
         sets: [{ team1Score: "", team2Score: "", minutes: "" }],
         playedAt: toDateTimeLocal(new Date()),
       });
-      setViewWithRoute("ranking", "push");
+      setToastMessage(t("rankingPage.toastMatchSaved"));
     } catch (error) {
       console.error("Failed to save match", error);
       window.alert(t("rankingPage.cannotSaveMatch"));
@@ -526,6 +529,15 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     setUserMenuOpen(false);
     setGuestMenuOpen(false);
   }, [mobileSidebarOpen]);
+
+  useEffect(() => {
+    if (!toastMessage) return;
+    const timer = window.setTimeout(
+      () => setToastMessage(""),
+      TOAST_DURATION_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [toastMessage]);
 
   if (!isOpen) return null;
 
@@ -601,7 +613,9 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
               </div>
             ) : null}
 
-            {isPublicRankingRoute && !currentUser && !hideFloatingHeaderActions ? (
+            {isPublicRankingRoute &&
+            !currentUser &&
+            !hideFloatingHeaderActions ? (
               <div ref={guestMenuRef} className="relative">
                 <button
                   type="button"
@@ -629,7 +643,9 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                       onClick={() => {
                         setGuestMenuOpen(false);
                         navigate("/ranking/login", {
-                          state: { from: `${location.pathname}${location.search}` },
+                          state: {
+                            from: `${location.pathname}${location.search}`,
+                          },
                         });
                       }}
                       className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
@@ -649,7 +665,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
           onSetView={setViewWithRoute}
           onGoHome={onClose}
           isAdmin={isAdmin}
-          onGoUsers={() => navigate("/users")}
+          onGoUsers={() => navigate("/dashboard/users")}
           showMatchForm={!isPublicRankingRoute}
           mobileOpen={mobileSidebarOpen}
           onMobileClose={() => setMobileSidebarOpen(false)}
@@ -855,6 +871,8 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
           onClose={() => setSelectedPlayer(null)}
         />
       )}
+
+      {toastMessage ? <Toast message={toastMessage} /> : null}
     </div>
   );
 }
