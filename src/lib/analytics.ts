@@ -1,5 +1,3 @@
-import ReactGA from "react-ga4";
-import { envConfig } from "../env";
 import { createAuditEvent } from "./firebase";
 
 export enum AnalyticsEventName {
@@ -48,8 +46,8 @@ type UserProperties = Record<
 >;
 
 let initialized = false;
-const GA_MEASUREMENT_ID = envConfig.gaMeasurementId;
 let latestUserProperties: Record<string, string | number | boolean | null> = {};
+let latestPagePath = "";
 
 function normalizeAnalyticsObject(
   input?: Record<string, AnalyticsScalar>,
@@ -79,28 +77,14 @@ function normalizeAnalyticsObject(
   }, {});
 }
 
-function canTrack(): boolean {
-  return !!GA_MEASUREMENT_ID;
-}
-
 export function initAnalytics(): void {
-  if (initialized || !canTrack()) return;
-
-  ReactGA.initialize(GA_MEASUREMENT_ID, {
-    gaOptions: {
-      debug_mode: import.meta.env.MODE === "development",
-    },
-  });
+  if (initialized) return;
   initialized = true;
 }
 
 export function trackPageView(path: string): void {
-  if (!initialized || !path) return;
-
-  ReactGA.send({
-    hitType: "pageview",
-    page: path,
-  });
+  if (!path) return;
+  latestPagePath = String(path).trim();
 }
 
 export function trackEvent(
@@ -109,15 +93,14 @@ export function trackEvent(
 ): void {
   if (!initialized || !eventName) return;
 
-  ReactGA.event(eventName, params);
-
   const normalizedParams = normalizeAnalyticsObject(
     params as Record<string, AnalyticsScalar> | undefined,
   );
   const pagePath =
-    typeof window !== "undefined"
+    latestPagePath ||
+    (typeof window !== "undefined"
       ? `${window.location.pathname}${window.location.search}${window.location.hash}`
-      : "";
+      : "");
 
   void createAuditEvent({
     eventName,
@@ -143,8 +126,4 @@ export function setUserProperties(properties: UserProperties): void {
     ...latestUserProperties,
     ...normalizedProperties,
   };
-
-  if (!initialized || entries.length === 0) return;
-
-  ReactGA.set(normalizedProperties);
 }
