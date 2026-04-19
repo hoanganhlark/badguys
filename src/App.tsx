@@ -77,20 +77,25 @@ export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [inputDraft] = useState(() => loadStoredInputDraft());
-  const [courtFeeInput, setCourtFeeInput] = useState(inputDraft.courtFeeInput);
+  const storageScopeKey = currentUser?.userId || "guest";
+
+  const [courtFeeInput, setCourtFeeInput] = useState(
+    () => loadStoredInputDraft(storageScopeKey).courtFeeInput,
+  );
   const [shuttleCountInput, setShuttleCountInput] = useState(
-    inputDraft.shuttleCountInput,
+    () => loadStoredInputDraft(storageScopeKey).shuttleCountInput,
   );
   const [courtCountInput, setCourtCountInput] = useState(
-    inputDraft.courtCountInput,
+    () => loadStoredInputDraft(storageScopeKey).courtCountInput,
   );
-  const [bulkInput, setBulkInput] = useState(inputDraft.bulkInput);
+  const [bulkInput, setBulkInput] = useState(
+    () => loadStoredInputDraft(storageScopeKey).bulkInput,
+  );
   const [players, setPlayers] = useState<Player[]>(() =>
-    parsePlayersBulk(inputDraft.bulkInput),
+    parsePlayersBulk(loadStoredInputDraft(storageScopeKey).bulkInput),
   );
   const [config, setConfig] = useState<AppConfig>(() =>
-    loadStoredConfig(envConfig.defaultConfig),
+    loadStoredConfig(envConfig.defaultConfig, storageScopeKey),
   );
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [sessionsError, setSessionsError] = useState("");
@@ -210,17 +215,37 @@ export default function App() {
   ]);
 
   useEffect(() => {
-    saveConfig(config);
-  }, [config]);
+    saveConfig(config, storageScopeKey);
+  }, [config, storageScopeKey]);
 
   useEffect(() => {
-    saveInputDraft({
-      courtFeeInput,
-      shuttleCountInput,
-      courtCountInput,
-      bulkInput,
-    });
-  }, [courtFeeInput, shuttleCountInput, courtCountInput, bulkInput]);
+    saveInputDraft(
+      {
+        courtFeeInput,
+        shuttleCountInput,
+        courtCountInput,
+        bulkInput,
+      },
+      storageScopeKey,
+    );
+  }, [
+    courtFeeInput,
+    shuttleCountInput,
+    courtCountInput,
+    bulkInput,
+    storageScopeKey,
+  ]);
+
+  useEffect(() => {
+    const draft = loadStoredInputDraft(storageScopeKey);
+    setCourtFeeInput(draft.courtFeeInput);
+    setShuttleCountInput(draft.shuttleCountInput);
+    setCourtCountInput(draft.courtCountInput);
+    setBulkInput(draft.bulkInput);
+    setPlayers(parsePlayersBulk(draft.bulkInput));
+    setConfig(loadStoredConfig(envConfig.defaultConfig, storageScopeKey));
+    setResetArmed(false);
+  }, [storageScopeKey]);
 
   useEffect(() => {
     if (!toastMessage) return;
@@ -443,7 +468,7 @@ export default function App() {
       setCourtCountInput("");
       setBulkInput("");
       setPlayers([]);
-      clearInputDraft();
+      clearInputDraft(storageScopeKey);
       showToast(t("app.toastClearedData"));
       return;
     }

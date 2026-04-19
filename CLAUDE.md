@@ -28,7 +28,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `src/env.ts` — Parses `VITE_*` env vars with fallback defaults
 - `src/lib/firebase.ts` — Firestore init, session CRUD, user management (auth, password), and subscriptions
 - `src/lib/telegram.ts` — Async Telegram notification (silent failure on error)
-- `src/lib/analytics.ts` — Audit event logging to Firestore; provides `initAnalytics()`, `trackPageView()`, `trackEvent()`, and `setUserProperties()`
+- `src/lib/analytics.ts` — Audit event logging to Firestore; provides `initAnalytics()`, `trackPageView()`, `trackEvent()`, `trackRouteChange()`, and `setUserProperties()`
 - `src/lib/platform.ts` — localStorage, clipboard, URL params, device detection
 - `src/lib/rankingStats.ts` — Glicko2-based rating calculations for tournament rankings; computes skill rating, rating deviation, volatility, and activity metrics
 - `src/components/RankingPage.tsx` — Ranking system: manages member CRUD, match recording (singles/doubles), and ranking display; supports public guest view and authenticated user access

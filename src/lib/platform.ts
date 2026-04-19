@@ -19,8 +19,22 @@ const DEFAULT_INPUT_DRAFT: InputDraft = {
   bulkInput: "",
 };
 
-export function loadStoredConfig(defaultConfig: AppConfig): AppConfig {
-  const raw = localStorage.getItem(CONFIG_KEY);
+function normalizeStorageScope(scopeKey?: string): string {
+  const normalized = String(scopeKey || "").trim();
+  return normalized || "guest";
+}
+
+function getScopedStorageKey(baseKey: string, scopeKey?: string): string {
+  return `${baseKey}:${normalizeStorageScope(scopeKey)}`;
+}
+
+export function loadStoredConfig(
+  defaultConfig: AppConfig,
+  scopeKey?: string,
+): AppConfig {
+  const raw =
+    localStorage.getItem(getScopedStorageKey(CONFIG_KEY, scopeKey)) ||
+    localStorage.getItem(CONFIG_KEY);
   if (!raw) return defaultConfig;
 
   try {
@@ -44,12 +58,17 @@ export function loadStoredConfig(defaultConfig: AppConfig): AppConfig {
   }
 }
 
-export function saveConfig(config: AppConfig): void {
-  localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+export function saveConfig(config: AppConfig, scopeKey?: string): void {
+  localStorage.setItem(
+    getScopedStorageKey(CONFIG_KEY, scopeKey),
+    JSON.stringify(config),
+  );
 }
 
-export function loadStoredInputDraft(): InputDraft {
-  const raw = localStorage.getItem(INPUT_DRAFT_KEY);
+export function loadStoredInputDraft(scopeKey?: string): InputDraft {
+  const raw =
+    localStorage.getItem(getScopedStorageKey(INPUT_DRAFT_KEY, scopeKey)) ||
+    localStorage.getItem(INPUT_DRAFT_KEY);
   if (!raw) return DEFAULT_INPUT_DRAFT;
 
   try {
@@ -77,12 +96,15 @@ export function loadStoredInputDraft(): InputDraft {
   }
 }
 
-export function saveInputDraft(draft: InputDraft): void {
-  localStorage.setItem(INPUT_DRAFT_KEY, JSON.stringify(draft));
+export function saveInputDraft(draft: InputDraft, scopeKey?: string): void {
+  localStorage.setItem(
+    getScopedStorageKey(INPUT_DRAFT_KEY, scopeKey),
+    JSON.stringify(draft),
+  );
 }
 
-export function clearInputDraft(): void {
-  localStorage.removeItem(INPUT_DRAFT_KEY);
+export function clearInputDraft(scopeKey?: string): void {
+  localStorage.removeItem(getScopedStorageKey(INPUT_DRAFT_KEY, scopeKey));
 }
 
 export function loadAdminMode(): boolean {

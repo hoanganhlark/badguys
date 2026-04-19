@@ -6,6 +6,15 @@ const STORAGE_MEMBERS_KEY = "rankingMembers";
 const STORAGE_MATCHES_KEY = "rankingMatches";
 const STORAGE_RANKING_SETTINGS_KEY = "rankingSettings";
 
+function normalizeStorageScope(scopeKey?: string): string {
+  const normalized = String(scopeKey || "").trim();
+  return normalized || "guest";
+}
+
+function getScopedRankingSettingsKey(scopeKey?: string): string {
+  return `${STORAGE_RANKING_SETTINGS_KEY}:${normalizeStorageScope(scopeKey)}`;
+}
+
 const DEFAULT_MEMBERS: Member[] = [
   { id: 1, name: "Nguyễn Văn A", level: "Yo" },
   { id: 2, name: "Trần Thị B", level: "Lo" },
@@ -74,9 +83,13 @@ export function saveMatchesToStorage(matches: Match[]) {
   localStorage.setItem(STORAGE_MATCHES_KEY, JSON.stringify(matches));
 }
 
-export function loadRankingSettingsFromStorage(): RankingSettings {
+export function loadRankingSettingsFromStorage(
+  scopeKey?: string,
+): RankingSettings {
   try {
-    const stored = localStorage.getItem(STORAGE_RANKING_SETTINGS_KEY);
+    const stored =
+      localStorage.getItem(getScopedRankingSettingsKey(scopeKey)) ||
+      localStorage.getItem(STORAGE_RANKING_SETTINGS_KEY);
     if (!stored) return DEFAULT_RANKING_SETTINGS;
 
     const parsed = JSON.parse(stored);
@@ -118,8 +131,14 @@ export function loadRankingSettingsFromStorage(): RankingSettings {
   }
 }
 
-export function saveRankingSettingsToStorage(settings: RankingSettings) {
-  localStorage.setItem(STORAGE_RANKING_SETTINGS_KEY, JSON.stringify(settings));
+export function saveRankingSettingsToStorage(
+  settings: RankingSettings,
+  scopeKey?: string,
+) {
+  localStorage.setItem(
+    getScopedRankingSettingsKey(scopeKey),
+    JSON.stringify(settings),
+  );
 }
 
 export function buildMembersFromMatches(matches: Match[]): Member[] {
