@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="refresh" content="0;url=/badguys/" />
+    <title>Redirecting...</title>
+    <script>
+      // Redirect unknown paths on GitHub Pages back to the SPA entry.
+      (function () {
+        var segmentCount = 1;
+        var location = window.location;
+        var basePath = location.pathname
+          .split("/")
+          .slice(0, 1 + segmentCount)
+          .join("/");
+        var routePath = location.pathname
+          .slice(1)
+          .split("/")
+          .slice(segmentCount)
+          .join("/");
+        var search = location.search
+          ? "&" + location.search.slice(1).replace(/&/g, "~and~")
+          : "";
+
+        location.replace(
+          location.protocol +
+            "//" +
+            location.host +
+            basePath +
+            "/?/" +
+            routePath.replace(/&/g, "~and~") +
+            search +
+            location.hash,
+        );
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>
