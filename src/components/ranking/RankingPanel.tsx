@@ -24,6 +24,18 @@ function formatMatchDateTime(dateText: string): string {
   return dateText;
 }
 
+function getWinRate(matches: number, wins: number): number {
+  if (matches <= 0) return 0;
+  return Math.max(0, Math.min(100, (wins / matches) * 100));
+}
+
+function getWinRateTone(winRate: number): string {
+  if (winRate >= 70) return "bg-emerald-500";
+  if (winRate >= 50) return "bg-sky-500";
+  if (winRate >= 35) return "bg-amber-500";
+  return "bg-rose-500";
+}
+
 export default function RankingPanel({
   rankings,
   matches,
@@ -37,52 +49,69 @@ export default function RankingPanel({
     <div className="max-w-5xl space-y-4 md:space-y-6">
       <div>
         <div className="md:hidden space-y-2.5">
-          {rankings.map((player, index) => (
-            <button
-              key={player.name}
-              type="button"
-              onClick={() => onSelectPlayer(player)}
-              className="w-full rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-sm"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="inline-flex items-center gap-2">
-                  {index < 3 ? (
-                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100">
-                      {index === 0 ? (
-                        <Award className="h-4 w-4 text-amber-500" />
-                      ) : index === 1 ? (
-                        <Award className="h-4 w-4 text-slate-400" />
-                      ) : (
-                        <Star className="h-4 w-4 text-orange-400" />
-                      )}
-                    </span>
-                  ) : (
-                    <span className="text-sm font-semibold text-slate-500">
-                      #{index + 1}
-                    </span>
-                  )}
-                  <p className="font-semibold text-slate-900">{player.name}</p>
-                </div>
-                <p className="text-sm font-bold text-sky-700">
-                  {player.rankScore.toFixed(3)}
-                </p>
-              </div>
-              <div className="mt-2.5 grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded-lg bg-slate-50 px-2.5 py-2">
-                  <p className="text-slate-500">Số trận</p>
-                  <p className="text-sm font-semibold text-slate-900">
-                    {player.matches}
+          {rankings.map((player, index) => {
+            const winRate = getWinRate(player.matches, player.wins);
+            const progressTone = getWinRateTone(winRate);
+
+            return (
+              <button
+                key={player.name}
+                type="button"
+                onClick={() => onSelectPlayer(player)}
+                className="w-full rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="inline-flex items-center gap-2">
+                    {index < 3 ? (
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100">
+                        {index === 0 ? (
+                          <Award className="h-4 w-4 text-amber-500" />
+                        ) : index === 1 ? (
+                          <Award className="h-4 w-4 text-slate-400" />
+                        ) : (
+                          <Star className="h-4 w-4 text-orange-400" />
+                        )}
+                      </span>
+                    ) : (
+                      <span className="text-sm font-semibold text-slate-500">
+                        #{index + 1}
+                      </span>
+                    )}
+                    <p className="font-semibold text-slate-900">{player.name}</p>
+                  </div>
+                  <p className="text-sm font-bold text-sky-700">
+                    {player.rankScore.toFixed(3)}
                   </p>
                 </div>
-                <div className="rounded-lg bg-slate-50 px-2.5 py-2">
-                  <p className="text-slate-500">Trận thắng</p>
-                  <p className="text-sm font-semibold text-slate-900">
-                    {player.wins}
+                <div className="mt-3 rounded-lg bg-slate-50 px-2.5 py-2.5">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <p className="font-semibold uppercase tracking-wide text-slate-500">
+                      Tỉ lệ thắng
+                    </p>
+                    <p className="font-bold text-slate-700">
+                      {Math.round(winRate)}%
+                    </p>
+                  </div>
+                  <div
+                    className="mt-2 h-2.5 overflow-hidden rounded-full bg-slate-200"
+                    role="progressbar"
+                    aria-label={`Tỉ lệ thắng của ${player.name}`}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={Math.round(winRate)}
+                  >
+                    <div
+                      className={`h-full rounded-full ${progressTone}`}
+                      style={{ width: `${winRate}%` }}
+                    />
+                  </div>
+                  <p className="mt-1.5 text-[11px] text-slate-500">
+                    {player.wins}/{player.matches} trận thắng
                   </p>
                 </div>
-              </div>
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
 
         <div className="hidden md:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -96,10 +125,7 @@ export default function RankingPanel({
                   Vận động viên
                 </th>
                 <th className="px-4 py-3 text-xs font-semibold text-slate-700 uppercase text-center">
-                  Trận
-                </th>
-                <th className="px-4 py-3 text-xs font-semibold text-slate-700 uppercase text-center">
-                  Thắng
+                  Tỉ lệ thắng
                 </th>
                 <th className="px-4 py-3 text-xs font-semibold text-slate-700 uppercase text-right">
                   RankScore
@@ -107,41 +133,63 @@ export default function RankingPanel({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {rankings.map((player, index) => (
-                <tr
-                  key={player.name}
-                  onClick={() => onSelectPlayer(player)}
-                  className="hover:bg-slate-50 transition-colors cursor-pointer"
-                >
-                  <td className="px-4 py-3 font-semibold">
-                    {index < 3 ? (
-                      <span className="inline-flex">
-                        {index === 0 ? (
-                          <Award className="h-5 w-5 text-amber-500" />
-                        ) : index === 1 ? (
-                          <Award className="h-5 w-5 text-slate-400" />
-                        ) : (
-                          <Star className="h-5 w-5 text-orange-400" />
-                        )}
-                      </span>
-                    ) : (
-                      <span className="text-slate-500">#{index + 1}</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 font-semibold text-slate-900">
-                    {player.name}
-                  </td>
-                  <td className="px-4 py-3 text-center text-slate-600">
-                    {player.matches}
-                  </td>
-                  <td className="px-4 py-3 text-center text-slate-600">
-                    {player.wins}
-                  </td>
-                  <td className="px-4 py-3 text-right font-bold text-sky-700">
-                    {player.rankScore.toFixed(3)}
-                  </td>
-                </tr>
-              ))}
+              {rankings.map((player, index) => {
+                const winRate = getWinRate(player.matches, player.wins);
+                const progressTone = getWinRateTone(winRate);
+
+                return (
+                  <tr
+                    key={player.name}
+                    onClick={() => onSelectPlayer(player)}
+                    className="hover:bg-slate-50 transition-colors cursor-pointer"
+                  >
+                    <td className="px-4 py-3 font-semibold">
+                      {index < 3 ? (
+                        <span className="inline-flex">
+                          {index === 0 ? (
+                            <Award className="h-5 w-5 text-amber-500" />
+                          ) : index === 1 ? (
+                            <Award className="h-5 w-5 text-slate-400" />
+                          ) : (
+                            <Star className="h-5 w-5 text-orange-400" />
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-slate-500">#{index + 1}</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 font-semibold text-slate-900">
+                      {player.name}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="mx-auto w-44">
+                        <div className="flex items-center justify-between text-[11px] font-medium text-slate-600">
+                          <span>{Math.round(winRate)}%</span>
+                          <span>
+                            {player.wins}/{player.matches}
+                          </span>
+                        </div>
+                        <div
+                          className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-200"
+                          role="progressbar"
+                          aria-label={`Tỉ lệ thắng của ${player.name}`}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          aria-valuenow={Math.round(winRate)}
+                        >
+                          <div
+                            className={`h-full rounded-full ${progressTone}`}
+                            style={{ width: `${winRate}%` }}
+                          />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-right font-bold text-sky-700">
+                      {player.rankScore.toFixed(3)}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

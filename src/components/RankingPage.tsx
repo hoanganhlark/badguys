@@ -487,21 +487,31 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     return currentUser.username.charAt(0).toUpperCase();
   }, [currentUser?.username]);
 
+  const hideFloatingHeaderActions = mobileSidebarOpen;
+
+  useEffect(() => {
+    if (!mobileSidebarOpen) return;
+    setUserMenuOpen(false);
+    setGuestMenuOpen(false);
+  }, [mobileSidebarOpen]);
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[60] bg-slate-950/40 flex">
       <div className="dashboard-surface flex flex-col md:flex-row min-h-screen w-full text-slate-900 font-sans">
-        <button
-          type="button"
-          onClick={() => setMobileSidebarOpen(true)}
-          className="md:hidden fixed top-5 left-5 z-[70] h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm inline-flex items-center justify-center hover:bg-slate-50"
-          aria-label="Mở menu dashboard"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
+        {!mobileSidebarOpen ? (
+          <button
+            type="button"
+            onClick={() => setMobileSidebarOpen(true)}
+            className="md:hidden fixed top-5 left-5 z-[70] h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm inline-flex items-center justify-center hover:bg-slate-50"
+            aria-label="Mở menu dashboard"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        ) : null}
 
-        {currentUser ? (
+        {currentUser && !hideFloatingHeaderActions ? (
           <div
             ref={userMenuRef}
             className="fixed top-5 right-5 md:top-8 md:right-8 z-[70]"
@@ -548,7 +558,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
           </div>
         ) : null}
 
-        {isPublicRankingRoute && !currentUser ? (
+        {isPublicRankingRoute && !currentUser && !hideFloatingHeaderActions ? (
           <div
             ref={guestMenuRef}
             className="fixed top-5 right-5 md:top-8 md:right-8 z-[70]"
