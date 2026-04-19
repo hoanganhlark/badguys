@@ -14,7 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
-**BadGuys** is a single-page React + TypeScript app for splitting badminton session costs. Includes a ranking tracker modal for tournament results and player rankings (client-side, localStorage-backed). Features user authentication, role-based access control (admin/user), and Firebase Firestore for session history, user management, and Telegram Bot API for notifications.
+**BadGuys** is a single-page React + TypeScript app for splitting badminton session costs. Includes a ranking tracker modal for tournament results and player rankings (client-side, localStorage-backed). Features user authentication, role-based access control (admin/user), Firebase Firestore for session history and user management, audit event logging, and Telegram Bot API for notifications.
 
 ### Key files
 
@@ -32,6 +32,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `src/lib/platform.ts` — localStorage, clipboard, URL params, device detection
 - `src/lib/rankingStats.ts` — Glicko2-based rating calculations for tournament rankings; computes skill rating, rating deviation, volatility, and activity metrics
 - `src/components/RankingPage.tsx` — Ranking system: manages member CRUD, match recording (singles/doubles), and ranking display; supports public guest view and authenticated user access
+- `src/components/AuditPage.tsx` — Audit event log viewer (admin-only); displays all tracked events with user properties, timestamps, and page context
 - `src/i18n/index.ts` — i18next configuration; manages language initialization, fallback (Vietnamese), and localStorage persistence
 - `src/i18n/resources.ts` — Internationalization strings (Vietnamese only)
 - `vite.config.ts` — Base path is `/` in dev, `/badguys/` in production build
@@ -61,6 +62,7 @@ User authentication via `AuthContext` (login with username/password, MD5-hashed 
 - `/` — Main cost calculator (guest accessible)
 - `/login` — Login form
 - `/dashboard/ranking` — Ranking dashboard (authenticated users only)
+- `/dashboard/audit` — Audit event log (admin only)
 - `/ranking` — Public ranking view (guest accessible, no member/match edit)
 - `/ranking/login` — Login form on public ranking page
 - `/users` — User management page (admin only)
@@ -73,7 +75,7 @@ User authentication via `AuthContext` (login with username/password, MD5-hashed 
 
 Player ratings use the **Glicko2** algorithm (a Bayesian rating system accounting for rating deviation and volatility). Matches are processed periodically to update ratings. Match records include `playedAt` (timestamp) and `durationMinutes` (optional match length) for more accurate rating updates. Configurable via `RankingSettings`: tau parameter (player rating volatility) and penaltyCoefficient (activity-based penalties).
 
-**Firestore collections** are automatically prefixed with "dev-" in development mode (when `MODE=development`). Collection names: `ranking-members`, `ranking-matches`, `users`, `matches`. In production, collections use plain names without prefix.
+**Firestore collections** are automatically prefixed with "dev-" in development mode (when `MODE=development`). Collection names: `ranking-members`, `ranking-matches`, `users`, `matches`, `audit-events`. In production, collections use plain names without prefix.
 
 ### State management
 
