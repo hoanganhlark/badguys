@@ -15,6 +15,7 @@ interface MatchFormPanelProps {
     team1: string[];
     team2: string[];
     sets: MatchSetInput[];
+    playedAt: string;
   }) => void;
   onSaveMatch: () => void;
 }
@@ -41,7 +42,10 @@ export default function MatchFormPanel({
   const addSetInput = () => {
     onSetMatchData({
       ...matchData,
-      sets: [...matchData.sets, { team1Score: "", team2Score: "", minutes: "" }],
+      sets: [
+        ...matchData.sets,
+        { team1Score: "", team2Score: "", minutes: "" },
+      ],
     });
   };
 

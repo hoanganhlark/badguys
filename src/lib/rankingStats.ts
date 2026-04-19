@@ -189,7 +189,13 @@ export function calculateRankingStats(
 
   for (const periodKey of periodKeys) {
     const matchesInPeriod = periodMatches.get(periodKey) || [];
-    const ratingMatches: Array<[unknown, unknown, number]> = [];
+    const ratingMatches: Array<
+      [
+        ReturnType<Glicko2["makePlayer"]>,
+        ReturnType<Glicko2["makePlayer"]>,
+        number,
+      ]
+    > = [];
 
     for (const match of matchesInPeriod) {
       const { score1, score2, minutes } = calculateMatchOutcome(match);
@@ -240,7 +246,7 @@ export function calculateRankingStats(
       }
     }
 
-    ranking.updateRatings(ratingMatches);
+    ranking.updateRatings(ratingMatches as never);
   }
 
   const periodCount = Math.max(1, periodKeys.length);

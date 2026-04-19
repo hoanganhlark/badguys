@@ -36,6 +36,15 @@ function getWinRateTone(winRate: number): string {
   return "bg-rose-500";
 }
 
+function formatSet(setText: string): string {
+  const [score, minutes] = String(setText || "").split("@");
+  const normalizedMinutes = Number.parseInt(String(minutes || ""), 10);
+  if (!Number.isFinite(normalizedMinutes) || normalizedMinutes <= 0) {
+    return score;
+  }
+  return `${score} (${normalizedMinutes}p)`;
+}
+
 export default function RankingPanel({
   rankings,
   matches,
@@ -77,7 +86,9 @@ export default function RankingPanel({
                         #{index + 1}
                       </span>
                     )}
-                    <p className="font-semibold text-slate-900">{player.name}</p>
+                    <p className="font-semibold text-slate-900">
+                      {player.name}
+                    </p>
                   </div>
                   <p className="text-sm font-bold text-sky-700">
                     {player.rankScore.toFixed(3)}
@@ -243,7 +254,7 @@ export default function RankingPanel({
                   {match.team1.join(" & ")}
                 </div>
                 <div className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700">
-                  {match.sets.join(", ")}
+                  {match.sets.map(formatSet).join(", ")}
                 </div>
                 <div className="font-medium text-slate-900 truncate text-right">
                   {match.team2.join(" & ")}

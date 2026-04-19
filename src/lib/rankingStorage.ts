@@ -1,14 +1,28 @@
 import type { Match, Member } from "../components/ranking/types";
+import type { RankingSettings } from "../types";
 import { normalizeRankingLevel } from "./rankingLevel";
 
 const STORAGE_MEMBERS_KEY = "rankingMembers";
 const STORAGE_MATCHES_KEY = "rankingMatches";
+const STORAGE_RANKING_SETTINGS_KEY = "rankingSettings";
 
 const DEFAULT_MEMBERS: Member[] = [
   { id: 1, name: "Nguyễn Văn A", level: "Yo" },
   { id: 2, name: "Trần Thị B", level: "Lo" },
   { id: 3, name: "Lê Văn C", level: "Yo" },
 ];
+
+export const DEFAULT_RANKING_SETTINGS: RankingSettings = {
+  tau: 0.5,
+  penaltyCoefficient: 0.3,
+  metricVisibility: {
+    skill: true,
+    stability: true,
+    uncertainty: true,
+    motivation: true,
+    winRate: true,
+  },
+};
 
 export function loadMembersFromStorage(): Member[] {
   try {
@@ -58,6 +72,54 @@ export function saveMembersToStorage(members: Member[]) {
 
 export function saveMatchesToStorage(matches: Match[]) {
   localStorage.setItem(STORAGE_MATCHES_KEY, JSON.stringify(matches));
+}
+
+export function loadRankingSettingsFromStorage(): RankingSettings {
+  try {
+    const stored = localStorage.getItem(STORAGE_RANKING_SETTINGS_KEY);
+    if (!stored) return DEFAULT_RANKING_SETTINGS;
+
+    const parsed = JSON.parse(stored);
+    return {
+      tau:
+        Number.isFinite(parsed?.tau) && parsed.tau >= 0.3 && parsed.tau <= 1.2
+          ? parsed.tau
+          : DEFAULT_RANKING_SETTINGS.tau,
+      penaltyCoefficient:
+        Number.isFinite(parsed?.penaltyCoefficient) &&
+        parsed.penaltyCoefficient >= 0
+          ? parsed.penaltyCoefficient
+          : DEFAULT_RANKING_SETTINGS.penaltyCoefficient,
+      metricVisibility: {
+        skill:
+          typeof parsed?.metricVisibility?.skill === "boolean"
+            ? parsed.metricVisibility.skill
+            : DEFAULT_RANKING_SETTINGS.metricVisibility.skill,
+        stability:
+          typeof parsed?.metricVisibility?.stability === "boolean"
+            ? parsed.metricVisibility.stability
+            : DEFAULT_RANKING_SETTINGS.metricVisibility.stability,
+        uncertainty:
+          typeof parsed?.metricVisibility?.uncertainty === "boolean"
+            ? parsed.metricVisibility.uncertainty
+            : DEFAULT_RANKING_SETTINGS.metricVisibility.uncertainty,
+        motivation:
+          typeof parsed?.metricVisibility?.motivation === "boolean"
+            ? parsed.metricVisibility.motivation
+            : DEFAULT_RANKING_SETTINGS.metricVisibility.motivation,
+        winRate:
+          typeof parsed?.metricVisibility?.winRate === "boolean"
+            ? parsed.metricVisibility.winRate
+            : DEFAULT_RANKING_SETTINGS.metricVisibility.winRate,
+      },
+    };
+  } catch {
+    return DEFAULT_RANKING_SETTINGS;
+  }
+}
+
+export function saveRankingSettingsToStorage(settings: RankingSettings) {
+  localStorage.setItem(STORAGE_RANKING_SETTINGS_KEY, JSON.stringify(settings));
 }
 
 export function buildMembersFromMatches(matches: Match[]): Member[] {
