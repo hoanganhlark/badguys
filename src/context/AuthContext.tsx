@@ -8,6 +8,7 @@ import {
 } from "react";
 import { getUserByUsername, updateUserLastLogin } from "../lib/firebase";
 import { hashMd5 } from "../lib/hash";
+import { setUserProperties } from "../lib/analytics";
 import type { AuthUser } from "../types";
 
 const AUTH_STORAGE_KEY = "badguys-auth-session";
@@ -84,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setCurrentUser(authUser);
     saveAuthToStorage(authUser);
+    setUserProperties({ role: authUser.role, username: authUser.username });
   }, []);
 
   const logout = useCallback(() => {

@@ -51,6 +51,7 @@ import {
   saveInputDraft,
   shouldSendVisitNotificationToday,
 } from "./lib/platform";
+import { initAnalytics, trackEvent, trackPageView } from "./lib/analytics";
 import { notifyCopyClicked, notifyGuestVisited } from "./lib/telegram";
 import type { AppConfig, Player, SessionRecord } from "./types";
 
@@ -99,6 +100,7 @@ export default function App() {
   const resetTimerRef = useRef<number | null>(null);
   const rankingMenuRef = useRef<HTMLDivElement | null>(null);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
+  const lastCalculationTrackedRef = useRef("");
 
   const {
     configOpen,
@@ -122,6 +124,53 @@ export default function App() {
   );
 
   const showResult = players.length > 0 && calc.total !== 0;
+
+  const calculationTrackingKey = useMemo(() => {
+    if (!showResult) return "";
+
+    return JSON.stringify({
+      playersCount: players.length,
+      courtFee,
+      shuttleCount,
+      courtCount,
+      total: calc.total,
+    });
+  }, [
+    showResult,
+    players.length,
+    courtFee,
+    shuttleCount,
+    courtCount,
+    calc.total,
+  ]);
+
+  useEffect(() => {
+    initAnalytics();
+  }, []);
+
+  useEffect(() => {
+    trackPageView(`${location.pathname}${location.search}${location.hash}`);
+  }, [location.pathname, location.search, location.hash]);
+
+  useEffect(() => {
+    if (!calculationTrackingKey) return;
+    if (lastCalculationTrackedRef.current === calculationTrackingKey) return;
+
+    lastCalculationTrackedRef.current = calculationTrackingKey;
+
+    trackEvent("calculate_session", {
+      players_count: players.length,
+      male_count: calc.malesCount,
+      female_count: calc.femalesCount,
+      total_fee_k: calc.total,
+    });
+  }, [
+    calculationTrackingKey,
+    players.length,
+    calc.malesCount,
+    calc.femalesCount,
+    calc.total,
+  ]);
 
   useEffect(() => {
     saveConfig(config);
@@ -151,6 +200,9 @@ export default function App() {
 
     (async () => {
       await notifyGuestVisited(formatVisitTimestampUTC7());
+      trackEvent("send_telegram_notification", {
+        notification_type: "guest_visit",
+      });
       markVisitNotifiedToday();
     })();
   }, [isAdmin]);
@@ -262,10 +314,18 @@ export default function App() {
     }
 
     if (!isAdmin) {
-      notifyCopyClicked(summaryText);
-      saveDailySummary(payload).catch((error) => {
-        console.warn("Save daily session failed", error);
+      trackEvent("send_telegram_notification", {
+        notification_type: "copy_clicked",
       });
+      void notifyCopyClicked(summaryText);
+      void saveDailySummary(payload)
+        .then(() => {
+          trackEvent("save_session", { status: "success" });
+        })
+        .catch((error) => {
+          console.warn("Save daily session failed", error);
+          trackEvent("save_session", { status: "failed" });
+        });
     }
   }
 

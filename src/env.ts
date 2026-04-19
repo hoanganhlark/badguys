@@ -29,6 +29,7 @@ const defaultConfig: AppConfig = {
 };
 
 export const envConfig: EnvConfig & { firebaseCollection: string } = {
+  gaMeasurementId: import.meta.env.VITE_GA_MEASUREMENT_ID || "",
   telegramBotToken: import.meta.env.VITE_TELEGRAM_BOT_TOKEN || "",
   telegramGroupChatId: import.meta.env.VITE_TELEGRAM_GROUP_CHAT_ID || "",
   enableTelegramNotification: getEnvBoolean(

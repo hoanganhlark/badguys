@@ -114,6 +114,7 @@ export type MatchRecord = {
 };
 
 export type EnvConfig = {
+  gaMeasurementId: string;
   telegramBotToken: string;
   telegramGroupChatId: string;
   enableTelegramNotification: boolean;
