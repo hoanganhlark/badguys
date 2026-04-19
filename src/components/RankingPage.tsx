@@ -542,14 +542,28 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
 
   return (
     <div className="fixed inset-0 z-[60] bg-slate-950/40 flex">
-      <Layout className="dashboard-surface min-h-screen w-full text-slate-900 font-sans">
+      <Layout
+        className="min-h-screen w-full text-slate-900 font-sans"
+        style={{ background: "transparent" }}
+      >
         <Layout.Header
-          className={`app-topbar dashboard-topbar z-[55] ${
+          className={`z-[55] ${
             mobileSidebarOpen
               ? "opacity-0 pointer-events-none md:opacity-100 md:pointer-events-auto"
               : ""
           }`}
-          style={{ background: "transparent", paddingInline: 0 }}
+          style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 55,
+            height: 56,
+            lineHeight: "56px",
+            paddingInline: 0,
+            borderBottom: "1px solid #e2e8f0",
+            background: "rgba(250, 250, 250, 0.92)",
+            backdropFilter: "blur(8px)",
+            boxShadow: "0 2px 12px rgba(15, 23, 42, 0.08)",
+          }}
         >
           <div className="flex h-14 items-center justify-between px-4 md:px-6">
             <div>
@@ -649,7 +663,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
           <Layout.Content>
             <main
               ref={mainContentRef}
-              className="dashboard-main-scroll flex-1 overflow-auto px-4 pt-20 md:p-8 md:pt-20 relative"
+              className="dashboard-main-scroll flex-1 overflow-auto px-4 py-4 md:p-8 relative"
             >
               <div className="max-w-7xl mx-auto">
                 <header className="mb-5 rounded-2xl border border-slate-200 bg-white px-4 py-4 md:px-6 md:py-5">

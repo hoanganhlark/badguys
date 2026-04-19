@@ -172,12 +172,12 @@ npm run dev
 
 ## Slice 9: Ranking Display Panel
 
-- [ ] Refactor `RankingPanel.tsx` → unified Ant `Table` (replaces dual mobile/desktop rendering)
-- [ ] Replace custom progress bars → Ant `Progress` component
-- [ ] Implement table columns: Rank, Name, Win Rate, Score
-- [ ] Implement horizontal scroll for mobile: `<Table scroll={{ x: 600 }}>`
-- [ ] Keep click-for-stats behavior (navigate to player detail modal)
-- [ ] Keep match history display logic
+- [x] Refactor `RankingPanel.tsx` → unified Ant `Table` (replaces dual mobile/desktop rendering)
+- [x] Replace custom progress bars → Ant `Progress` component
+- [x] Implement table columns: Rank, Name, Win Rate, Score
+- [x] Implement horizontal scroll for mobile: `<Table scroll={{ x: 600 }}>`
+- [x] Keep click-for-stats behavior (navigate to player detail modal)
+- [x] Keep match history display logic
 - [ ] Test table renders all columns
 - [ ] Test progress bars show correct values
 - [ ] Test responsive scrolling on narrow screens
@@ -191,10 +191,10 @@ npm run dev
 
 ## Slice 10: Player Stats Modal
 
-- [ ] Refactor `PlayerStatsModal.tsx` → Ant `Modal` + `Progress` + `Collapse`
-- [ ] Replace custom expandable sections → Ant `Collapse` panels
-- [ ] Replace custom progress bars → Ant `Progress`
-- [ ] Keep metric calculations intact
+- [x] Refactor `PlayerStatsModal.tsx` → Ant `Modal` + `Progress` + `Collapse`
+- [x] Replace custom expandable sections → Ant `Collapse` panels
+- [x] Replace custom progress bars → Ant `Progress`
+- [x] Keep metric calculations intact
 - [ ] Test modal open/close
 - [ ] Test metric rows display with progress bars
 - [ ] Test accordion expand/collapse works
@@ -220,11 +220,11 @@ npm run dev
 
 ## Slice 11: Audit Log Page
 
-- [ ] Refactor `AuditPage.tsx` → Ant `Layout` + `Select` (filters) + `Table`
-- [ ] Implement filter by user: Ant `Select` dropdown
-- [ ] Implement filter by event type: Ant `Select` dropdown
-- [ ] Replace table rendering → Ant `Table` with 7 columns (Time, Type, Event, User, Role, Path, Params)
-- [ ] Keep sorting and pagination logic intact
+- [x] Refactor `AuditPage.tsx` → Ant `Layout` + `Select` (filters) + `Table`
+- [x] Implement filter by user: Ant `Select` dropdown
+- [x] Implement filter by event type: Ant `Select` dropdown
+- [x] Replace table rendering → Ant `Table` with 7 columns (Time, Type, Event, User, Role, Path, Params)
+- [x] Keep sorting and pagination logic intact
 - [ ] Test filter dropdowns work
 - [ ] Test table updates based on filters
 - [ ] Test pagination works if logs are long
@@ -237,13 +237,13 @@ npm run dev
 
 ## Slice 12: User Management Page
 
-- [ ] Refactor `UserManagementPage.tsx` → Ant `Form` (create user) + `Table` (users list)
-- [ ] Implement create user form: Ant `Form` + `Input` + `Input.Password` + `Select` (role) + `Button`
-- [ ] Replace users table rendering → Ant `Table` with 5 columns (Username, Role, Created At, Last Login, Actions)
-- [ ] Implement inline role change: table cell renders Ant `Select`
-- [ ] Implement lock/unlock action: table cell renders `Button` with Popconfirm
-- [ ] Implement delete action: table cell renders `Button` with Popconfirm
-- [ ] Keep CRUD logic intact
+- [x] Refactor `UserManagementPage.tsx` → Ant `Form` (create user) + `Table` (users list)
+- [x] Implement create user form: Ant `Form` + `Input` + `Input.Password` + `Select` (role) + `Button`
+- [x] Replace users table rendering → Ant `Table` with 5 columns (Username, Role, Created At, Last Login, Actions)
+- [x] Implement inline role change: table cell renders Ant `Select`
+- [x] Implement lock/unlock action: table cell renders `Button` with Popconfirm
+- [x] Implement delete action: table cell renders `Button` with Popconfirm
+- [x] Keep CRUD logic intact
 - [ ] Test create user form submission
 - [ ] Test inline role change updates table
 - [ ] Test lock/delete with confirmation dialogs
@@ -257,10 +257,10 @@ npm run dev
 
 ## Slice 13: Error Boundary
 
-- [ ] Refactor `ErrorBoundary.tsx` → Ant `Result` + `Button`
-- [ ] Implement error state display with `Result` component (status="error")
-- [ ] Implement reload button with `Button` component
-- [ ] Keep error catching logic intact
+- [x] Refactor `ErrorBoundary.tsx` → Ant `Result` + `Button`
+- [x] Implement error state display with `Result` component (status="error")
+- [x] Implement reload button with `Button` component
+- [x] Keep error catching logic intact
 - [ ] Test error boundary catches errors
 - [ ] Test reload button resets the app
 
@@ -272,12 +272,12 @@ npm run dev
 
 ## Slice 14: Cleanup & Custom CSS Migration
 
-- [ ] Review `src/styles.css` and identify obsolete custom CSS classes
-- [ ] Remove `.app-topbar`, `.sidebar-panel`, `.panel-backdrop` (replaced by Ant Layout/Drawer)
-- [ ] Remove `.dashboard-*`, `.card`, `.input-minimal` (replaced by Ant components)
+- [x] Review `src/styles.css` and identify obsolete custom CSS classes
+- [x] Remove `.app-topbar`, `.sidebar-panel`, `.panel-backdrop` (replaced by Ant Layout/Drawer)
+- [x] Remove `.dashboard-*`, `.card`, `.input-minimal` (replaced by Ant components)
 - [ ] Keep `.animate-fade` keyframe if needed, or replace with Ant motion tokens
 - [ ] Keep font `@import` and global body styles (bg, font-family)
-- [ ] Verify no broken className references in components
+- [x] Verify no broken className references in components
 - [ ] Search codebase for any remaining Tailwind utility classes that should stay
 - [ ] Test no console errors after CSS cleanup
 - [ ] Verify no visual regressions across all pages

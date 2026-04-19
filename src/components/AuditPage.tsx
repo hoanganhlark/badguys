@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Activity, Menu } from "react-feather";
+import { MenuOutlined } from "@ant-design/icons";
+import { Activity } from "react-feather";
 import {
   Alert,
+  Button,
   Card,
+  Layout,
   Select,
   Spin,
   Statistic,
   Table,
+  Typography,
   type TableColumnsType,
 } from "antd";
 import { useTranslation } from "react-i18next";
@@ -288,34 +292,44 @@ export default function AuditPage() {
   }, []);
 
   return (
-    <div className="min-h-screen dashboard-surface text-slate-900 font-sans">
-      <header
-        className={`app-topbar dashboard-topbar z-[55] ${
-          mobileSidebarOpen
-            ? "opacity-0 pointer-events-none md:opacity-100 md:pointer-events-auto"
-            : ""
-        }`}
+    <Layout style={{ minHeight: "100vh", background: "transparent" }}>
+      <Layout.Header
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 55,
+          height: 56,
+          lineHeight: "56px",
+          padding: "0 16px",
+          borderBottom: "1px solid #e2e8f0",
+          background: "rgba(250, 250, 250, 0.92)",
+          backdropFilter: "blur(8px)",
+          boxShadow: "0 2px 12px rgba(15, 23, 42, 0.08)",
+        }}
       >
-        <div className="flex h-14 items-center justify-between px-4 md:px-6">
+        <div className="flex h-14 items-center justify-between">
           <div>
             {!mobileSidebarOpen ? (
-              <button
-                type="button"
+              <Button
+                type="default"
+                shape="circle"
+                icon={<MenuOutlined />}
                 onClick={() => setMobileSidebarOpen(true)}
-                className="md:hidden h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm inline-flex items-center justify-center hover:bg-slate-50"
+                className="md:hidden"
                 aria-label={t("auditPage.menu")}
-              >
-                <Menu className="h-5 w-5" />
-              </button>
+              />
             ) : null}
           </div>
-          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <Typography.Text className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             {t("auditPage.title")}
-          </span>
+          </Typography.Text>
         </div>
-      </header>
+      </Layout.Header>
 
-      <div className="flex min-h-screen flex-col md:flex-row">
+      <Layout
+        className="flex min-h-0 flex-col md:flex-row"
+        style={{ background: "transparent" }}
+      >
         <RankingSidebar
           currentView="ranking"
           onSetView={handleSetDashboardView}
@@ -331,9 +345,9 @@ export default function AuditPage() {
           activeView={null}
         />
 
-        <main
+        <Layout.Content
           ref={mainContentRef}
-          className="dashboard-main-scroll flex-1 overflow-auto px-4 pt-20 md:p-8 md:pt-20"
+          className="dashboard-main-scroll flex-1 overflow-auto px-4 py-4 md:p-8"
         >
           <div className="mx-auto max-w-7xl space-y-5 md:space-y-6">
             <header className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm md:px-6 md:py-5">
@@ -424,8 +438,8 @@ export default function AuditPage() {
               )}
             </Card>
           </div>
-        </main>
-      </div>
-    </div>
+        </Layout.Content>
+      </Layout>
+    </Layout>
   );
 }

@@ -25,113 +25,14 @@ select {
   font: inherit;
 }
 
-.dashboard-surface {
-  background-color: #fafafa;
-}
-
-.dashboard-card {
-  border-radius: 1rem;
-  border: 1px solid #f0f0f0;
-  background: #ffffff;
-  transition: all 0.2s ease;
-}
-
-.dashboard-input {
-  background-color: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.75rem;
-  padding: 0.625rem 0.75rem;
-  transition: all 0.2s ease;
-}
-
-.dashboard-input:focus {
-  outline: none;
-  border-color: #1a1a1a;
-  background-color: #fff;
-}
-
 .dashboard-main-scroll {
   padding-bottom: calc(6rem + var(--mobile-keyboard-inset));
-}
-
-.app-topbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  border-bottom: 1px solid #e2e8f0;
-  background: rgba(250, 250, 250, 0.92);
-  backdrop-filter: blur(8px);
-  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
-}
-
-.dashboard-topbar {
-  left: 0;
-}
-
-.mobile-focus-target {
-  scroll-margin-top: 5.5rem;
-  scroll-margin-bottom: 10rem;
 }
 
 @media (min-width: 768px) {
   .dashboard-main-scroll {
     padding-bottom: 2rem;
   }
-
-  .dashboard-topbar {
-    left: 18rem;
-  }
-}
-
-.card {
-  background: #ffffff;
-  border: 1px solid #f0f0f0;
-  border-radius: 1rem;
-  transition: all 0.2s ease;
-}
-
-.input-minimal {
-  background-color: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.75rem;
-  transition: all 0.2s ease;
-}
-
-.input-minimal:focus {
-  outline: none;
-  border-color: #1a1a1a;
-  background-color: #fff;
-}
-
-.tag {
-  transition: all 0.2s ease;
-  cursor: pointer;
-  user-select: none;
-}
-
-.tag-male {
-  background-color: #f3f4f6;
-  color: #374151;
-  border: 1px solid #e5e7eb;
-}
-
-.tag-female {
-  background-color: #fef2f2;
-  color: #991b1b;
-  border: 1px solid #fee2e2;
-}
-
-.tag-set {
-  background-color: #eff6ff;
-  color: #1d4ed8;
-  border: 1px solid #dbeafe;
-}
-
-.tag-duplicate {
-  background-color: #fffbeb;
-  color: #92400e;
-  border: 1px solid #fbbf24;
 }
 
 @keyframes fadeIn {
@@ -148,15 +49,4 @@ select {
 
 .animate-fade {
   animation: fadeIn 0.3s ease-out forwards;
-}
-
-.panel-backdrop {
-  background: rgba(15, 23, 42, 0.3);
-  backdrop-filter: blur(2px);
-}
-
-.sidebar-panel {
-  background: #ffffff;
-  border-right: 1px solid #f0f0f0;
-  box-shadow: 12px 0 30px rgba(15, 23, 42, 0.08);
 }
