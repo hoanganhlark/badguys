@@ -8,6 +8,7 @@ import {
 } from "react";
 import { getUserByUsername, updateUserLastLogin } from "../lib/firebase";
 import { hashMd5 } from "../lib/hash";
+import { AnalyticsUserPropertyKey, setUserProperties } from "../lib/analytics";
 import type { AuthUser } from "../types";
 
 const AUTH_STORAGE_KEY = "badguys-auth-session";
@@ -84,11 +85,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setCurrentUser(authUser);
     saveAuthToStorage(authUser);
+    setUserProperties({
+      [AnalyticsUserPropertyKey.Role]: authUser.role,
+      [AnalyticsUserPropertyKey.Username]: authUser.username,
+      [AnalyticsUserPropertyKey.IsAuthenticated]: true,
+    });
   }, []);
 
   const logout = useCallback(() => {
     setCurrentUser(null);
     saveAuthToStorage(null);
+    setUserProperties({
+      [AnalyticsUserPropertyKey.Role]: "guest",
+      [AnalyticsUserPropertyKey.Username]: "guest",
+      [AnalyticsUserPropertyKey.IsAuthenticated]: false,
+    });
   }, []);
 
   const value = useMemo<AuthContextValue>(

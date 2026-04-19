@@ -222,7 +222,7 @@ export default function UserManagementPage() {
   return (
     <div className="min-h-screen dashboard-surface text-slate-900 font-sans">
       <header
-        className={`app-topbar z-[55] md:left-72 ${
+        className={`app-topbar dashboard-topbar z-[55] ${
           mobileSidebarOpen
             ? "opacity-0 pointer-events-none md:opacity-100 md:pointer-events-auto"
             : ""
@@ -254,10 +254,12 @@ export default function UserManagementPage() {
           onGoHome={() => navigate("/")}
           isAdmin={isAdmin}
           onGoUsers={() => navigate("/dashboard/users")}
+          onGoAudit={() => navigate("/dashboard/audit")}
           showMatchForm={true}
           mobileOpen={mobileSidebarOpen}
           onMobileClose={() => setMobileSidebarOpen(false)}
           usersActive={true}
+          auditActive={false}
           activeView={null}
         />
 

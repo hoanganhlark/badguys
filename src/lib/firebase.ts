@@ -18,6 +18,7 @@ import {
 import { envConfig } from "../env";
 import { normalizeRankingLevel } from "./rankingLevel";
 import type {
+  AuditEventRecord,
   MatchRecord,
   RankingMatch,
   RankingMember,
@@ -35,6 +36,7 @@ const RANKING_MATCHES_COLLECTION = "ranking-matches";
 const RANKING_STATE_DOC_ID = "state";
 const USERS_COLLECTION = "users";
 const MATCHES_COLLECTION = "matches";
+const AUDIT_EVENTS_COLLECTION = "audit-events";
 
 function getSessionDateKey(now?: Date): string {
   const current = now || new Date();
@@ -741,5 +743,172 @@ export async function deleteMatch(matchId: string): Promise<void> {
       collection(context.db, getCollectionPath(MATCHES_COLLECTION)),
       normalizedMatchId,
     ),
+  );
+}
+
+function mapAuditEventRecord(auditDoc: {
+  id: string;
+  data: () => Record<string, unknown>;
+}): AuditEventRecord {
+  const data = auditDoc.data();
+  const createdAt =
+    resolveDateLikeToIso(data.clientCreatedAt) ??
+    resolveDateLikeToIso(data.createdAt);
+
+  const rawParams =
+    data.params && typeof data.params === "object"
+      ? (data.params as Record<string, unknown>)
+      : {};
+  const rawUserProperties =
+    data.userProperties && typeof data.userProperties === "object"
+      ? (data.userProperties as Record<string, unknown>)
+      : {};
+
+  const normalizeObject = (
+    input: Record<string, unknown>,
+  ): Record<string, string | number | boolean | null> => {
+    return Object.entries(input).reduce<
+      Record<string, string | number | boolean | null>
+    >((acc, [key, value]) => {
+      if (typeof value === "string") {
+        acc[key] = value;
+        return acc;
+      }
+      if (typeof value === "number" && Number.isFinite(value)) {
+        acc[key] = value;
+        return acc;
+      }
+      if (typeof value === "boolean") {
+        acc[key] = value;
+        return acc;
+      }
+      if (value === null) {
+        acc[key] = null;
+      }
+      return acc;
+    }, {});
+  };
+
+  const eventName = String(data.eventName || "").trim();
+  const rawEventType = String(data.eventType || "").trim();
+  const eventType =
+    rawEventType === "route_change"
+      ? "route_change"
+      : rawEventType === "event"
+        ? "event"
+        : eventName === "route_change"
+          ? "route_change"
+          : "event";
+
+  return {
+    id: auditDoc.id,
+    eventName,
+    eventType,
+    params: normalizeObject(rawParams),
+    userProperties: normalizeObject(rawUserProperties),
+    pagePath:
+      typeof data.pagePath === "string" && data.pagePath.trim()
+        ? data.pagePath
+        : undefined,
+    mode:
+      typeof data.mode === "string" && data.mode.trim() ? data.mode : undefined,
+    createdAt,
+  };
+}
+
+export async function createAuditEvent(input: {
+  eventName: string;
+  eventType?: "event" | "route_change";
+  params?: Record<string, string | number | boolean | null>;
+  userProperties?: Record<string, string | number | boolean | null>;
+  pagePath?: string;
+  mode?: string;
+}): Promise<void> {
+  const context = ensureFirebase();
+  if (!context.db) {
+    throw new Error("Firebase is not configured");
+  }
+
+  const eventName = String(input.eventName || "").trim();
+  const eventType =
+    input.eventType === "route_change" ? "route_change" : "event";
+  if (!eventName) {
+    throw new Error("Missing event name");
+  }
+
+  const auditEventsRef = collection(
+    context.db,
+    getCollectionPath(AUDIT_EVENTS_COLLECTION),
+  );
+
+  await addDoc(auditEventsRef, {
+    eventName,
+    eventType,
+    params: input.params || {},
+    userProperties: input.userProperties || {},
+    pagePath: String(input.pagePath || "").trim() || null,
+    mode: String(input.mode || "").trim() || envConfig.mode,
+    createdAt: serverTimestamp(),
+    clientCreatedAt: new Date().toISOString(),
+  });
+}
+
+export async function getRecentAuditEvents(
+  maxItems = 200,
+): Promise<AuditEventRecord[]> {
+  const context = ensureFirebase();
+  if (!context.db) {
+    throw new Error("Firebase is not configured");
+  }
+
+  const auditEventsRef = collection(
+    context.db,
+    getCollectionPath(AUDIT_EVENTS_COLLECTION),
+  );
+  const auditEventsQuery = query(
+    auditEventsRef,
+    orderBy("createdAt", "desc"),
+    limit(maxItems),
+  );
+  const snapshot = await getDocs(auditEventsQuery);
+
+  return snapshot.docs
+    .map((auditDoc) => mapAuditEventRecord(auditDoc))
+    .filter((audit) => !!audit.eventName);
+}
+
+export function subscribeAuditEvents(
+  onData: (events: AuditEventRecord[]) => void,
+  onError?: (error: Error) => void,
+  maxItems = 200,
+): () => void {
+  const context = ensureFirebase();
+  if (!context.db) {
+    throw new Error("Firebase is not configured");
+  }
+
+  const auditEventsRef = collection(
+    context.db,
+    getCollectionPath(AUDIT_EVENTS_COLLECTION),
+  );
+  const auditEventsQuery = query(
+    auditEventsRef,
+    orderBy("createdAt", "desc"),
+    limit(maxItems),
+  );
+
+  return onSnapshot(
+    auditEventsQuery,
+    (snapshot) => {
+      const events = snapshot.docs
+        .map((auditDoc) => mapAuditEventRecord(auditDoc))
+        .filter((audit) => !!audit.eventName);
+      onData(events);
+    },
+    (error) => {
+      if (onError) {
+        onError(error);
+      }
+    },
   );
 }

@@ -14,6 +14,11 @@ import { matchPath, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { calculateRankingStats } from "../lib/rankingStats";
 import {
+  AnalyticsEventName,
+  AnalyticsParamKey,
+  trackEvent,
+} from "../lib/analytics";
+import {
   buildMembersFromMatches,
   loadMatchesFromStorage,
   loadMembersFromStorage,
@@ -487,6 +492,12 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
         sets: [{ team1Score: "", team2Score: "", minutes: "" }],
         playedAt: toDateTimeLocal(new Date()),
       });
+      trackEvent(AnalyticsEventName.RecordMatch, {
+        [AnalyticsParamKey.MatchType]: matchType,
+        [AnalyticsParamKey.SetCount]: parsedSets.length,
+        [AnalyticsParamKey.DurationMinutes]:
+          totalMinutes > 0 ? totalMinutes : 0,
+      });
       setToastMessage(t("rankingPage.toastMatchSaved"));
     } catch (error) {
       console.error("Failed to save match", error);
@@ -545,7 +556,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     <div className="fixed inset-0 z-[60] bg-slate-950/40 flex">
       <div className="dashboard-surface flex flex-col md:flex-row min-h-screen w-full text-slate-900 font-sans">
         <header
-          className={`app-topbar z-[55] md:left-72 ${
+          className={`app-topbar dashboard-topbar z-[55] ${
             mobileSidebarOpen
               ? "opacity-0 pointer-events-none md:opacity-100 md:pointer-events-auto"
               : ""
@@ -666,6 +677,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
           onGoHome={onClose}
           isAdmin={isAdmin}
           onGoUsers={() => navigate("/dashboard/users")}
+          onGoAudit={() => navigate("/dashboard/audit")}
           showMatchForm={!isPublicRankingRoute}
           mobileOpen={mobileSidebarOpen}
           onMobileClose={() => setMobileSidebarOpen(false)}

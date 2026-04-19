@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import ConfigSidebar from "./components/ConfigSidebar";
 import ExpensesSection from "./components/ExpensesSection";
+import AuditPage from "./components/AuditPage";
 import LoginModal from "./components/LoginModal";
 import PlayersSection from "./components/PlayersSection";
 import RankingPage from "./components/RankingPage";
@@ -51,6 +52,18 @@ import {
   saveInputDraft,
   shouldSendVisitNotificationToday,
 } from "./lib/platform";
+import {
+  AnalyticsEventName,
+  AnalyticsNotificationType,
+  AnalyticsParamKey,
+  AnalyticsStatus,
+  AnalyticsUserPropertyKey,
+  initAnalytics,
+  setUserProperties,
+  trackEvent,
+  trackPageView,
+  trackRouteChange,
+} from "./lib/analytics";
 import { notifyCopyClicked, notifyGuestVisited } from "./lib/telegram";
 import type { AppConfig, Player, SessionRecord } from "./types";
 
@@ -99,6 +112,8 @@ export default function App() {
   const resetTimerRef = useRef<number | null>(null);
   const rankingMenuRef = useRef<HTMLDivElement | null>(null);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
+  const lastCalculationTrackedRef = useRef("");
+  const previousPathRef = useRef("");
 
   const {
     configOpen,
@@ -122,6 +137,77 @@ export default function App() {
   );
 
   const showResult = players.length > 0 && calc.total !== 0;
+
+  const calculationTrackingKey = useMemo(() => {
+    if (!showResult) return "";
+
+    return JSON.stringify({
+      playersCount: players.length,
+      courtFee,
+      shuttleCount,
+      courtCount,
+      total: calc.total,
+    });
+  }, [
+    showResult,
+    players.length,
+    courtFee,
+    shuttleCount,
+    courtCount,
+    calc.total,
+  ]);
+
+  useEffect(() => {
+    initAnalytics();
+  }, []);
+
+  useEffect(() => {
+    trackPageView(`${location.pathname}${location.search}${location.hash}`);
+  }, [location.pathname, location.search, location.hash]);
+
+  useEffect(() => {
+    const nextPath = `${location.pathname}${location.search}${location.hash}`;
+    const previousPath = previousPathRef.current;
+
+    if (!previousPath) {
+      previousPathRef.current = nextPath;
+      return;
+    }
+
+    if (isAuthenticated && previousPath !== nextPath) {
+      trackRouteChange(previousPath, nextPath);
+    }
+
+    previousPathRef.current = nextPath;
+  }, [isAuthenticated, location.pathname, location.search, location.hash]);
+
+  useEffect(() => {
+    setUserProperties({
+      [AnalyticsUserPropertyKey.IsAuthenticated]: isAuthenticated,
+      [AnalyticsUserPropertyKey.Role]: currentUser?.role || "guest",
+      [AnalyticsUserPropertyKey.Username]: currentUser?.username || "guest",
+    });
+  }, [isAuthenticated, currentUser?.role, currentUser?.username]);
+
+  useEffect(() => {
+    if (!calculationTrackingKey) return;
+    if (lastCalculationTrackedRef.current === calculationTrackingKey) return;
+
+    lastCalculationTrackedRef.current = calculationTrackingKey;
+
+    trackEvent(AnalyticsEventName.CalculateSession, {
+      [AnalyticsParamKey.PlayersCount]: players.length,
+      [AnalyticsParamKey.MaleCount]: calc.malesCount,
+      [AnalyticsParamKey.FemaleCount]: calc.femalesCount,
+      [AnalyticsParamKey.TotalFeeK]: calc.total,
+    });
+  }, [
+    calculationTrackingKey,
+    players.length,
+    calc.malesCount,
+    calc.femalesCount,
+    calc.total,
+  ]);
 
   useEffect(() => {
     saveConfig(config);
@@ -151,6 +237,10 @@ export default function App() {
 
     (async () => {
       await notifyGuestVisited(formatVisitTimestampUTC7());
+      trackEvent(AnalyticsEventName.SendTelegramNotification, {
+        [AnalyticsParamKey.NotificationType]:
+          AnalyticsNotificationType.GuestVisit,
+      });
       markVisitNotifiedToday();
     })();
   }, [isAdmin]);
@@ -262,10 +352,23 @@ export default function App() {
     }
 
     if (!isAdmin) {
-      notifyCopyClicked(summaryText);
-      saveDailySummary(payload).catch((error) => {
-        console.warn("Save daily session failed", error);
+      trackEvent(AnalyticsEventName.SendTelegramNotification, {
+        [AnalyticsParamKey.NotificationType]:
+          AnalyticsNotificationType.CopyClicked,
       });
+      void notifyCopyClicked(summaryText);
+      void saveDailySummary(payload)
+        .then(() => {
+          trackEvent(AnalyticsEventName.SaveSession, {
+            [AnalyticsParamKey.Status]: AnalyticsStatus.Success,
+          });
+        })
+        .catch((error) => {
+          console.warn("Save daily session failed", error);
+          trackEvent(AnalyticsEventName.SaveSession, {
+            [AnalyticsParamKey.Status]: AnalyticsStatus.Failed,
+          });
+        });
     }
   }
 
@@ -473,6 +576,14 @@ export default function App() {
     return (
       <AdminRoute>
         <UserManagementPage />
+      </AdminRoute>
+    );
+  }
+
+  if (location.pathname === "/dashboard/audit") {
+    return (
+      <AdminRoute>
+        <AuditPage />
       </AdminRoute>
     );
   }
