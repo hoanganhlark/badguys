@@ -8,6 +8,7 @@ interface MatchFormPanelProps {
     team1: string[];
     team2: string[];
     sets: MatchSetInput[];
+    playedAt: string;
   };
   onSetMatchType: (type: "singles" | "doubles") => void;
   onSetMatchData: (next: {
@@ -40,7 +41,7 @@ export default function MatchFormPanel({
   const addSetInput = () => {
     onSetMatchData({
       ...matchData,
-      sets: [...matchData.sets, { team1Score: "", team2Score: "" }],
+      sets: [...matchData.sets, { team1Score: "", team2Score: "", minutes: "" }],
     });
   };
 
@@ -126,8 +127,25 @@ export default function MatchFormPanel({
       </div>
 
       <div className="pt-5 border-t border-slate-200 space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2.5 md:items-center">
           <h3 className="font-bold text-slate-900">Kết quả theo set</h3>
+          <input
+            type="datetime-local"
+            className="mobile-focus-target dashboard-input w-full md:w-auto"
+            value={matchData.playedAt}
+            onChange={(e) =>
+              onSetMatchData({
+                ...matchData,
+                playedAt: e.target.value,
+              })
+            }
+            aria-label="Thời điểm thi đấu"
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-slate-500">
+            Ô phút là tuỳ chọn, dùng cho công thức động lực.
+          </p>
           <button
             type="button"
             onClick={addSetInput}
@@ -137,7 +155,7 @@ export default function MatchFormPanel({
           </button>
         </div>
         {matchData.sets.map((set, i) => (
-          <div key={i} className="grid grid-cols-2 gap-3">
+          <div key={i} className="grid grid-cols-3 gap-3">
             <input
               type="number"
               min={0}
@@ -172,6 +190,25 @@ export default function MatchFormPanel({
                 newSets[i] = {
                   ...newSets[i],
                   team2Score: e.target.value,
+                };
+                onSetMatchData({ ...matchData, sets: newSets });
+              }}
+            />
+            <input
+              type="number"
+              min={0}
+              inputMode="numeric"
+              placeholder={`Set ${i + 1} - Phút`}
+              className="mobile-focus-target dashboard-input w-full"
+              value={set.minutes || ""}
+              onChange={(e) => {
+                if (e.target.value !== "" && Number(e.target.value) < 0) {
+                  return;
+                }
+                const newSets = [...matchData.sets];
+                newSets[i] = {
+                  ...newSets[i],
+                  minutes: e.target.value,
                 };
                 onSetMatchData({ ...matchData, sets: newSets });
               }}

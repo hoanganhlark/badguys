@@ -62,8 +62,24 @@ export type RankingMatch = {
   team2: string[];
   sets: string[];
   date: string;
+  playedAt?: string;
+  durationMinutes?: number;
   createdBy?: string;
   createdByUsername?: string;
+};
+
+export type RankingMetricVisibility = {
+  skill: boolean;
+  stability: boolean;
+  uncertainty: boolean;
+  motivation: boolean;
+  winRate: boolean;
+};
+
+export type RankingSettings = {
+  tau: number;
+  penaltyCoefficient: number;
+  metricVisibility: RankingMetricVisibility;
 };
 
 export type UserRole = "admin" | "member";
@@ -88,6 +104,8 @@ export type MatchRecord = {
   playerA: string;
   playerB: string;
   score: string;
+  playedAt?: string;
+  durationMinutes?: number;
   createdBy: string;
   createdByUsername?: string;
   createdAt?: string;

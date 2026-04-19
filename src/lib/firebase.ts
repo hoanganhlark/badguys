@@ -506,11 +506,20 @@ function mapMatchRecord(matchDoc: {
   data: () => Record<string, unknown>;
 }): MatchRecord {
   const data = matchDoc.data();
+  const durationMinutesRaw = Number(data.durationMinutes);
   return {
     id: matchDoc.id,
     playerA: String(data.playerA || ""),
     playerB: String(data.playerB || ""),
     score: String(data.score || ""),
+    playedAt:
+      typeof data.playedAt === "string" && data.playedAt.trim()
+        ? data.playedAt
+        : undefined,
+    durationMinutes:
+      Number.isFinite(durationMinutesRaw) && durationMinutesRaw > 0
+        ? durationMinutesRaw
+        : undefined,
     createdBy: String(data.createdBy || ""),
     createdByUsername: String(data.createdByUsername || ""),
     createdAt:
@@ -572,6 +581,8 @@ export async function createMatch(input: {
   playerA: string;
   playerB: string;
   score: string;
+  playedAt?: string;
+  durationMinutes?: number;
   createdBy: string;
   createdByUsername?: string;
 }): Promise<MatchRecord> {
@@ -583,6 +594,8 @@ export async function createMatch(input: {
   const playerA = String(input.playerA || "").trim();
   const playerB = String(input.playerB || "").trim();
   const score = String(input.score || "").trim();
+  const playedAt = String(input.playedAt || "").trim();
+  const durationMinutes = Number(input.durationMinutes);
   const createdBy = String(input.createdBy || "").trim();
   const createdByUsername = String(input.createdByUsername || "").trim();
 
@@ -597,6 +610,11 @@ export async function createMatch(input: {
     playerA,
     playerB,
     score,
+    playedAt: playedAt || new Date().toISOString(),
+    durationMinutes:
+      Number.isFinite(durationMinutes) && durationMinutes > 0
+        ? durationMinutes
+        : null,
     createdBy,
     createdByUsername,
     createdAt: serverTimestamp(),
@@ -608,6 +626,11 @@ export async function createMatch(input: {
     playerA,
     playerB,
     score,
+    playedAt: playedAt || new Date().toISOString(),
+    durationMinutes:
+      Number.isFinite(durationMinutes) && durationMinutes > 0
+        ? durationMinutes
+        : undefined,
     createdBy,
     createdByUsername,
     createdAt: new Date().toISOString(),
