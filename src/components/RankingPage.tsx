@@ -1,5 +1,13 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { App as AntApp, Button, Dropdown, Layout, type MenuProps } from "antd";
+import {
+  HomeOutlined,
+  LoginOutlined,
+  LogoutOutlined,
+  MenuOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
 import {
   createMatch,
   deleteMatch,
@@ -9,7 +17,6 @@ import {
   subscribeMatches,
   subscribeUsers,
 } from "../lib/firebase";
-import { TOAST_DURATION_MS } from "../lib/constants";
 import { matchPath, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { calculateRankingStats } from "../lib/rankingStats";
@@ -32,7 +39,6 @@ import MembersPanel from "./ranking/MembersPanel";
 import PlayerStatsModal from "./ranking/PlayerStatsModal";
 import RankingPanel from "./ranking/RankingPanel";
 import RankingSidebar from "./ranking/RankingSidebar";
-import Toast from "./Toast";
 import type {
   AdvancedStats,
   Match,
@@ -41,7 +47,7 @@ import type {
   RankingView,
 } from "./ranking/types";
 import type { MatchRecord, RankingLevel, RankingSettings } from "../types";
-import { Award, BarChart2, LogIn, LogOut, Menu, Settings } from "react-feather";
+import { Award, BarChart2, Settings } from "react-feather";
 
 interface RankingPageProps {
   isOpen: boolean;
@@ -55,6 +61,7 @@ function isRankingView(value: string | null): value is RankingView {
 export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   const { currentUser, isAdmin, logout } = useAuth();
   const { t } = useTranslation();
+  const { message: messageApi } = AntApp.useApp();
   const navigate = useNavigate();
   const location = useLocation();
   const isPublicRankingRoute = location.pathname.startsWith("/ranking");
@@ -80,13 +87,8 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   const [usernamesById, setUsernamesById] = useState<Record<string, string>>(
     {},
   );
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [guestMenuOpen, setGuestMenuOpen] = useState(false);
-  const userMenuRef = useRef<HTMLDivElement | null>(null);
-  const guestMenuRef = useRef<HTMLDivElement | null>(null);
   const mainContentRef = useRef<HTMLElement | null>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
 
   // Member Form State
   const [isEditing, setIsEditing] = useState<number | null>(null);
@@ -242,43 +244,6 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   }, [isOpen]);
 
   useEffect(() => {
-    if (!userMenuOpen) return;
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!userMenuRef.current) return;
-      if (userMenuRef.current.contains(event.target as Node)) return;
-      setUserMenuOpen(false);
-    };
-
-    window.addEventListener("mousedown", handleClickOutside);
-    return () => window.removeEventListener("mousedown", handleClickOutside);
-  }, [userMenuOpen]);
-
-  useEffect(() => {
-    if (!guestMenuOpen) return;
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!guestMenuRef.current) return;
-      if (guestMenuRef.current.contains(event.target as Node)) return;
-      setGuestMenuOpen(false);
-    };
-
-    window.addEventListener("mousedown", handleClickOutside);
-    return () => window.removeEventListener("mousedown", handleClickOutside);
-  }, [guestMenuOpen]);
-
-  useEffect(() => {
-    if (currentUser) return;
-    setUserMenuOpen(false);
-  }, [currentUser]);
-
-  useEffect(() => {
-    if (currentUser || !isPublicRankingRoute) {
-      setGuestMenuOpen(false);
-    }
-  }, [currentUser, isPublicRankingRoute]);
-
-  useEffect(() => {
     setMobileSidebarOpen(false);
   }, [view, location.pathname]);
 
@@ -386,8 +351,6 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
 
   const deleteMember = (id: number) => {
     if (!isAdmin) return;
-    const confirmed = window.confirm(t("common.confirmDelete"));
-    if (!confirmed) return;
     setMembers(members.filter((m) => m.id !== id));
   };
 
@@ -505,7 +468,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
         [AnalyticsParamKey.DurationMinutes]:
           totalMinutes > 0 ? totalMinutes : 0,
       });
-      setToastMessage(t("rankingPage.toastMatchSaved"));
+      messageApi.success(t("rankingPage.toastMatchSaved"));
     } catch (error) {
       console.error("Failed to save match", error);
       window.alert(t("rankingPage.cannotSaveMatch"));
@@ -542,53 +505,86 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
 
   const hideFloatingHeaderActions = mobileSidebarOpen;
 
-  useEffect(() => {
-    if (!mobileSidebarOpen) return;
-    setUserMenuOpen(false);
-    setGuestMenuOpen(false);
-  }, [mobileSidebarOpen]);
+  const userMenuItems = useMemo<MenuProps["items"]>(
+    () => [
+      {
+        key: "home",
+        icon: <HomeOutlined />,
+        label: t("app.home"),
+      },
+      {
+        key: "logout",
+        icon: <LogoutOutlined />,
+        label: t("common.logout"),
+        danger: true,
+      },
+    ],
+    [t],
+  );
 
-  useEffect(() => {
-    if (!toastMessage) return;
-    const timer = window.setTimeout(
-      () => setToastMessage(""),
-      TOAST_DURATION_MS,
-    );
-    return () => window.clearTimeout(timer);
-  }, [toastMessage]);
+  const guestMenuItems = useMemo<MenuProps["items"]>(
+    () => [
+      {
+        key: "home",
+        icon: <HomeOutlined />,
+        label: t("app.home"),
+      },
+      {
+        key: "login",
+        icon: <LoginOutlined />,
+        label: t("common.login"),
+      },
+    ],
+    [t],
+  );
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[60] bg-slate-950/40 flex">
-      <div className="dashboard-surface flex flex-col md:flex-row min-h-screen w-full text-slate-900 font-sans">
-        <header
+      <Layout className="dashboard-surface min-h-screen w-full text-slate-900 font-sans">
+        <Layout.Header
           className={`app-topbar dashboard-topbar z-[55] ${
             mobileSidebarOpen
               ? "opacity-0 pointer-events-none md:opacity-100 md:pointer-events-auto"
               : ""
           }`}
+          style={{ background: "transparent", paddingInline: 0 }}
         >
           <div className="flex h-14 items-center justify-between px-4 md:px-6">
             <div>
               {!mobileSidebarOpen ? (
-                <button
-                  type="button"
+                <Button
+                  type="text"
                   onClick={() => setMobileSidebarOpen(true)}
-                  className="md:hidden h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm inline-flex items-center justify-center hover:bg-slate-50"
+                  className="md:hidden"
                   aria-label={t("rankingPage.menu")}
-                >
-                  <Menu className="h-5 w-5" />
-                </button>
+                  icon={<MenuOutlined />}
+                ></Button>
               ) : null}
             </div>
 
             {currentUser && !hideFloatingHeaderActions ? (
-              <div ref={userMenuRef} className="relative">
-                <button
-                  type="button"
-                  onClick={() => setUserMenuOpen((prev) => !prev)}
-                  className="h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm inline-flex items-center justify-center text-sm font-bold uppercase hover:bg-slate-50"
+              <Dropdown
+                menu={{
+                  items: userMenuItems,
+                  onClick: ({ key }) => {
+                    if (key === "home") {
+                      navigate("/");
+                      return;
+                    }
+
+                    if (key === "logout") {
+                      navigate("/");
+                      logout();
+                    }
+                  },
+                }}
+                trigger={["click"]}
+              >
+                <Button
+                  type="text"
+                  shape="circle"
                   title={t("rankingPage.userMenuTitle", {
                     username: currentUser.username,
                   })}
@@ -597,289 +593,251 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                   })}
                 >
                   {currentUserInitial}
-                </button>
-
-                {userMenuOpen ? (
-                  <div className="absolute right-0 top-12 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
-                    <p className="px-2 py-1 text-xs font-semibold text-slate-500 truncate">
-                      {currentUser.username}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        navigate("/");
-                      }}
-                      className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center gap-2"
-                    >
-                      <Award className="h-4 w-4" />
-                      {t("app.home")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        navigate("/");
-                        logout();
-                      }}
-                      className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-red-600 hover:bg-red-50 inline-flex items-center gap-2"
-                    >
-                      <LogOut className="h-4 w-4" /> {t("common.logout")}
-                    </button>
-                  </div>
-                ) : null}
-              </div>
+                </Button>
+              </Dropdown>
             ) : null}
 
             {isPublicRankingRoute &&
             !currentUser &&
             !hideFloatingHeaderActions ? (
-              <div ref={guestMenuRef} className="relative">
-                <button
-                  type="button"
-                  onClick={() => setGuestMenuOpen((prev) => !prev)}
-                  aria-label={t("rankingPage.guestMenu")}
-                  className="h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
-                >
-                  <LogIn className="h-5 w-5" />
-                </button>
+              <Dropdown
+                menu={{
+                  items: guestMenuItems,
+                  onClick: ({ key }) => {
+                    if (key === "home") {
+                      navigate("/");
+                      return;
+                    }
 
-                {guestMenuOpen ? (
-                  <div className="absolute right-0 top-12 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setGuestMenuOpen(false);
-                        navigate("/");
-                      }}
-                      className="w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                    >
-                      {t("app.home")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setGuestMenuOpen(false);
-                        navigate("/ranking/login", {
-                          state: {
-                            from: `${location.pathname}${location.search}`,
-                          },
-                        });
-                      }}
-                      className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                    >
-                      {t("common.login")}
-                    </button>
-                  </div>
-                ) : null}
-              </div>
+                    if (key === "login") {
+                      navigate("/ranking/login", {
+                        state: {
+                          from: `${location.pathname}${location.search}`,
+                        },
+                      });
+                    }
+                  },
+                }}
+                trigger={["click"]}
+              >
+                <Button
+                  type="text"
+                  shape="circle"
+                  aria-label={t("rankingPage.guestMenu")}
+                  icon={<UserOutlined />}
+                />
+              </Dropdown>
             ) : null}
           </div>
-        </header>
+        </Layout.Header>
 
-        {/* Sidebar */}
-        <RankingSidebar
-          currentView={view}
-          onSetView={setViewWithRoute}
-          onGoHome={onClose}
-          isAdmin={isAdmin}
-          onGoUsers={() => navigate("/dashboard/users")}
-          onGoAudit={() => navigate("/dashboard/audit")}
-          showMatchForm={!isPublicRankingRoute}
-          mobileOpen={mobileSidebarOpen}
-          onMobileClose={() => setMobileSidebarOpen(false)}
-        />
+        <Layout hasSider style={{ minHeight: 0 }}>
+          {/* Sidebar */}
+          <RankingSidebar
+            currentView={view}
+            onSetView={setViewWithRoute}
+            onGoHome={onClose}
+            isAdmin={isAdmin}
+            onGoUsers={() => navigate("/dashboard/users")}
+            onGoAudit={() => navigate("/dashboard/audit")}
+            showMatchForm={!isPublicRankingRoute}
+            mobileOpen={mobileSidebarOpen}
+            onMobileClose={() => setMobileSidebarOpen(false)}
+          />
 
-        {/* Main Content */}
-        <main
-          ref={mainContentRef}
-          className="dashboard-main-scroll flex-1 overflow-auto px-4 pt-20 md:p-8 md:pt-20 relative"
-        >
-          <div className="max-w-7xl mx-auto">
-            <header className="mb-5 rounded-2xl border border-slate-200 bg-white px-4 py-4 md:px-6 md:py-5">
-              <h1 className="text-xl md:text-3xl font-bold text-slate-900 flex items-center gap-3">
+          {/* Main Content */}
+          <Layout.Content>
+            <main
+              ref={mainContentRef}
+              className="dashboard-main-scroll flex-1 overflow-auto px-4 pt-20 md:p-8 md:pt-20 relative"
+            >
+              <div className="max-w-7xl mx-auto">
+                <header className="mb-5 rounded-2xl border border-slate-200 bg-white px-4 py-4 md:px-6 md:py-5">
+                  <h1 className="text-xl md:text-3xl font-bold text-slate-900 flex items-center gap-3">
+                    {view === "member" && (
+                      <>
+                        <Settings className="h-6 w-6 md:h-8 md:w-8 text-sky-600" />{" "}
+                        {t("rankingPage.memberManagement")}
+                      </>
+                    )}
+                    {view === "match-form" && (
+                      <>
+                        <BarChart2 className="h-6 w-6 md:h-8 md:w-8 text-sky-600" />
+                        {t("rankingPage.recordResult")}
+                      </>
+                    )}
+                    {view === "ranking" && (
+                      <>
+                        <Award className="h-6 w-6 md:h-8 md:w-8 text-sky-600" />{" "}
+                        {t("rankingPage.clubRanking")}
+                      </>
+                    )}
+                  </h1>
+                  <p className="text-slate-500 text-xs md:text-sm mt-1.5">
+                    {t("rankingPage.systemDescription")}
+                  </p>
+                </header>
+
+                <section className="grid grid-cols-3 gap-2 mb-4 md:mb-6 md:max-w-2xl">
+                  <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
+                    <p className="text-[11px] text-slate-500">
+                      {t("rankingPage.members")}
+                    </p>
+                    <p className="text-lg font-bold text-slate-900">
+                      {members.length}
+                    </p>
+                  </div>
+                  <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
+                    <p className="text-[11px] text-slate-500">
+                      {t("rankingPage.matches")}
+                    </p>
+                    <p className="text-lg font-bold text-slate-900">
+                      {matches.length}
+                    </p>
+                  </div>
+                  <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
+                    <p className="text-[11px] text-slate-500">
+                      {t("rankingPage.topRank")}
+                    </p>
+                    <p className="text-sm md:text-base font-bold text-slate-900 truncate">
+                      {rankings[0]?.name ?? "-"}
+                    </p>
+                  </div>
+                </section>
+
+                {/* View: Dashboard (Members) */}
                 {view === "member" && (
-                  <>
-                    <Settings className="h-6 w-6 md:h-8 md:w-8 text-sky-600" />{" "}
-                    {t("rankingPage.memberManagement")}
-                  </>
-                )}
-                {view === "match-form" && (
-                  <>
-                    <BarChart2 className="h-6 w-6 md:h-8 md:w-8 text-sky-600" />
-                    {t("rankingPage.recordResult")}
-                  </>
-                )}
-                {view === "ranking" && (
-                  <>
-                    <Award className="h-6 w-6 md:h-8 md:w-8 text-sky-600" />{" "}
-                    {t("rankingPage.clubRanking")}
-                  </>
-                )}
-              </h1>
-              <p className="text-slate-500 text-xs md:text-sm mt-1.5">
-                {t("rankingPage.systemDescription")}
-              </p>
-            </header>
-
-            <section className="grid grid-cols-3 gap-2 mb-4 md:mb-6 md:max-w-2xl">
-              <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
-                <p className="text-[11px] text-slate-500">
-                  {t("rankingPage.members")}
-                </p>
-                <p className="text-lg font-bold text-slate-900">
-                  {members.length}
-                </p>
-              </div>
-              <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
-                <p className="text-[11px] text-slate-500">
-                  {t("rankingPage.matches")}
-                </p>
-                <p className="text-lg font-bold text-slate-900">
-                  {matches.length}
-                </p>
-              </div>
-              <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
-                <p className="text-[11px] text-slate-500">
-                  {t("rankingPage.topRank")}
-                </p>
-                <p className="text-sm md:text-base font-bold text-slate-900 truncate">
-                  {rankings[0]?.name ?? "-"}
-                </p>
-              </div>
-            </section>
-
-            {/* View: Dashboard (Members) */}
-            {view === "member" && (
-              <div className="space-y-4">
-                <MembersPanel
-                  isEditing={isEditing}
-                  newMember={newMember}
-                  members={members}
-                  onSetNewMember={setNewMember}
-                  onAddOrUpdateMember={handleAddMember}
-                  onStartEdit={startEdit}
-                  onDeleteMember={deleteMember}
-                  canManage={isAdmin}
-                />
-                {isAdmin ? (
-                  <div className="max-w-5xl rounded-2xl border border-slate-200 bg-white p-4 md:p-5 space-y-3">
-                    <h3 className="text-sm font-semibold uppercase text-slate-700">
-                      {t("rankingPage.rankingConfig")}
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <label className="text-sm text-slate-700">
-                        Tau (0.3 - 1.2)
-                        <input
-                          type="number"
-                          min={0.3}
-                          max={1.2}
-                          step={0.1}
-                          className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200"
-                          value={rankingSettings.tau}
-                          onChange={(e) => {
-                            const value = Number(e.target.value);
-                            if (!Number.isFinite(value)) return;
-                            setRankingSettings((prev) => ({
-                              ...prev,
-                              tau: Math.min(1.2, Math.max(0.3, value)),
-                            }));
-                          }}
-                        />
-                      </label>
-                      <label className="text-sm text-slate-700">
-                        {t("rankingPage.penaltyCoefficient")}
-                        <input
-                          type="number"
-                          min={0}
-                          max={2}
-                          step={0.05}
-                          className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200"
-                          value={rankingSettings.penaltyCoefficient}
-                          onChange={(e) => {
-                            const value = Number(e.target.value);
-                            if (!Number.isFinite(value)) return;
-                            setRankingSettings((prev) => ({
-                              ...prev,
-                              penaltyCoefficient: Math.min(
-                                2,
-                                Math.max(0, value),
-                              ),
-                            }));
-                          }}
-                        />
-                      </label>
-                    </div>
-                    <div className="space-y-1.5">
-                      <p className="text-xs font-semibold uppercase text-slate-500">
-                        {t("rankingPage.showMetricsInModal")}
-                      </p>
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                        {[
-                          ["skill", t("rankingPage.skill")],
-                          ["stability", t("rankingPage.stability")],
-                          ["uncertainty", t("rankingPage.uncertainty")],
-                          ["motivation", t("rankingPage.motivation")],
-                          ["winRate", t("rankingPage.winRate")],
-                        ].map(([key, label]) => (
-                          <label
-                            key={key}
-                            className="inline-flex items-center gap-2 text-xs text-slate-700"
-                          >
+                  <div className="space-y-4">
+                    <MembersPanel
+                      isEditing={isEditing}
+                      newMember={newMember}
+                      members={members}
+                      onSetNewMember={setNewMember}
+                      onAddOrUpdateMember={handleAddMember}
+                      onStartEdit={startEdit}
+                      onDeleteMember={deleteMember}
+                      canManage={isAdmin}
+                    />
+                    {isAdmin ? (
+                      <div className="max-w-5xl rounded-2xl border border-slate-200 bg-white p-4 md:p-5 space-y-3">
+                        <h3 className="text-sm font-semibold uppercase text-slate-700">
+                          {t("rankingPage.rankingConfig")}
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <label className="text-sm text-slate-700">
+                            Tau (0.3 - 1.2)
                             <input
-                              type="checkbox"
-                              checked={
-                                rankingSettings.metricVisibility[
-                                  key as keyof RankingSettings["metricVisibility"]
-                                ]
-                              }
-                              onChange={(e) =>
+                              type="number"
+                              min={0.3}
+                              max={1.2}
+                              step={0.1}
+                              className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200"
+                              value={rankingSettings.tau}
+                              onChange={(e) => {
+                                const value = Number(e.target.value);
+                                if (!Number.isFinite(value)) return;
                                 setRankingSettings((prev) => ({
                                   ...prev,
-                                  metricVisibility: {
-                                    ...prev.metricVisibility,
-                                    [key]: e.target.checked,
-                                  },
-                                }))
-                              }
+                                  tau: Math.min(1.2, Math.max(0.3, value)),
+                                }));
+                              }}
                             />
-                            {label}
                           </label>
-                        ))}
+                          <label className="text-sm text-slate-700">
+                            {t("rankingPage.penaltyCoefficient")}
+                            <input
+                              type="number"
+                              min={0}
+                              max={2}
+                              step={0.05}
+                              className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200"
+                              value={rankingSettings.penaltyCoefficient}
+                              onChange={(e) => {
+                                const value = Number(e.target.value);
+                                if (!Number.isFinite(value)) return;
+                                setRankingSettings((prev) => ({
+                                  ...prev,
+                                  penaltyCoefficient: Math.min(
+                                    2,
+                                    Math.max(0, value),
+                                  ),
+                                }));
+                              }}
+                            />
+                          </label>
+                        </div>
+                        <div className="space-y-1.5">
+                          <p className="text-xs font-semibold uppercase text-slate-500">
+                            {t("rankingPage.showMetricsInModal")}
+                          </p>
+                          <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                            {[
+                              ["skill", t("rankingPage.skill")],
+                              ["stability", t("rankingPage.stability")],
+                              ["uncertainty", t("rankingPage.uncertainty")],
+                              ["motivation", t("rankingPage.motivation")],
+                              ["winRate", t("rankingPage.winRate")],
+                            ].map(([key, label]) => (
+                              <label
+                                key={key}
+                                className="inline-flex items-center gap-2 text-xs text-slate-700"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={
+                                    rankingSettings.metricVisibility[
+                                      key as keyof RankingSettings["metricVisibility"]
+                                    ]
+                                  }
+                                  onChange={(e) =>
+                                    setRankingSettings((prev) => ({
+                                      ...prev,
+                                      metricVisibility: {
+                                        ...prev.metricVisibility,
+                                        [key]: e.target.checked,
+                                      },
+                                    }))
+                                  }
+                                />
+                                {label}
+                              </label>
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    ) : null}
                   </div>
-                ) : null}
+                )}
+
+                {/* View: Match Form */}
+                {view === "match-form" && (
+                  <MatchFormPanel
+                    members={members}
+                    matchType={matchType}
+                    matchData={matchData}
+                    onSetMatchType={setMatchType}
+                    onSetMatchData={setMatchData}
+                    onSaveMatch={handleSaveMatch}
+                  />
+                )}
+
+                {/* View: Rankings */}
+                {view === "ranking" && (
+                  <RankingPanel
+                    rankings={rankings}
+                    matches={matchesForDisplay}
+                    onSelectPlayer={setSelectedPlayer}
+                    onClearHistory={handleClearHistory}
+                    onDeleteMatch={handleDeleteMatch}
+                    isAdmin={isAdmin}
+                    currentUserId={currentUser?.userId || ""}
+                  />
+                )}
               </div>
-            )}
-
-            {/* View: Match Form */}
-            {view === "match-form" && (
-              <MatchFormPanel
-                members={members}
-                matchType={matchType}
-                matchData={matchData}
-                onSetMatchType={setMatchType}
-                onSetMatchData={setMatchData}
-                onSaveMatch={handleSaveMatch}
-              />
-            )}
-
-            {/* View: Rankings */}
-            {view === "ranking" && (
-              <RankingPanel
-                rankings={rankings}
-                matches={matchesForDisplay}
-                onSelectPlayer={setSelectedPlayer}
-                onClearHistory={handleClearHistory}
-                onDeleteMatch={handleDeleteMatch}
-                isAdmin={isAdmin}
-                currentUserId={currentUser?.userId || ""}
-              />
-            )}
-          </div>
-        </main>
-      </div>
+            </main>
+          </Layout.Content>
+        </Layout>
+      </Layout>
 
       {/* Player Stats Modal */}
       {selectedPlayer && (
@@ -890,8 +848,6 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
           onClose={() => setSelectedPlayer(null)}
         />
       )}
-
-      {toastMessage ? <Toast message={toastMessage} /> : null}
     </div>
   );
 }

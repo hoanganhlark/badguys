@@ -1,6 +1,5 @@
-import { useEffect } from "react";
+import { Button, Drawer, InputNumber, Space, Switch, Typography } from "antd";
 import type { AppConfig } from "../types";
-import { X } from "react-feather";
 import { useTranslation } from "react-i18next";
 
 type Props = {
@@ -16,11 +15,6 @@ type Props = {
   appVersion: string;
 };
 
-function toSafeNumber(value: string): number {
-  const parsed = parseFloat(value);
-  return Number.isNaN(parsed) ? 0 : Math.max(0, parsed);
-}
-
 export default function ConfigSidebar({
   open,
   backdropInteractive,
@@ -35,210 +29,138 @@ export default function ConfigSidebar({
 }: Props) {
   const { t } = useTranslation();
 
-  useEffect(() => {
-    if (!open) return;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, onClose]);
-
   return (
-    <>
-      <div
-        onClick={onClose}
-        className={`${open ? "" : "hidden"} ${backdropInteractive ? "" : "pointer-events-none"} fixed inset-0 panel-backdrop z-40`}
-      />
-      <aside
-        className={`${open ? "" : "hidden"} fixed left-0 top-0 h-full w-full max-w-sm sidebar-panel z-50 p-6 overflow-y-auto`}
-      >
-        <div className="min-h-full flex flex-col">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wider">
-              {t("configSidebar.title")}
-            </h3>
-            <button
-              onClick={onClose}
-              className="text-slate-400 hover:text-slate-700"
-              aria-label={t("configSidebar.close")}
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <label
-                htmlFor="cfgEnableCourtCount"
-                className="block text-xs text-slate-500 mb-2"
-              >
-                {t("configSidebar.enableCourtCount")}
-              </label>
-              <label className="inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  id="cfgEnableCourtCount"
-                  className="form-checkbox h-5 w-5 text-blue-600"
-                  checked={config.enableCourtCount}
-                  onChange={(e) =>
-                    onConfigChange({
-                      ...config,
-                      enableCourtCount: e.target.checked,
-                    })
-                  }
-                />
-                <span className="ml-2 text-xs text-slate-500">
-                  {t("configSidebar.on")}
-                </span>
-              </label>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <label
-                htmlFor="cfgRoundResult"
-                className="block text-xs text-slate-500 mb-2"
-              >
-                {t("configSidebar.roundResult")}
-              </label>
-              <label className="inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  id="cfgRoundResult"
-                  className="form-checkbox h-5 w-5 text-blue-600"
-                  checked={config.roundResult}
-                  onChange={(e) =>
-                    onConfigChange({ ...config, roundResult: e.target.checked })
-                  }
-                />
-                <span className="ml-2 text-xs text-slate-500">
-                  {t("configSidebar.on")}
-                </span>
-              </label>
-            </div>
-
-            <div>
-              <label
-                htmlFor="cfgFemaleMax"
-                className="block text-xs text-slate-500 mb-2"
-              >
-                {t("configSidebar.femaleMax")}
-              </label>
-              <input
-                type="number"
-                id="cfgFemaleMax"
-                className="input-minimal px-4 py-3 text-sm font-medium w-full"
-                value={config.femaleMax === 0 ? "" : config.femaleMax}
-                min={0}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  // Allow empty string for user editing
-                  if (val === "") {
-                    onConfigChange({ ...config, femaleMax: 0 });
-                  } else {
-                    onConfigChange({ ...config, femaleMax: toSafeNumber(val) });
-                  }
-                }}
-                onBlur={(e) => {
-                  if (e.target.value === "" || isNaN(Number(e.target.value))) {
-                    onConfigChange({ ...config, femaleMax: 0 });
-                  }
-                }}
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="cfgTubePrice"
-                className="block text-xs text-slate-500 mb-2"
-              >
-                {t("configSidebar.tubePrice")}
-              </label>
-              <input
-                type="number"
-                id="cfgTubePrice"
-                className="input-minimal px-4 py-3 text-sm font-medium w-full"
-                value={config.tubePrice === 0 ? "" : config.tubePrice}
-                min={0}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (val === "") {
-                    onConfigChange({ ...config, tubePrice: 0 });
-                  } else {
-                    onConfigChange({ ...config, tubePrice: toSafeNumber(val) });
-                  }
-                }}
-                onBlur={(e) => {
-                  if (e.target.value === "" || isNaN(Number(e.target.value))) {
-                    onConfigChange({ ...config, tubePrice: 0 });
-                  }
-                }}
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="cfgSetPrice"
-                className="block text-xs text-slate-500 mb-2"
-              >
-                {t("configSidebar.setPrice")}
-              </label>
-              <input
-                type="number"
-                id="cfgSetPrice"
-                className="input-minimal px-4 py-3 text-sm font-medium w-full"
-                value={config.setPrice === 0 ? "" : config.setPrice}
-                min={0}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (val === "") {
-                    onConfigChange({ ...config, setPrice: 0 });
-                  } else {
-                    onConfigChange({ ...config, setPrice: toSafeNumber(val) });
-                  }
-                }}
-                onBlur={(e) => {
-                  if (e.target.value === "" || isNaN(Number(e.target.value))) {
-                    onConfigChange({ ...config, setPrice: 0 });
-                  }
-                }}
-              />
-            </div>
-          </div>
-
-          <p className="text-xs text-slate-400 mt-6 leading-relaxed">
-            {t("configSidebar.note")}
-          </p>
-
-          <button
-            type="button"
-            onClick={onOpenSessions}
-            className="mt-5 w-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 py-3 rounded-xl text-sm font-semibold transition-colors"
-          >
-            {t("configSidebar.recentSessions")}
-          </button>
-
-          <div className="mt-auto pt-8 space-y-2">
-            {currentUsername ? (
-              <button
-                type="button"
-                onClick={onLogout}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-              >
-                {t("common.logout")} ({currentUsername})
-              </button>
-            ) : null}
-            <p className="text-[11px] text-slate-300 tracking-wide">
-              {appVersion}
-              {isAdmin ? " admin" : ""}
-            </p>
-          </div>
+    <Drawer
+      open={open}
+      onClose={onClose}
+      placement="left"
+      title={t("configSidebar.title")}
+      width={360}
+      maskClosable={backdropInteractive}
+      destroyOnClose={false}
+      extra={
+        <Typography.Text type="secondary">
+          {t("configSidebar.on")}
+        </Typography.Text>
+      }
+      styles={{
+        body: {
+          display: "flex",
+          flexDirection: "column",
+          gap: 20,
+          paddingBottom: 12,
+        },
+      }}
+    >
+      <Space direction="vertical" size={16} style={{ width: "100%" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Typography.Text>
+            {t("configSidebar.enableCourtCount")}
+          </Typography.Text>
+          <Switch
+            checked={config.enableCourtCount}
+            onChange={(checked) =>
+              onConfigChange({
+                ...config,
+                enableCourtCount: checked,
+              })
+            }
+          />
         </div>
-      </aside>
-    </>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Typography.Text>{t("configSidebar.roundResult")}</Typography.Text>
+          <Switch
+            checked={config.roundResult}
+            onChange={(checked) =>
+              onConfigChange({
+                ...config,
+                roundResult: checked,
+              })
+            }
+          />
+        </div>
+
+        <div>
+          <Typography.Text>{t("configSidebar.femaleMax")}</Typography.Text>
+          <InputNumber
+            min={0}
+            value={config.femaleMax}
+            onChange={(value) =>
+              onConfigChange({
+                ...config,
+                femaleMax: Math.max(0, Number(value) || 0),
+              })
+            }
+            style={{ width: "100%", marginTop: 8 }}
+          />
+        </div>
+
+        <div>
+          <Typography.Text>{t("configSidebar.tubePrice")}</Typography.Text>
+          <InputNumber
+            min={0}
+            value={config.tubePrice}
+            onChange={(value) =>
+              onConfigChange({
+                ...config,
+                tubePrice: Math.max(0, Number(value) || 0),
+              })
+            }
+            style={{ width: "100%", marginTop: 8 }}
+          />
+        </div>
+
+        <div>
+          <Typography.Text>{t("configSidebar.setPrice")}</Typography.Text>
+          <InputNumber
+            min={0}
+            value={config.setPrice}
+            onChange={(value) =>
+              onConfigChange({
+                ...config,
+                setPrice: Math.max(0, Number(value) || 0),
+              })
+            }
+            style={{ width: "100%", marginTop: 8 }}
+          />
+        </div>
+      </Space>
+
+      <Typography.Paragraph type="secondary" style={{ margin: "4px 0 0" }}>
+        {t("configSidebar.note")}
+      </Typography.Paragraph>
+
+      <Button block onClick={onOpenSessions}>
+        {t("configSidebar.recentSessions")}
+      </Button>
+
+      <div style={{ marginTop: "auto", paddingTop: 12 }}>
+        {currentUsername ? (
+          <Button block onClick={onLogout}>
+            {t("common.logout")} ({currentUsername})
+          </Button>
+        ) : null}
+        <Typography.Text
+          type="secondary"
+          style={{ display: "inline-block", marginTop: 10, fontSize: 11 }}
+        >
+          {appVersion}
+          {isAdmin ? " admin" : ""}
+        </Typography.Text>
+      </div>
+    </Drawer>
   );
 }

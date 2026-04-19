@@ -1,4 +1,5 @@
 import React from "react";
+import { Button, Result } from "antd";
 import i18n from "../i18n";
 
 type State = { hasError: boolean };
@@ -23,17 +24,15 @@ export default class ErrorBoundary extends React.Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div className="p-8 text-center">
-          <p className="text-slate-600 text-sm">
-            {i18n.t("errorBoundary.error")}
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-4 text-xs text-slate-500 underline"
-          >
-            {i18n.t("errorBoundary.reload")}
-          </button>
-        </div>
+        <Result
+          status="error"
+          title={i18n.t("errorBoundary.error")}
+          extra={
+            <Button type="primary" onClick={() => window.location.reload()}>
+              {i18n.t("errorBoundary.reload")}
+            </Button>
+          }
+        />
       );
     }
     return this.props.children;

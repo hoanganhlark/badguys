@@ -1,3 +1,4 @@
+import { Button, Card, Divider, Flex, Statistic, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 
 type Props = {
@@ -23,51 +24,30 @@ export default function ResultCard({
 
   return (
     <section className="animate-fade mb-10">
-      <div className="card p-6 mb-4">
-        <div className="flex justify-between items-end mb-6">
-          <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-              {t("resultCard.total")}
-            </p>
-            <h3 className="text-3xl font-bold">{totalLabel}</h3>
-          </div>
-          <div className="flex items-end gap-6 text-right">
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                {t("resultCard.female")}
-              </p>
-              <p className="text-lg font-semibold text-rose-700">
-                {femaleFeeLabel}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                {t("resultCard.perSet")}
-              </p>
-              <p className="text-lg font-semibold text-blue-700">
-                {setPriceLabel}
-              </p>
-            </div>
-          </div>
-        </div>
+      <Card style={{ marginBottom: 16 }}>
+        <Flex align="end" justify="space-between" gap={16}>
+          <Statistic title={t("resultCard.total")} value={totalLabel} />
+          <Flex align="end" gap={24}>
+            <Statistic title={t("resultCard.female")} value={femaleFeeLabel} />
+            <Statistic title={t("resultCard.perSet")} value={setPriceLabel} />
+          </Flex>
+        </Flex>
 
-        <div className="space-y-3 pt-4 border-t border-slate-50">
-          <div className="flex justify-between text-sm">
-            <span className="text-slate-500">
-              {t("resultCard.eachMalePays")}
-            </span>
-            <span className="font-bold text-lg">{maleFeeLabel}</span>
-          </div>
-        </div>
-      </div>
+        <Divider style={{ margin: "16px 0" }} />
 
-      <button
-        type="button"
-        onClick={onCopy}
-        className="w-full bg-slate-900 text-white py-4 rounded-xl text-sm font-semibold hover:bg-black transition-all active:scale-[0.98]"
-      >
+        <Flex align="center" justify="space-between">
+          <Typography.Text type="secondary">
+            {t("resultCard.eachMalePays")}
+          </Typography.Text>
+          <Typography.Title level={4} style={{ margin: 0 }}>
+            {maleFeeLabel}
+          </Typography.Title>
+        </Flex>
+      </Card>
+
+      <Button type="primary" onClick={onCopy} block size="large">
         {t("resultCard.copySummary")}
-      </button>
+      </Button>
     </section>
   );
 }

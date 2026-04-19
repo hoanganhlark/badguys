@@ -1,8 +1,24 @@
-import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { Award, Key, LogOut, Settings, X } from "react-feather";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  App as AntApp,
+  Button,
+  Dropdown,
+  Form,
+  Layout,
+  Typography,
+  type MenuProps,
+} from "antd";
+import {
+  LogoutOutlined,
+  SettingOutlined,
+  KeyOutlined,
+  TrophyOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import ConfigSidebar from "./components/ConfigSidebar";
+import ChangePasswordModal from "./components/ChangePasswordModal";
 import ExpensesSection from "./components/ExpensesSection";
 import AuditPage from "./components/AuditPage";
 import LoginModal from "./components/LoginModal";
@@ -10,7 +26,6 @@ import PlayersSection from "./components/PlayersSection";
 import RankingPage from "./components/RankingPage";
 import ResultCard from "./components/ResultCard";
 import SessionsModal from "./components/SessionsModal";
-import Toast from "./components/Toast";
 import UserManagementPage from "./components/UserManagementPage";
 import AdminRoute from "./components/auth/AdminRoute";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -30,7 +45,6 @@ import {
 import {
   RESET_CONFIRM_TIMEOUT_MS,
   SESSIONS_FETCH_LIMIT,
-  TOAST_DURATION_MS,
 } from "./lib/constants";
 import {
   getUserByUsername,
@@ -76,6 +90,7 @@ export default function App() {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
+  const { message: messageApi } = AntApp.useApp();
 
   const storageScopeKey = currentUser?.userId || "guest";
 
@@ -100,23 +115,18 @@ export default function App() {
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [sessionsError, setSessionsError] = useState("");
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
-  const [toastMessage, setToastMessage] = useState("");
   const [resetArmed, setResetArmed] = useState(false);
-  const [rankingMenuOpen, setRankingMenuOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [changePasswordError, setChangePasswordError] = useState("");
   const [changePasswordSubmitting, setChangePasswordSubmitting] =
     useState(false);
-  const [passwordForm, setPasswordForm] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
+  const [passwordForm] = Form.useForm<{
+    currentPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+  }>();
 
   const resetTimerRef = useRef<number | null>(null);
-  const rankingMenuRef = useRef<HTMLDivElement | null>(null);
-  const userMenuRef = useRef<HTMLDivElement | null>(null);
   const previousPathRef = useRef("");
 
   const {
@@ -208,15 +218,6 @@ export default function App() {
   }, [storageScopeKey]);
 
   useEffect(() => {
-    if (!toastMessage) return;
-    const timer = window.setTimeout(
-      () => setToastMessage(""),
-      TOAST_DURATION_MS,
-    );
-    return () => window.clearTimeout(timer);
-  }, [toastMessage]);
-
-  useEffect(() => {
     if (isAdmin) return;
     if (!shouldSendVisitNotificationToday()) return;
 
@@ -231,50 +232,14 @@ export default function App() {
   }, [isAdmin]);
 
   useEffect(() => {
-    if (!rankingMenuOpen) return;
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!rankingMenuRef.current) return;
-      if (rankingMenuRef.current.contains(event.target as Node)) return;
-      setRankingMenuOpen(false);
-    };
-
-    window.addEventListener("mousedown", handleClickOutside);
-    return () => window.removeEventListener("mousedown", handleClickOutside);
-  }, [rankingMenuOpen]);
-
-  useEffect(() => {
-    if (!userMenuOpen) return;
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!userMenuRef.current) return;
-      if (userMenuRef.current.contains(event.target as Node)) return;
-      setUserMenuOpen(false);
-    };
-
-    window.addEventListener("mousedown", handleClickOutside);
-    return () => window.removeEventListener("mousedown", handleClickOutside);
-  }, [userMenuOpen]);
-
-  useEffect(() => {
     if (isAuthenticated) return;
-    setUserMenuOpen(false);
     setChangePasswordOpen(false);
     setChangePasswordError("");
-    setPasswordForm({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
+    passwordForm.resetFields();
   }, [isAuthenticated]);
 
-  useEffect(() => {
-    if (!currentUser) return;
-    setRankingMenuOpen(false);
-  }, [currentUser]);
-
   function showToast(message: string) {
-    setToastMessage(message);
+    messageApi.info(message);
   }
 
   function handleBulkInputChange(value: string) {
@@ -447,17 +412,19 @@ export default function App() {
     }, RESET_CONFIRM_TIMEOUT_MS);
   }
 
-  async function handleSubmitChangePassword(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
+  async function handleSubmitChangePassword(values: {
+    currentPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+  }) {
     if (!currentUser) {
       setChangePasswordError(t("app.notLoggedIn"));
       return;
     }
 
-    const currentPassword = String(passwordForm.currentPassword || "");
-    const newPassword = String(passwordForm.newPassword || "");
-    const confirmPassword = String(passwordForm.confirmPassword || "");
+    const currentPassword = String(values.currentPassword || "");
+    const newPassword = String(values.newPassword || "");
+    const confirmPassword = String(values.confirmPassword || "");
 
     if (!currentPassword || !newPassword || !confirmPassword) {
       setChangePasswordError(t("app.fillAllFields"));
@@ -495,13 +462,8 @@ export default function App() {
 
       await updateUserPassword(userRecord.id, hashMd5(newPassword));
 
-      setPasswordForm({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
+      passwordForm.resetFields();
       setChangePasswordOpen(false);
-      setUserMenuOpen(false);
       showToast(t("app.toastPasswordChanged"));
     } catch (error) {
       setChangePasswordError(
@@ -553,12 +515,63 @@ export default function App() {
 
   const loginModalOpen =
     location.pathname === "/login" || location.pathname === "/ranking/login";
-  const passwordFormValid =
-    passwordForm.currentPassword.trim().length > 0 &&
-    passwordForm.newPassword.trim().length >= 4 &&
-    passwordForm.confirmPassword.trim().length > 0 &&
-    passwordForm.newPassword !== passwordForm.currentPassword &&
-    passwordForm.newPassword === passwordForm.confirmPassword;
+
+  const rankingMenuItems: MenuProps["items"] = [
+    {
+      key: "ranking-view",
+      label: t("app.viewRanking"),
+      onClick: openRanking,
+    },
+    {
+      key: "ranking-login",
+      label: t("common.login"),
+      onClick: () =>
+        navigate("/login", {
+          state: { from: "/dashboard/ranking" },
+        }),
+    },
+  ];
+
+  const userMenuItems: MenuProps["items"] = [
+    {
+      key: "user-name",
+      label: (
+        <Typography.Text strong style={{ maxWidth: 130 }} ellipsis>
+          {currentUser?.username}
+        </Typography.Text>
+      ),
+      disabled: true,
+    },
+    {
+      key: "dashboard-open",
+      label: t("app.openDashboard"),
+      icon: <TrophyOutlined />,
+      onClick: () => navigate("/dashboard/ranking"),
+    },
+    {
+      key: "password-change",
+      label: t("app.changePasswordTitle"),
+      icon: <KeyOutlined />,
+      onClick: () => {
+        setChangePasswordOpen(true);
+        setChangePasswordError("");
+        passwordForm.resetFields();
+      },
+    },
+    {
+      type: "divider",
+    },
+    {
+      key: "logout",
+      label: t("common.logout"),
+      icon: <LogoutOutlined />,
+      danger: true,
+      onClick: () => {
+        navigate("/", { replace: true });
+        logout();
+      },
+    },
+  ];
 
   if (location.pathname === "/users") {
     return <Navigate to="/dashboard/users" replace />;
@@ -599,112 +612,36 @@ export default function App() {
 
   return (
     <div className="relative min-h-screen bg-[#fafafa]">
-      <header className="app-topbar z-40">
+      <Layout.Header className="app-topbar z-40" style={{ padding: 0 }}>
         <div className="mx-auto flex h-14 w-full max-w-4xl items-center justify-between px-4 md:px-6">
-          <button
+          <Button
+            shape="circle"
+            icon={<SettingOutlined />}
             onClick={openConfig}
             aria-label={t("app.openConfig")}
-            className="h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
-          >
-            <Settings className="h-5 w-5" />
-          </button>
+          />
 
           {!currentUser ? (
-            <div ref={rankingMenuRef} className="relative">
-              <button
-                type="button"
-                onClick={() => {
-                  if (currentUser) return;
-                  setRankingMenuOpen((prev) => !prev);
-                }}
+            <Dropdown menu={{ items: rankingMenuItems }} trigger={["click"]}>
+              <Button
+                shape="circle"
+                icon={<TrophyOutlined />}
                 aria-label={t("app.ranking")}
-                className="h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
-              >
-                <Award className="h-5 w-5" />
-              </button>
-
-              {rankingMenuOpen ? (
-                <div className="absolute right-0 top-12 z-50 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRankingMenuOpen(false);
-                      openRanking();
-                    }}
-                    className="w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                  >
-                    {t("app.viewRanking")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRankingMenuOpen(false);
-                      navigate("/login", {
-                        state: { from: "/dashboard/ranking" },
-                      });
-                    }}
-                    className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                  >
-                    {t("common.login")}
-                  </button>
-                </div>
-              ) : null}
-            </div>
+              />
+            </Dropdown>
           ) : null}
 
           {isAuthenticated ? (
-            <div ref={userMenuRef} className="relative">
-              <button
-                type="button"
-                onClick={() => setUserMenuOpen((prev) => !prev)}
-                aria-label={t("app.openAccountMenu")}
-                className="h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center text-sm font-bold uppercase"
-              >
-                {currentUser?.username?.charAt(0) || "U"}
-              </button>
-
-              {userMenuOpen ? (
-                <div className="absolute right-0 top-12 z-50 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
-                  <p className="px-2 py-1 text-xs font-semibold text-slate-500 truncate">
-                    {currentUser?.username}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUserMenuOpen(false);
-                      navigate("/dashboard/ranking");
-                    }}
-                    className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center gap-2"
-                  >
-                    <Award className="h-4 w-4" /> {t("app.openDashboard")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setChangePasswordOpen(true);
-                      setChangePasswordError("");
-                    }}
-                    className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center gap-2"
-                  >
-                    <Key className="h-4 w-4" /> {t("app.changePasswordTitle")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUserMenuOpen(false);
-                      navigate("/", { replace: true });
-                      logout();
-                    }}
-                    className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-red-600 hover:bg-red-50 inline-flex items-center gap-2"
-                  >
-                    <LogOut className="h-4 w-4" /> {t("common.logout")}
-                  </button>
-                </div>
-              ) : null}
-            </div>
+            <Dropdown menu={{ items: userMenuItems }} trigger={["click"]}>
+              <Button shape="circle" aria-label={t("app.openAccountMenu")}>
+                {currentUser?.username?.charAt(0)?.toUpperCase() || (
+                  <UserOutlined />
+                )}
+              </Button>
+            </Dropdown>
           ) : null}
         </div>
-      </header>
+      </Layout.Header>
 
       <div className="px-5 pb-5 pt-20 md:px-12 md:pb-12">
         <div className="max-w-md mx-auto">
@@ -796,122 +733,19 @@ export default function App() {
         </ProtectedRoute>
       ) : null}
 
-      {changePasswordOpen ? (
-        <div
-          className="fixed inset-0 z-[80] bg-black/40 p-4"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="mx-auto mt-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-semibold text-slate-900">
-                {t("app.changePasswordTitle")}
-              </h3>
-              <button
-                type="button"
-                onClick={() => {
-                  setChangePasswordOpen(false);
-                  setChangePasswordError("");
-                }}
-                className="rounded-md p-1 text-slate-400 hover:text-slate-700"
-                aria-label={t("app.closeChangePassword")}
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form
-              className="mt-4 space-y-3"
-              onSubmit={handleSubmitChangePassword}
-            >
-              <div>
-                <label className="block text-xs font-semibold uppercase text-slate-600">
-                  {t("app.currentPassword")}
-                </label>
-                <input
-                  type="password"
-                  value={passwordForm.currentPassword}
-                  onChange={(event) =>
-                    setPasswordForm((prev) => ({
-                      ...prev,
-                      currentPassword: event.target.value,
-                    }))
-                  }
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  autoComplete="current-password"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase text-slate-600">
-                  {t("app.newPassword")}
-                </label>
-                <input
-                  type="password"
-                  value={passwordForm.newPassword}
-                  onChange={(event) =>
-                    setPasswordForm((prev) => ({
-                      ...prev,
-                      newPassword: event.target.value,
-                    }))
-                  }
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  autoComplete="new-password"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase text-slate-600">
-                  {t("app.confirmNewPassword")}
-                </label>
-                <input
-                  type="password"
-                  value={passwordForm.confirmPassword}
-                  onChange={(event) =>
-                    setPasswordForm((prev) => ({
-                      ...prev,
-                      confirmPassword: event.target.value,
-                    }))
-                  }
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  autoComplete="new-password"
-                  required
-                />
-              </div>
-
-              {changePasswordError ? (
-                <p className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
-                  {changePasswordError}
-                </p>
-              ) : null}
-
-              <div className="flex items-center justify-end gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setChangePasswordOpen(false);
-                    setChangePasswordError("");
-                  }}
-                  className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                >
-                  {t("common.cancel")}
-                </button>
-                <button
-                  type="submit"
-                  disabled={!passwordFormValid || changePasswordSubmitting}
-                  className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
-                >
-                  {changePasswordSubmitting
-                    ? t("app.saving")
-                    : t("app.savePassword")}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      ) : null}
-
-      {toastMessage ? <Toast message={toastMessage} /> : null}
+      <ChangePasswordModal
+        open={changePasswordOpen}
+        submitting={changePasswordSubmitting}
+        error={changePasswordError}
+        form={passwordForm}
+        onCancel={() => {
+          setChangePasswordOpen(false);
+          setChangePasswordError("");
+          passwordForm.resetFields();
+        }}
+        onSubmit={handleSubmitChangePassword}
+        onClearError={() => setChangePasswordError("")}
+      />
 
       <LoginModal
         open={loginModalOpen}

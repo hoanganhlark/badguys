@@ -1,7 +1,8 @@
-import { useLayoutEffect, useRef } from "react";
-import { X } from "react-feather";
+import { Alert, Input, Tag, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import type { Player } from "../types";
+
+const { TextArea } = Input;
 
 type Props = {
   bulkInput: string;
@@ -19,7 +20,6 @@ export default function PlayersSection({
   onRemovePlayer,
 }: Props) {
   const { t } = useTranslation();
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const normalizeName = (name: string) => name.trim().toLowerCase();
 
@@ -41,18 +41,6 @@ export default function PlayersSection({
 
   const hasDuplicateNames = duplicateIndexes.size > 0;
 
-  useLayoutEffect(() => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const frame = window.requestAnimationFrame(() => {
-      textarea.style.height = "auto";
-      textarea.style.height = `${textarea.scrollHeight}px`;
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [bulkInput]);
-
   return (
     <section className="mb-8">
       <div className="flex justify-between items-center mb-4 px-1">
@@ -70,32 +58,34 @@ export default function PlayersSection({
       >
         {t("players.help")}
       </label>
-      <textarea
-        ref={textareaRef}
+      <TextArea
         id="bulkInput"
-        rows={2}
-        className="input-minimal w-full px-4 py-3 text-sm mb-4 resize-none overflow-hidden"
+        autoSize={{ minRows: 2, maxRows: 10 }}
+        style={{ marginBottom: 16 }}
         placeholder={t("players.placeholder")}
         value={bulkInput}
         onChange={(e) => onBulkInputChange(e.target.value)}
       />
 
       {hasDuplicateNames ? (
-        <p className="text-xs text-amber-700 mb-3 px-1">
-          {t("players.duplicateWarning")}
-        </p>
+        <Alert
+          type="warning"
+          showIcon
+          message={t("players.duplicateWarning")}
+          style={{ marginBottom: 12 }}
+        />
       ) : null}
 
       <div className="flex flex-wrap gap-2 min-h-[20px]">
         {players.map((player, index) => {
-          let typeClass = "tag-male";
+          let color: string = "default";
           let label = player.name;
 
           if (player.sets > 0) {
-            typeClass = "tag-set";
+            color = "blue";
             label += ` (${player.sets}s)`;
           } else if (player.isFemale) {
-            typeClass = "tag-female";
+            color = "magenta";
             label += " (n)";
           }
           if (player.customFee != null) {
@@ -106,25 +96,31 @@ export default function PlayersSection({
           }
 
           return (
-            <div
+            <Tag
               key={`${player.name}-${index}`}
-              className={`tag ${typeClass} ${duplicateIndexes.has(index) ? "tag-duplicate" : ""} px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center animate-fade`}
+              color={duplicateIndexes.has(index) ? "gold" : color}
+              className="animate-fade"
+              closable
+              onClose={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onRemovePlayer(index);
+              }}
               onClick={() => onTogglePlayer(index)}
+              style={{
+                cursor: "pointer",
+                userSelect: "none",
+                paddingInline: 10,
+                paddingBlock: 4,
+                fontWeight: 600,
+                display: "inline-flex",
+                alignItems: "center",
+              }}
             >
-              <span className="mr-1.5 opacity-40">#</span>
-              <span>{label}</span>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRemovePlayer(index);
-                }}
-                className="ml-2 opacity-40 hover:opacity-100"
-                aria-label={t("players.removeLabel", { name: player.name })}
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
+              <Typography.Text style={{ fontSize: 12 }} ellipsis>
+                {`# ${label}`}
+              </Typography.Text>
+            </Tag>
           );
         })}
       </div>

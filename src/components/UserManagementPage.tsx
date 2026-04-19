@@ -1,5 +1,17 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Menu, Shield, Users } from "react-feather";
+import {
+  Button,
+  Card,
+  Form,
+  Input,
+  Popconfirm,
+  Select,
+  Spin,
+  Statistic,
+  Table,
+  type TableColumnsType,
+} from "antd";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -61,6 +73,85 @@ export default function UserManagementPage() {
     const min = String(date.getMinutes()).padStart(2, "0");
     return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
   };
+
+  const userColumns: TableColumnsType<UserRecord> = [
+    {
+      title: t("userManagement.username"),
+      dataIndex: "username",
+      key: "username",
+      render: (username: string) => <strong>{username}</strong>,
+    },
+    {
+      title: t("userManagement.role"),
+      dataIndex: "role",
+      key: "role",
+      render: (_, user) => (
+        <Select
+          value={user.role}
+          onChange={(value) => handleUpdateRole(user, value as UserRole)}
+          disabled={!isAdmin}
+          options={[
+            { value: "member", label: t("userManagement.memberOption") },
+            { value: "admin", label: t("userManagement.adminOption") },
+          ]}
+          style={{ width: 140 }}
+        />
+      ),
+    },
+    {
+      title: t("userManagement.createdAt"),
+      key: "createdAt",
+      width: 170,
+      render: (_, user) => formatLocalDateTime(user.createdAt),
+    },
+    {
+      title: t("userManagement.lastLoginAt"),
+      key: "lastLoginAt",
+      width: 170,
+      render: (_, user) => formatLocalDateTime(user.lastLoginAt),
+    },
+    {
+      title: t("userManagement.actions"),
+      key: "actions",
+      align: "right",
+      render: (_, user) => (
+        <div className="inline-flex items-center gap-2">
+          <Popconfirm
+            title={t("common.confirmDelete")}
+            onConfirm={() => handleToggleLockUser(user)}
+            okText={t("common.save")}
+            cancelText={t("common.cancel")}
+            disabled={!isAdmin || user.id === currentUser?.userId}
+          >
+            <Button
+              size="small"
+              disabled={!isAdmin || user.id === currentUser?.userId}
+            >
+              {user.isDisabled
+                ? t("userManagement.unlock")
+                : t("userManagement.lock")}
+            </Button>
+          </Popconfirm>
+
+          <Popconfirm
+            title={t("common.confirmDelete")}
+            onConfirm={() => handleDeleteUser(user)}
+            okText={t("common.save")}
+            cancelText={t("common.cancel")}
+            disabled={!isAdmin || user.id === currentUser?.userId}
+          >
+            <Button
+              danger
+              size="small"
+              disabled={!isAdmin || user.id === currentUser?.userId}
+            >
+              {t("userManagement.delete")}
+            </Button>
+          </Popconfirm>
+        </div>
+      ),
+    },
+  ];
 
   useEffect(() => {
     setLoading(true);
@@ -133,8 +224,7 @@ export default function UserManagementPage() {
     navigate(`/dashboard/${view}`);
   };
 
-  async function handleCreateUser(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleCreateUser() {
     if (!isAdmin) return;
 
     const username = form.username.trim();
@@ -172,9 +262,6 @@ export default function UserManagementPage() {
       setError(t("userManagement.cannotDeleteSelf"));
       return;
     }
-
-    const confirmed = window.confirm(t("common.confirmDelete"));
-    if (!confirmed) return;
 
     try {
       await deleteUser(user.id);
@@ -278,205 +365,136 @@ export default function UserManagementPage() {
               </p>
             </header>
 
-            <section className="grid grid-cols-3 gap-2 md:max-w-2xl">
-              <div className="dashboard-card px-3 py-2.5">
-                <p className="text-[11px] text-slate-500">
-                  {t("userManagement.totalUsers")}
-                </p>
-                <p className="text-lg font-bold text-slate-900">
-                  {sortedUsers.length}
-                </p>
-              </div>
-              <div className="dashboard-card px-3 py-2.5">
-                <p className="text-[11px] text-slate-500">
-                  {t("userManagement.admin")}
-                </p>
-                <p className="text-lg font-bold text-slate-900">{adminCount}</p>
-              </div>
-              <div className="dashboard-card px-3 py-2.5">
-                <p className="text-[11px] text-slate-500">
-                  {t("userManagement.member")}
-                </p>
-                <p className="text-lg font-bold text-slate-900">
-                  {Math.max(0, sortedUsers.length - adminCount)}
-                </p>
-              </div>
+            <section className="grid grid-cols-1 gap-3 md:grid-cols-3 md:max-w-3xl">
+              <Card>
+                <Statistic
+                  title={t("userManagement.totalUsers")}
+                  value={sortedUsers.length}
+                />
+              </Card>
+              <Card>
+                <Statistic
+                  title={t("userManagement.admin")}
+                  value={adminCount}
+                />
+              </Card>
+              <Card>
+                <Statistic
+                  title={t("userManagement.member")}
+                  value={Math.max(0, sortedUsers.length - adminCount)}
+                />
+              </Card>
             </section>
 
-            <section className="dashboard-card p-4 md:p-5">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
-                {t("userManagement.createTitle")}
-              </h2>
-              <form
-                className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-4"
-                onSubmit={handleCreateUser}
+            <Card title={t("userManagement.createTitle")}>
+              <Form
+                layout="vertical"
+                requiredMark={false}
+                onFinish={handleCreateUser}
               >
-                <input
-                  type="text"
-                  placeholder={t("userManagement.username")}
-                  value={form.username}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      username: event.target.value,
-                    }))
-                  }
-                  className="mobile-focus-target dashboard-input"
-                  required
-                />
-                <input
-                  type="password"
-                  placeholder={t("userManagement.password")}
-                  value={form.password}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      password: event.target.value,
-                    }))
-                  }
-                  className="mobile-focus-target dashboard-input"
-                  required
-                />
-                <select
-                  value={form.role}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      role: event.target.value === "admin" ? "admin" : "member",
-                    }))
-                  }
-                  className="mobile-focus-target dashboard-input"
-                >
-                  <option value="member">
-                    {t("userManagement.memberOption")}
-                  </option>
-                  <option value="admin">
-                    {t("userManagement.adminOption")}
-                  </option>
-                </select>
-                <button
-                  type="submit"
-                  disabled={!canCreateUser}
-                  className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
-                >
-                  {saving
-                    ? t("userManagement.creating")
-                    : t("userManagement.createButton")}
-                </button>
-              </form>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+                  <Form.Item
+                    label={t("userManagement.username")}
+                    style={{ marginBottom: 0 }}
+                  >
+                    <Input
+                      value={form.username}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          username: event.target.value,
+                        }))
+                      }
+                    />
+                  </Form.Item>
+
+                  <Form.Item
+                    label={t("userManagement.password")}
+                    style={{ marginBottom: 0 }}
+                  >
+                    <Input.Password
+                      value={form.password}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          password: event.target.value,
+                        }))
+                      }
+                    />
+                  </Form.Item>
+
+                  <Form.Item
+                    label={t("userManagement.role")}
+                    style={{ marginBottom: 0 }}
+                  >
+                    <Select
+                      value={form.role}
+                      onChange={(value) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          role: value === "admin" ? "admin" : "member",
+                        }))
+                      }
+                      options={[
+                        {
+                          value: "member",
+                          label: t("userManagement.memberOption"),
+                        },
+                        {
+                          value: "admin",
+                          label: t("userManagement.adminOption"),
+                        },
+                      ]}
+                    />
+                  </Form.Item>
+
+                  <Form.Item label=" " style={{ marginBottom: 0 }}>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      loading={saving}
+                      disabled={!canCreateUser}
+                      block
+                    >
+                      {saving
+                        ? t("userManagement.creating")
+                        : t("userManagement.createButton")}
+                    </Button>
+                  </Form.Item>
+                </div>
+              </Form>
               <p className="mt-2 text-xs text-slate-500">
                 {t("userManagement.passwordStoredMd5")}
               </p>
-            </section>
+            </Card>
 
-            <section className="dashboard-card p-4 md:p-5">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700 inline-flex items-center gap-2">
-                <Users className="h-4 w-4" /> {t("userManagement.usersList")}
-              </h2>
-
+            <Card
+              title={
+                <span className="inline-flex items-center gap-2">
+                  <Users className="h-4 w-4" /> {t("userManagement.usersList")}
+                </span>
+              }
+            >
               {error ? (
-                <p className="mt-3 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
+                <p className="mb-3 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
                   {error}
                 </p>
               ) : null}
 
               {loading ? (
-                <p className="mt-3 text-sm text-slate-500">
-                  {t("userManagement.loadingUsers")}
-                </p>
-              ) : (
-                <div className="mt-3 overflow-x-auto">
-                  <table className="w-full min-w-[600px] text-left text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-200 text-xs uppercase text-slate-500">
-                        <th className="px-2 py-3">
-                          {t("userManagement.username")}
-                        </th>
-                        <th className="px-2 py-3">
-                          {t("userManagement.role")}
-                        </th>
-                        <th className="px-2 py-3">
-                          {t("userManagement.createdAt")}
-                        </th>
-                        <th className="px-2 py-3">
-                          {t("userManagement.lastLoginAt")}
-                        </th>
-                        <th className="px-2 py-3 text-right">
-                          {t("userManagement.actions")}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortedUsers.map((user) => (
-                        <tr key={user.id} className="border-b border-slate-100">
-                          <td className="px-2 py-3 font-semibold text-slate-900">
-                            {user.username}
-                          </td>
-                          <td className="px-2 py-3">
-                            <select
-                              value={user.role}
-                              onChange={(event) =>
-                                handleUpdateRole(
-                                  user,
-                                  event.target.value === "admin"
-                                    ? "admin"
-                                    : "member",
-                                )
-                              }
-                              disabled={!isAdmin}
-                              className="dashboard-input py-1.5 text-xs"
-                            >
-                              <option value="member">
-                                {t("userManagement.memberOption")}
-                              </option>
-                              <option value="admin">
-                                {t("userManagement.adminOption")}
-                              </option>
-                            </select>
-                          </td>
-                          <td className="px-2 py-3 text-slate-600">
-                            {formatLocalDateTime(user.createdAt)}
-                          </td>
-                          <td className="px-2 py-3 text-slate-600">
-                            {formatLocalDateTime(user.lastLoginAt)}
-                          </td>
-                          <td className="px-2 py-3 text-right">
-                            <div className="inline-flex items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={() => handleToggleLockUser(user)}
-                                disabled={
-                                  !isAdmin || user.id === currentUser?.userId
-                                }
-                                className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold disabled:opacity-50 ${
-                                  user.isDisabled
-                                    ? "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                                    : "border-amber-200 text-amber-700 hover:bg-amber-50"
-                                }`}
-                              >
-                                {user.isDisabled
-                                  ? t("userManagement.unlock")
-                                  : t("userManagement.lock")}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteUser(user)}
-                                disabled={
-                                  !isAdmin || user.id === currentUser?.userId
-                                }
-                                className="rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
-                              >
-                                {t("userManagement.delete")}
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="py-8 text-center">
+                  <Spin tip={t("userManagement.loadingUsers")} />
                 </div>
+              ) : (
+                <Table
+                  rowKey="id"
+                  columns={userColumns}
+                  dataSource={sortedUsers}
+                  scroll={{ x: 900 }}
+                  pagination={{ pageSize: 20 }}
+                />
               )}
-            </section>
+            </Card>
           </div>
         </main>
       </div>

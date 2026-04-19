@@ -1,12 +1,28 @@
+:root {
+  --mobile-keyboard-inset: 0px;
+  --app-font-family: "Plus Jakarta Sans", sans-serif;
+  --app-bg: #fafafa;
+  --app-text: #1a1a1a;
+  --app-border: #f0f0f0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 body {
-  background-color: #fafafa;
-  font-family: "Plus Jakarta Sans", sans-serif;
-  color: #1a1a1a;
+  margin: 0;
+  background-color: var(--app-bg);
+  font-family: var(--app-font-family);
+  color: var(--app-text);
   min-height: 100vh;
 }
 
-:root {
-  --mobile-keyboard-inset: 0px;
+button,
+input,
+textarea,
+select {
+  font: inherit;
 }
 
 .dashboard-surface {

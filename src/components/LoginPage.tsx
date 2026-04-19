@@ -1,4 +1,5 @@
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import { Button, Card, Flex, Form, Input, Space, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -13,25 +14,21 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [form] = Form.useForm<{ username: string; password: string }>();
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const canSubmit =
-    username.trim().length > 0 && password.trim().length > 0 && !submitting;
 
   const redirectTo =
     (
       (location.state as LocationState | null)?.from || "/dashboard/ranking"
     ).trim() || "/dashboard/ranking";
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleSubmit(values: { username: string; password: string }) {
     setSubmitting(true);
     setError("");
 
     try {
-      await login(username.trim(), password);
+      await login(values.username.trim(), values.password);
       navigate(redirectTo, { replace: true });
     } catch (loginError) {
       setError(
@@ -43,73 +40,82 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-sky-50 to-cyan-100 p-4 flex items-center justify-center">
-      <div className="w-full max-w-md rounded-3xl border border-white/80 bg-white/90 p-6 shadow-xl backdrop-blur md:p-8">
-        <h1 className="text-2xl font-bold text-slate-900">
-          {t("login.titleDashboard")}
-        </h1>
-        <p className="mt-2 text-sm text-slate-600">{t("login.subtitlePage")}</p>
+    <Flex
+      align="center"
+      justify="center"
+      style={{
+        minHeight: "100vh",
+        padding: 16,
+        background:
+          "radial-gradient(circle at 15% 20%, #e2e8f0 0%, #f0f9ff 35%, #ecfeff 100%)",
+      }}
+    >
+      <Card
+        style={{ width: "100%", maxWidth: 460 }}
+        styles={{ body: { padding: 28 } }}
+      >
+        <Space direction="vertical" size={4} style={{ width: "100%" }}>
+          <Typography.Title level={2} style={{ margin: 0, fontSize: 30 }}>
+            {t("login.titleDashboard")}
+          </Typography.Title>
+          <Typography.Paragraph
+            style={{ margin: 0, color: "rgba(0, 0, 0, 0.65)" }}
+          >
+            {t("login.subtitlePage")}
+          </Typography.Paragraph>
+        </Space>
 
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-          <div>
-            <label
-              htmlFor="username"
-              className="block text-xs font-semibold text-slate-600 uppercase"
-            >
-              {t("login.username")}
-            </label>
-            <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500"
-              autoComplete="username"
-              required
-            />
-          </div>
+        <Form
+          form={form}
+          layout="vertical"
+          requiredMark={false}
+          style={{ marginTop: 20 }}
+          onFinish={handleSubmit}
+          onValuesChange={() => {
+            if (error) setError("");
+          }}
+        >
+          <Form.Item
+            name="username"
+            label={t("login.username")}
+            rules={[
+              { required: true, message: "Vui lòng nhập tên đăng nhập." },
+            ]}
+          >
+            <Input autoComplete="username" />
+          </Form.Item>
 
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-xs font-semibold text-slate-600 uppercase"
-            >
-              {t("login.password")}
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500"
-              autoComplete="current-password"
-              required
-            />
-          </div>
+          <Form.Item
+            name="password"
+            label={t("login.password")}
+            rules={[{ required: true, message: "Vui lòng nhập mật khẩu." }]}
+            validateStatus={error ? "error" : ""}
+            help={error || undefined}
+          >
+            <Input.Password autoComplete="current-password" />
+          </Form.Item>
 
-          {error ? (
-            <p className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
-              {error}
-            </p>
-          ) : null}
-
-          <button
-            type="submit"
-            disabled={!canSubmit}
-            className="w-full rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:opacity-60"
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={submitting}
+            block
+            size="large"
           >
             {submitting ? t("login.submitting") : t("common.login")}
-          </button>
-        </form>
+          </Button>
 
-        <button
-          type="button"
-          onClick={() => navigate("/")}
-          className="mt-3 w-full rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-        >
-          {t("login.backHome")}
-        </button>
-      </div>
-    </div>
+          <Button
+            type="default"
+            onClick={() => navigate("/")}
+            block
+            size="large"
+            style={{ marginTop: 12 }}
+          >
+            {t("login.backHome")}
+          </Button>
+        </Form>
+      </Card>
+    </Flex>
   );
 }

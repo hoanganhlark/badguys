@@ -1,4 +1,21 @@
-import { CheckCircle, Plus, User, Users } from "react-feather";
+import {
+  CheckCircleOutlined,
+  PlusOutlined,
+  UserOutlined,
+  UsergroupAddOutlined,
+} from "@ant-design/icons";
+import {
+  Button,
+  Card,
+  DatePicker,
+  Form,
+  InputNumber,
+  Radio,
+  Select,
+  Space,
+  Typography,
+} from "antd";
+import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
 import type { MatchSetInput, Member } from "./types";
 
@@ -71,188 +88,178 @@ export default function MatchFormPanel({
     });
   };
 
+  const playedAtValue = dayjs(matchData.playedAt);
+  const playedAt = playedAtValue.isValid() ? playedAtValue : null;
+
   return (
-    <div className="max-w-4xl bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
-      <div className="grid grid-cols-2 gap-2">
-        <button
-          onClick={() => onSetMatchType("doubles")}
-          className={`py-2.5 rounded-xl border text-sm font-semibold transition-all ${
-            matchType === "doubles"
-              ? "bg-slate-900 text-white border-slate-900"
-              : "border-slate-200 text-slate-600 hover:border-slate-300"
-          }`}
+    <Card style={{ maxWidth: 920 }}>
+      <Space direction="vertical" size={16} style={{ width: "100%" }}>
+        <Radio.Group
+          value={matchType}
+          buttonStyle="solid"
+          onChange={(event) => onSetMatchType(event.target.value)}
         >
-          <span className="inline-flex items-center gap-2">
-            <Users className="h-4 w-4" /> {t("matchForm.doubles")}
-          </span>
-        </button>
-        <button
-          onClick={() => onSetMatchType("singles")}
-          className={`py-2.5 rounded-xl border text-sm font-semibold transition-all ${
-            matchType === "singles"
-              ? "bg-slate-900 text-white border-slate-900"
-              : "border-slate-200 text-slate-600 hover:border-slate-300"
-          }`}
+          <Radio.Button value="doubles">
+            <Space>
+              <UsergroupAddOutlined />
+              {t("matchForm.doubles")}
+            </Space>
+          </Radio.Button>
+          <Radio.Button value="singles">
+            <Space>
+              <UserOutlined />
+              {t("matchForm.singles")}
+            </Space>
+          </Radio.Button>
+        </Radio.Group>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card size="small" title={t("matchForm.teamA")}>
+            <Space direction="vertical" size={8} style={{ width: "100%" }}>
+              {[...Array(slotCount)].map((_, i) => (
+                <Select
+                  key={`teamA-${i}`}
+                  placeholder={t("matchForm.choosePlayer")}
+                  value={matchData.team1[i] || undefined}
+                  allowClear
+                  options={getSelectableMembers("team1", i).map((member) => ({
+                    value: member.name,
+                    label: member.name,
+                  }))}
+                  onChange={(value) => {
+                    const nextTeam = [...matchData.team1];
+                    nextTeam[i] = value || "";
+                    onSetMatchData({ ...matchData, team1: nextTeam });
+                  }}
+                />
+              ))}
+            </Space>
+          </Card>
+
+          <Card size="small" title={t("matchForm.teamB")}>
+            <Space direction="vertical" size={8} style={{ width: "100%" }}>
+              {[...Array(slotCount)].map((_, i) => (
+                <Select
+                  key={`teamB-${i}`}
+                  placeholder={t("matchForm.choosePlayer")}
+                  value={matchData.team2[i] || undefined}
+                  allowClear
+                  options={getSelectableMembers("team2", i).map((member) => ({
+                    value: member.name,
+                    label: member.name,
+                  }))}
+                  onChange={(value) => {
+                    const nextTeam = [...matchData.team2];
+                    nextTeam[i] = value || "";
+                    onSetMatchData({ ...matchData, team2: nextTeam });
+                  }}
+                />
+              ))}
+            </Space>
+          </Card>
+        </div>
+
+        <Form layout="vertical" requiredMark={false}>
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-end">
+            <Form.Item
+              label={t("matchForm.setResults")}
+              style={{ marginBottom: 0 }}
+            >
+              <Typography.Text type="secondary">
+                {t("matchForm.playedAt")}
+              </Typography.Text>
+            </Form.Item>
+            <Form.Item
+              label={t("matchForm.playedAt")}
+              style={{ marginBottom: 0 }}
+            >
+              <DatePicker
+                showTime
+                format="DD/MM/YYYY HH:mm"
+                value={playedAt}
+                onChange={(value) => {
+                  const nextPlayedAt = value
+                    ? value.format("YYYY-MM-DDTHH:mm")
+                    : "";
+                  onSetMatchData({
+                    ...matchData,
+                    playedAt: nextPlayedAt,
+                  });
+                }}
+              />
+            </Form.Item>
+          </div>
+        </Form>
+
+        <Button icon={<PlusOutlined />} onClick={addSetInput}>
+          {t("matchForm.addSet")}
+        </Button>
+
+        <Space direction="vertical" size={8} style={{ width: "100%" }}>
+          {matchData.sets.map((set, i) => (
+            <div
+              key={`set-${i}`}
+              className="grid grid-cols-1 md:grid-cols-3 gap-3"
+            >
+              <InputNumber
+                min={0}
+                placeholder={t("matchForm.setTeamA", { index: i + 1 })}
+                value={set.team1Score === "" ? null : Number(set.team1Score)}
+                onChange={(value) => {
+                  if (value !== null && value < 0) return;
+                  const nextSets = [...matchData.sets];
+                  nextSets[i] = {
+                    ...nextSets[i],
+                    team1Score: value === null ? "" : String(value),
+                  };
+                  onSetMatchData({ ...matchData, sets: nextSets });
+                }}
+                style={{ width: "100%" }}
+              />
+              <InputNumber
+                min={0}
+                placeholder={t("matchForm.setTeamB", { index: i + 1 })}
+                value={set.team2Score === "" ? null : Number(set.team2Score)}
+                onChange={(value) => {
+                  if (value !== null && value < 0) return;
+                  const nextSets = [...matchData.sets];
+                  nextSets[i] = {
+                    ...nextSets[i],
+                    team2Score: value === null ? "" : String(value),
+                  };
+                  onSetMatchData({ ...matchData, sets: nextSets });
+                }}
+                style={{ width: "100%" }}
+              />
+              <InputNumber
+                min={0}
+                placeholder={t("matchForm.setMinutes", { index: i + 1 })}
+                value={set.minutes === "" ? null : Number(set.minutes)}
+                onChange={(value) => {
+                  if (value !== null && value < 0) return;
+                  const nextSets = [...matchData.sets];
+                  nextSets[i] = {
+                    ...nextSets[i],
+                    minutes: value === null ? "" : String(value),
+                  };
+                  onSetMatchData({ ...matchData, sets: nextSets });
+                }}
+                style={{ width: "100%" }}
+              />
+            </div>
+          ))}
+        </Space>
+
+        <Button
+          type="primary"
+          icon={<CheckCircleOutlined />}
+          disabled={!canSaveMatch}
+          onClick={onSaveMatch}
+          block
         >
-          <span className="inline-flex items-center gap-2">
-            <User className="h-4 w-4" /> {t("matchForm.singles")}
-          </span>
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-        <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 md:p-4">
-          <h3 className="font-bold text-center text-slate-800">
-            {t("matchForm.teamA")}
-          </h3>
-          <div className="space-y-2">
-            {[...Array(matchType === "singles" ? 1 : 2)].map((_, i) => (
-              <select
-                key={i}
-                className="mobile-focus-target dashboard-input w-full"
-                onChange={(e) => {
-                  const newTeam = [...matchData.team1];
-                  newTeam[i] = e.target.value;
-                  onSetMatchData({ ...matchData, team1: newTeam });
-                }}
-                value={matchData.team1[i] || ""}
-              >
-                <option value="">{t("matchForm.choosePlayer")}</option>
-                {getSelectableMembers("team1", i).map((m) => (
-                  <option key={m.id} value={m.name}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 md:p-4">
-          <h3 className="font-bold text-center text-slate-800">
-            {t("matchForm.teamB")}
-          </h3>
-          <div className="space-y-2">
-            {[...Array(matchType === "singles" ? 1 : 2)].map((_, i) => (
-              <select
-                key={i}
-                className="mobile-focus-target dashboard-input w-full"
-                onChange={(e) => {
-                  const newTeam = [...matchData.team2];
-                  newTeam[i] = e.target.value;
-                  onSetMatchData({ ...matchData, team2: newTeam });
-                }}
-                value={matchData.team2[i] || ""}
-              >
-                <option value="">{t("matchForm.choosePlayer")}</option>
-                {getSelectableMembers("team2", i).map((m) => (
-                  <option key={m.id} value={m.name}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="pt-5 border-t border-slate-200 space-y-3">
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2.5 md:items-center">
-          <h3 className="font-bold text-slate-900">
-            {t("matchForm.setResults")}
-          </h3>
-          <input
-            type="datetime-local"
-            className="mobile-focus-target dashboard-input w-full md:w-auto"
-            value={matchData.playedAt}
-            onChange={(e) =>
-              onSetMatchData({
-                ...matchData,
-                playedAt: e.target.value,
-              })
-            }
-            aria-label={t("matchForm.playedAt")}
-          />
-        </div>
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={addSetInput}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
-          >
-            <Plus className="h-4 w-4" /> {t("matchForm.addSet")}
-          </button>
-        </div>
-        {matchData.sets.map((set, i) => (
-          <div key={i} className="grid grid-cols-3 gap-3">
-            <input
-              type="number"
-              min={0}
-              inputMode="numeric"
-              placeholder={t("matchForm.setTeamA", { index: i + 1 })}
-              className="mobile-focus-target dashboard-input w-full"
-              value={set.team1Score}
-              onChange={(e) => {
-                if (e.target.value !== "" && Number(e.target.value) < 0) {
-                  return;
-                }
-                const newSets = [...matchData.sets];
-                newSets[i] = {
-                  ...newSets[i],
-                  team1Score: e.target.value,
-                };
-                onSetMatchData({ ...matchData, sets: newSets });
-              }}
-            />
-            <input
-              type="number"
-              min={0}
-              inputMode="numeric"
-              placeholder={t("matchForm.setTeamB", { index: i + 1 })}
-              className="mobile-focus-target dashboard-input w-full"
-              value={set.team2Score}
-              onChange={(e) => {
-                if (e.target.value !== "" && Number(e.target.value) < 0) {
-                  return;
-                }
-                const newSets = [...matchData.sets];
-                newSets[i] = {
-                  ...newSets[i],
-                  team2Score: e.target.value,
-                };
-                onSetMatchData({ ...matchData, sets: newSets });
-              }}
-            />
-            <input
-              type="number"
-              min={0}
-              inputMode="numeric"
-              placeholder={t("matchForm.setMinutes", { index: i + 1 })}
-              className="mobile-focus-target dashboard-input w-full"
-              value={set.minutes || ""}
-              onChange={(e) => {
-                if (e.target.value !== "" && Number(e.target.value) < 0) {
-                  return;
-                }
-                const newSets = [...matchData.sets];
-                newSets[i] = {
-                  ...newSets[i],
-                  minutes: e.target.value,
-                };
-                onSetMatchData({ ...matchData, sets: newSets });
-              }}
-            />
-          </div>
-        ))}
-      </div>
-
-      <button
-        onClick={onSaveMatch}
-        disabled={!canSaveMatch}
-        className="w-full bg-slate-900 text-white py-2.5 rounded-xl font-semibold hover:bg-slate-800 transition-all inline-flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-      >
-        <CheckCircle className="h-4 w-4" /> {t("matchForm.saveResult")}
-      </button>
-    </div>
+          {t("matchForm.saveResult")}
+        </Button>
+      </Space>
+    </Card>
   );
 }

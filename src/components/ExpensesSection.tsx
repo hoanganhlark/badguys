@@ -1,3 +1,4 @@
+import { InputNumber, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 
 type Props = {
@@ -30,51 +31,42 @@ export default function ExpensesSection({
         className={`grid ${showCourtCount ? "grid-cols-3" : "grid-cols-2"} gap-3`}
       >
         <div>
-          <label
-            htmlFor="courtFee"
-            className="block text-xs text-slate-500 mb-2"
-          >
+          <Typography.Text type="secondary">
             {t("expenses.courtFee")}
-          </label>
-          <input
-            type="number"
-            id="courtFee"
-            className="input-minimal px-4 py-3 text-sm font-medium w-full"
-            value={courtFee}
-            onChange={(e) => onCourtFeeChange(e.target.value)}
+          </Typography.Text>
+          <InputNumber
+            style={{ width: "100%", marginTop: 8 }}
+            value={courtFee === "" ? null : Number(courtFee)}
+            onChange={(value) =>
+              onCourtFeeChange(value == null ? "" : String(value))
+            }
           />
         </div>
         {showCourtCount ? (
           <div>
-            <label
-              htmlFor="courtCount"
-              className="block text-xs text-slate-500 mb-2"
-            >
+            <Typography.Text type="secondary">
               {t("expenses.courtCount")}
-            </label>
-            <input
-              type="number"
-              id="courtCount"
-              className="input-minimal px-4 py-3 text-sm font-medium w-full"
-              value={courtCount}
+            </Typography.Text>
+            <InputNumber
               min={0}
-              onChange={(e) => onCourtCountChange(e.target.value)}
+              style={{ width: "100%", marginTop: 8 }}
+              value={courtCount === "" ? null : Number(courtCount)}
+              onChange={(value) =>
+                onCourtCountChange(value == null ? "" : String(value))
+              }
             />
           </div>
         ) : null}
         <div>
-          <label
-            htmlFor="shuttleCount"
-            className="block text-xs text-slate-500 mb-2"
-          >
+          <Typography.Text type="secondary">
             {t("expenses.shuttleCount")}
-          </label>
-          <input
-            type="number"
-            id="shuttleCount"
-            className="input-minimal px-4 py-3 text-sm font-medium w-full"
-            value={shuttleCount}
-            onChange={(e) => onShuttleCountChange(e.target.value)}
+          </Typography.Text>
+          <InputNumber
+            style={{ width: "100%", marginTop: 8 }}
+            value={shuttleCount === "" ? null : Number(shuttleCount)}
+            onChange={(value) =>
+              onShuttleCountChange(value == null ? "" : String(value))
+            }
           />
         </div>
       </div>

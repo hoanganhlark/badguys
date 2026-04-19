@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Activity, Menu } from "react-feather";
+import {
+  Alert,
+  Card,
+  Select,
+  Spin,
+  Statistic,
+  Table,
+  type TableColumnsType,
+} from "antd";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -143,6 +152,51 @@ export default function AuditPage() {
     if (entries.length === 0) return "-";
     return JSON.stringify(value);
   };
+
+  const columns: TableColumnsType<AuditEventRecord> = [
+    {
+      title: t("auditPage.time"),
+      key: "time",
+      width: 170,
+      render: (_, record) => formatLocalDateTime(record.createdAt),
+    },
+    {
+      title: t("auditPage.type"),
+      key: "type",
+      width: 140,
+      render: (_, record) => getEventTypeLabel(record),
+    },
+    {
+      title: t("auditPage.event"),
+      dataIndex: "eventName",
+      key: "eventName",
+      width: 180,
+    },
+    {
+      title: t("auditPage.user"),
+      key: "username",
+      width: 130,
+      render: (_, record) => String(record.userProperties?.username || "guest"),
+    },
+    {
+      title: t("auditPage.role"),
+      key: "role",
+      width: 130,
+      render: (_, record) => String(record.userProperties?.role || "guest"),
+    },
+    {
+      title: t("auditPage.path"),
+      dataIndex: "pagePath",
+      key: "pagePath",
+      width: 220,
+      render: (value?: string) => value || "-",
+    },
+    {
+      title: t("auditPage.params"),
+      key: "params",
+      render: (_, record) => formatAuditPayload(record.params),
+    },
+  ];
 
   useEffect(() => {
     setFiltersHydrated(false);
@@ -292,131 +346,83 @@ export default function AuditPage() {
               </p>
             </header>
 
-            <section className="grid grid-cols-3 gap-2 md:max-w-2xl">
-              <div className="dashboard-card px-3 py-2.5">
-                <p className="text-[11px] text-slate-500">
-                  {t("auditPage.totalEvents")}
-                </p>
-                <p className="text-lg font-bold text-slate-900">
-                  {events.length}
-                </p>
-              </div>
-              <div className="dashboard-card px-3 py-2.5">
-                <p className="text-[11px] text-slate-500">
-                  {t("auditPage.uniqueEvents")}
-                </p>
-                <p className="text-lg font-bold text-slate-900">
-                  {uniqueEventsCount}
-                </p>
-              </div>
-              <div className="dashboard-card px-3 py-2.5">
-                <p className="text-[11px] text-slate-500">
-                  {t("auditPage.uniqueUsers")}
-                </p>
-                <p className="text-lg font-bold text-slate-900">
-                  {uniqueUsersCount}
-                </p>
-              </div>
+            <section className="grid grid-cols-1 gap-3 md:grid-cols-3 md:max-w-3xl">
+              <Card>
+                <Statistic
+                  title={t("auditPage.totalEvents")}
+                  value={events.length}
+                />
+              </Card>
+              <Card>
+                <Statistic
+                  title={t("auditPage.uniqueEvents")}
+                  value={uniqueEventsCount}
+                />
+              </Card>
+              <Card>
+                <Statistic
+                  title={t("auditPage.uniqueUsers")}
+                  value={uniqueUsersCount}
+                />
+              </Card>
             </section>
 
-            <section className="dashboard-card p-4 md:p-5">
+            <Card>
               {error ? (
-                <p className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
-                  {error}
-                </p>
+                <Alert
+                  type="error"
+                  message={error}
+                  showIcon
+                  style={{ marginBottom: 16 }}
+                />
               ) : null}
 
               <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-                <label className="text-sm text-slate-700">
-                  {t("auditPage.filterByUser")}
-                  <select
-                    value={selectedUser}
-                    onChange={(event) => setSelectedUser(event.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5"
-                  >
-                    <option value="all">{t("auditPage.filterAllUsers")}</option>
-                    {userFilterOptions.map((username) => (
-                      <option key={username} value={username}>
-                        {username}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <Select
+                  value={selectedUser}
+                  onChange={(value) => setSelectedUser(value)}
+                  options={[
+                    { value: "all", label: t("auditPage.filterAllUsers") },
+                    ...userFilterOptions.map((username) => ({
+                      value: username,
+                      label: username,
+                    })),
+                  ]}
+                  placeholder={t("auditPage.filterByUser")}
+                />
 
-                <label className="text-sm text-slate-700">
-                  {t("auditPage.filterByType")}
-                  <select
-                    value={selectedType}
-                    onChange={(event) =>
-                      setSelectedType(event.target.value as AuditFilterType)
-                    }
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5"
-                  >
-                    <option value="all">{t("auditPage.filterAllTypes")}</option>
-                    <option value="event">{t("auditPage.typeEvent")}</option>
-                    <option value="route_change">
-                      {t("auditPage.typeRouteChange")}
-                    </option>
-                  </select>
-                </label>
+                <Select
+                  value={selectedType}
+                  onChange={(value) =>
+                    setSelectedType(value as AuditFilterType)
+                  }
+                  options={[
+                    { value: "all", label: t("auditPage.filterAllTypes") },
+                    { value: "event", label: t("auditPage.typeEvent") },
+                    {
+                      value: "route_change",
+                      label: t("auditPage.typeRouteChange"),
+                    },
+                  ]}
+                  placeholder={t("auditPage.filterByType")}
+                />
               </div>
 
               {loading ? (
-                <p className="text-sm text-slate-500">
-                  {t("auditPage.loadingAudit")}
-                </p>
-              ) : filteredEvents.length === 0 ? (
-                <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-4 text-sm text-slate-500 text-center">
-                  {t("auditPage.noLogs")}
-                </p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[980px] text-left text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-200 text-xs uppercase text-slate-500">
-                        <th className="px-2 py-3">{t("auditPage.time")}</th>
-                        <th className="px-2 py-3">{t("auditPage.type")}</th>
-                        <th className="px-2 py-3">{t("auditPage.event")}</th>
-                        <th className="px-2 py-3">{t("auditPage.user")}</th>
-                        <th className="px-2 py-3">{t("auditPage.role")}</th>
-                        <th className="px-2 py-3">{t("auditPage.path")}</th>
-                        <th className="px-2 py-3">{t("auditPage.params")}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredEvents.map((item) => (
-                        <tr
-                          key={item.id}
-                          className="border-b border-slate-100 align-top"
-                        >
-                          <td className="px-2 py-3 text-slate-600">
-                            {formatLocalDateTime(item.createdAt)}
-                          </td>
-                          <td className="px-2 py-3 text-slate-700">
-                            {getEventTypeLabel(item)}
-                          </td>
-                          <td className="px-2 py-3 font-semibold text-slate-900">
-                            {item.eventName}
-                          </td>
-                          <td className="px-2 py-3 text-slate-700">
-                            {String(item.userProperties?.username || "guest")}
-                          </td>
-                          <td className="px-2 py-3 text-slate-700">
-                            {String(item.userProperties?.role || "guest")}
-                          </td>
-                          <td className="px-2 py-3 text-slate-700 break-all">
-                            {item.pagePath || "-"}
-                          </td>
-                          <td className="px-2 py-3 text-slate-700 break-all">
-                            {formatAuditPayload(item.params)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="py-8 text-center">
+                  <Spin tip={t("auditPage.loadingAudit")} />
                 </div>
+              ) : (
+                <Table
+                  rowKey="id"
+                  columns={columns}
+                  dataSource={filteredEvents}
+                  scroll={{ x: 980 }}
+                  pagination={{ pageSize: 20 }}
+                  locale={{ emptyText: t("auditPage.noLogs") }}
+                />
               )}
-            </section>
+            </Card>
           </div>
         </main>
       </div>

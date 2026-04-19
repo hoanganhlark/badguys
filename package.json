@@ -12,6 +12,8 @@
     "migrate:admin-bi": "node scripts/rename-admin-to-bi.mjs"
   },
   "dependencies": {
+    "@ant-design/icons": "^6.1.1",
+    "antd": "^6.3.6",
     "blueimp-md5": "^2.19.0",
     "firebase": "^12.0.0",
     "glicko2": "^1.2.1",

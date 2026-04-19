@@ -1,6 +1,17 @@
-import { useEffect } from "react";
+import {
+  Button,
+  Card,
+  Empty,
+  List,
+  Modal,
+  Popconfirm,
+  Space,
+  Spin,
+  Typography,
+  Alert,
+} from "antd";
+import { CopyOutlined } from "@ant-design/icons";
 import { formatK, formatSessionDateLabel, normalizeKLabels } from "../lib/core";
-import { Copy, X } from "react-feather";
 import { useTranslation } from "react-i18next";
 import type { SessionRecord } from "../types";
 
@@ -27,87 +38,84 @@ export default function SessionsModal({
 }: Props) {
   const { t } = useTranslation();
 
-  useEffect(() => {
-    if (!open) return;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, onClose]);
-
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-[60] bg-black/40 p-4 md:p-6"
-      onClick={onClose}
+    <Modal
+      open={open}
+      onCancel={onClose}
+      footer={null}
+      title={t("sessions.title")}
+      destroyOnClose
+      width={720}
+      styles={{
+        body: {
+          maxHeight: "70vh",
+          overflowY: "auto",
+        },
+      }}
     >
-      <div
-        className="mx-auto w-full max-w-lg bg-white rounded-2xl border border-slate-200 shadow-2xl flex flex-col max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-          <h4 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">
-            {t("sessions.title")}
-          </h4>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-700"
-            aria-label={t("sessions.close")}
-          >
-            <X className="h-5 w-5" />
-          </button>
+      {loading ? (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            padding: "32px 0",
+          }}
+        >
+          <Spin tip={t("sessions.loading")} />
         </div>
+      ) : null}
 
-        {loading && (
-          <div className="p-5 text-sm text-slate-500">
-            {t("sessions.loading")}
-          </div>
-        )}
-        {!loading && error && (
-          <div className="p-5 text-sm text-slate-500">{error}</div>
-        )}
-        {!loading && !error && sessions.length === 0 && (
-          <div className="p-5 text-sm text-slate-500">
-            {t("sessions.empty")}
-          </div>
-        )}
+      {!loading && error ? (
+        <Alert type="error" message={error} showIcon />
+      ) : null}
 
-        {!loading && !error && sessions.length > 0 && (
-          <div className="p-5 overflow-y-auto space-y-3">
-            {sessions.map((session) => {
-              const summaryText = String(session.summaryText || "").trim();
-              return (
-                <article
-                  key={session.id}
-                  className="border border-slate-200 rounded-xl p-4 bg-white"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <h5 className="text-sm font-semibold text-slate-800">
-                      {formatSessionDateLabel(session)}
-                    </h5>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-slate-500">
-                        {t("sessions.total")}: {formatK(session.total || 0)}
-                      </span>
-                      {canRemove ? (
-                        <button
-                          type="button"
-                          onClick={() => onRemove(session.id)}
-                          className="text-xs px-2 py-1 rounded-md border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
-                          title={t("sessions.deleteSession")}
-                        >
-                          {t("sessions.delete")}
-                        </button>
-                      ) : null}
+      {!loading && !error && sessions.length === 0 ? (
+        <Empty description={t("sessions.empty")} />
+      ) : null}
+
+      {!loading && !error && sessions.length > 0 ? (
+        <List
+          dataSource={sessions}
+          split={false}
+          renderItem={(session) => {
+            const summaryText = String(session.summaryText || "").trim();
+
+            return (
+              <List.Item key={session.id} style={{ padding: "0 0 12px" }}>
+                <Card size="small" style={{ width: "100%" }}>
+                  <Space
+                    align="start"
+                    style={{ width: "100%", justifyContent: "space-between" }}
+                  >
+                    <div>
+                      <Typography.Text strong>
+                        {formatSessionDateLabel(session)}
+                      </Typography.Text>
+                      <div>
+                        <Typography.Text type="secondary">
+                          {t("sessions.total")}: {formatK(session.total || 0)}
+                        </Typography.Text>
+                      </div>
                     </div>
-                  </div>
-                  <p className="text-xs text-slate-500">
+
+                    {canRemove ? (
+                      <Popconfirm
+                        title={t("common.confirmDelete")}
+                        onConfirm={() => onRemove(session.id)}
+                        okText={t("sessions.delete")}
+                        cancelText={t("common.cancel")}
+                      >
+                        <Button type="text" danger size="small">
+                          {t("sessions.delete")}
+                        </Button>
+                      </Popconfirm>
+                    ) : null}
+                  </Space>
+
+                  <Typography.Paragraph
+                    type="secondary"
+                    style={{ margin: "8px 0" }}
+                  >
                     {t("sessions.summaryLine", {
                       males: session.malesCount || 0,
                       maleFee: formatK(session.maleFee || 0),
@@ -115,30 +123,48 @@ export default function SessionsModal({
                       femaleFee: formatK(session.femaleFee || 0),
                       setPlayers: session.setPlayersCount || 0,
                     })}
-                  </p>
+                  </Typography.Paragraph>
+
                   {summaryText ? (
-                    <div className="relative mt-1">
-                      <button
-                        type="button"
-                        className="absolute top-2 right-2 text-slate-400 hover:text-blue-600 z-10 bg-white/80 rounded p-1"
-                        title={t("sessions.copyNote")}
-                        onClick={() =>
-                          onCopyNote(normalizeKLabels(summaryText))
-                        }
+                    <div>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "flex-end",
+                          marginBottom: 6,
+                        }}
                       >
-                        <Copy className="inline h-4 w-4" />
-                      </button>
-                      <pre className="text-xs bg-slate-50 border border-slate-100 rounded-lg p-3 text-slate-600 whitespace-pre-wrap break-words">
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<CopyOutlined />}
+                          onClick={() =>
+                            onCopyNote(normalizeKLabels(summaryText))
+                          }
+                        >
+                          {t("sessions.copyNote")}
+                        </Button>
+                      </div>
+                      <Typography.Paragraph
+                        style={{
+                          margin: 0,
+                          whiteSpace: "pre-wrap",
+                          wordBreak: "break-word",
+                          background: "rgba(0, 0, 0, 0.02)",
+                          borderRadius: 8,
+                          padding: 12,
+                        }}
+                      >
                         {summaryText}
-                      </pre>
+                      </Typography.Paragraph>
                     </div>
                   ) : null}
-                </article>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </div>
+                </Card>
+              </List.Item>
+            );
+          }}
+        />
+      ) : null}
+    </Modal>
   );
 }
