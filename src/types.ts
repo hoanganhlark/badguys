@@ -116,6 +116,7 @@ export type MatchRecord = {
 export type AuditEventRecord = {
   id: string;
   eventName: string;
+  eventType?: "event" | "route_change";
   params?: Record<string, string | number | boolean | null>;
   userProperties?: Record<string, string | number | boolean | null>;
   pagePath?: string;

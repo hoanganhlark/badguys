@@ -62,6 +62,7 @@ import {
   setUserProperties,
   trackEvent,
   trackPageView,
+  trackRouteChange,
 } from "./lib/analytics";
 import { notifyCopyClicked, notifyGuestVisited } from "./lib/telegram";
 import type { AppConfig, Player, SessionRecord } from "./types";
@@ -112,6 +113,7 @@ export default function App() {
   const rankingMenuRef = useRef<HTMLDivElement | null>(null);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
   const lastCalculationTrackedRef = useRef("");
+  const previousPathRef = useRef("");
 
   const {
     configOpen,
@@ -162,6 +164,22 @@ export default function App() {
   useEffect(() => {
     trackPageView(`${location.pathname}${location.search}${location.hash}`);
   }, [location.pathname, location.search, location.hash]);
+
+  useEffect(() => {
+    const nextPath = `${location.pathname}${location.search}${location.hash}`;
+    const previousPath = previousPathRef.current;
+
+    if (!previousPath) {
+      previousPathRef.current = nextPath;
+      return;
+    }
+
+    if (isAuthenticated && previousPath !== nextPath) {
+      trackRouteChange(previousPath, nextPath);
+    }
+
+    previousPathRef.current = nextPath;
+  }, [isAuthenticated, location.pathname, location.search, location.hash]);
 
   useEffect(() => {
     setUserProperties({

@@ -790,10 +790,20 @@ function mapAuditEventRecord(auditDoc: {
   };
 
   const eventName = String(data.eventName || "").trim();
+  const rawEventType = String(data.eventType || "").trim();
+  const eventType =
+    rawEventType === "route_change"
+      ? "route_change"
+      : rawEventType === "event"
+        ? "event"
+        : eventName === "route_change"
+          ? "route_change"
+          : "event";
 
   return {
     id: auditDoc.id,
     eventName,
+    eventType,
     params: normalizeObject(rawParams),
     userProperties: normalizeObject(rawUserProperties),
     pagePath:
@@ -808,6 +818,7 @@ function mapAuditEventRecord(auditDoc: {
 
 export async function createAuditEvent(input: {
   eventName: string;
+  eventType?: "event" | "route_change";
   params?: Record<string, string | number | boolean | null>;
   userProperties?: Record<string, string | number | boolean | null>;
   pagePath?: string;
@@ -819,6 +830,8 @@ export async function createAuditEvent(input: {
   }
 
   const eventName = String(input.eventName || "").trim();
+  const eventType =
+    input.eventType === "route_change" ? "route_change" : "event";
   if (!eventName) {
     throw new Error("Missing event name");
   }
@@ -830,6 +843,7 @@ export async function createAuditEvent(input: {
 
   await addDoc(auditEventsRef, {
     eventName,
+    eventType,
     params: input.params || {},
     userProperties: input.userProperties || {},
     pagePath: String(input.pagePath || "").trim() || null,

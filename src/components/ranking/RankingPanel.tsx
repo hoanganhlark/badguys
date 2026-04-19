@@ -1,12 +1,4 @@
-import {
-  Award,
-  Clock,
-  FileText,
-  Star,
-  Trash2,
-  User,
-  Users,
-} from "react-feather";
+import { Award, Clock, Star, Trash2, User, Users } from "react-feather";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { AdvancedStats, Match } from "./types";
@@ -144,159 +136,172 @@ export default function RankingPanel({
     return Array.from(grouped.values()).sort((a, b) => b.order - a.order);
   }, [matches, t]);
 
+  const hasRankings = rankings.length > 0;
+  const hasHistory = matches.length > 0;
+
   return (
     <div className="max-w-5xl space-y-4 md:space-y-6">
       <div>
-        <div className="md:hidden space-y-2.5">
-          {rankings.map((player, index) => {
-            const winRate = getWinRate(player.totalMatches, player.wins);
-            const progressTone = getWinRateTone(winRate);
+        {!hasRankings ? (
+          <div className="rounded-xl border border-slate-200 bg-white p-4 text-center text-sm text-slate-500">
+            {t("rankingPanel.noRanking")}
+          </div>
+        ) : null}
 
-            return (
-              <button
-                key={player.name}
-                type="button"
-                onClick={() => onSelectPlayer(player)}
-                className="w-full rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-sm"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="inline-flex items-center gap-2">
-                    {index < 3 ? (
-                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100">
-                        {index === 0 ? (
-                          <Award className="h-4 w-4 text-amber-500" />
-                        ) : index === 1 ? (
-                          <Award className="h-4 w-4 text-slate-400" />
-                        ) : (
-                          <Star className="h-4 w-4 text-orange-400" />
-                        )}
-                      </span>
-                    ) : (
-                      <span className="text-sm font-semibold text-slate-500">
-                        #{index + 1}
-                      </span>
-                    )}
-                    <p className="font-semibold text-slate-900">
-                      {player.name}
-                    </p>
-                  </div>
-                  <p className="text-sm font-bold text-sky-700">
-                    {player.rankScore.toFixed(3)}
-                  </p>
-                </div>
-                <div className="mt-3 rounded-lg bg-slate-50 px-2.5 py-2.5">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <p className="font-semibold uppercase tracking-wide text-slate-500">
-                      {t("rankingPanel.winRate")}
-                    </p>
-                    <p className="font-bold text-slate-700">
-                      {Math.round(winRate)}%
-                    </p>
-                  </div>
-                  <div
-                    className="mt-2 h-2.5 overflow-hidden rounded-full bg-slate-200"
-                    role="progressbar"
-                    aria-label={`${t("rankingPanel.winRate")} ${player.name}`}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-valuenow={Math.round(winRate)}
-                  >
-                    <div
-                      className={`h-full rounded-full ${progressTone}`}
-                      style={{ width: `${winRate}%` }}
-                    />
-                  </div>
-                  <p className="mt-1.5 text-[11px] text-slate-500">
-                    {t("rankingPanel.winsOutOfMatches", {
-                      wins: player.wins,
-                      matches: player.totalMatches,
-                    })}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+        {hasRankings ? (
+          <div className="md:hidden space-y-2.5">
+            {rankings.map((player, index) => {
+              const winRate = getWinRate(player.totalMatches, player.wins);
+              const progressTone = getWinRateTone(winRate);
 
-        <div className="hidden md:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="px-4 py-3 text-xs font-semibold text-slate-700 uppercase">
-                  {t("rankingPanel.rank")}
-                </th>
-                <th className="px-4 py-3 text-xs font-semibold text-slate-700 uppercase">
-                  {t("rankingPanel.athlete")}
-                </th>
-                <th className="px-4 py-3 text-xs font-semibold text-slate-700 uppercase text-center">
-                  {t("rankingPanel.winRate")}
-                </th>
-                <th className="px-4 py-3 text-xs font-semibold text-slate-700 uppercase text-right">
-                  {t("rankingPanel.rankScore")}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {rankings.map((player, index) => {
-                const winRate = getWinRate(player.totalMatches, player.wins);
-                const progressTone = getWinRateTone(winRate);
-
-                return (
-                  <tr
-                    key={player.name}
-                    onClick={() => onSelectPlayer(player)}
-                    className="hover:bg-slate-50 transition-colors cursor-pointer"
-                  >
-                    <td className="px-4 py-3 font-semibold">
+              return (
+                <button
+                  key={player.name}
+                  type="button"
+                  onClick={() => onSelectPlayer(player)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-sm"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="inline-flex items-center gap-2">
                       {index < 3 ? (
-                        <span className="inline-flex">
+                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100">
                           {index === 0 ? (
-                            <Award className="h-5 w-5 text-amber-500" />
+                            <Award className="h-4 w-4 text-amber-500" />
                           ) : index === 1 ? (
-                            <Award className="h-5 w-5 text-slate-400" />
+                            <Award className="h-4 w-4 text-slate-400" />
                           ) : (
-                            <Star className="h-5 w-5 text-orange-400" />
+                            <Star className="h-4 w-4 text-orange-400" />
                           )}
                         </span>
                       ) : (
-                        <span className="text-slate-500">#{index + 1}</span>
+                        <span className="text-sm font-semibold text-slate-500">
+                          #{index + 1}
+                        </span>
                       )}
-                    </td>
-                    <td className="px-4 py-3 font-semibold text-slate-900">
-                      {player.name}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="mx-auto w-44">
-                        <div className="flex items-center justify-between text-[11px] font-medium text-slate-600">
-                          <span>{Math.round(winRate)}%</span>
-                          <span>
-                            {player.wins}/{player.totalMatches}
-                          </span>
-                        </div>
-                        <div
-                          className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-200"
-                          role="progressbar"
-                          aria-label={`${t("rankingPanel.winRate")} ${player.name}`}
-                          aria-valuemin={0}
-                          aria-valuemax={100}
-                          aria-valuenow={Math.round(winRate)}
-                        >
-                          <div
-                            className={`h-full rounded-full ${progressTone}`}
-                            style={{ width: `${winRate}%` }}
-                          />
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-right font-bold text-sky-700">
+                      <p className="font-semibold text-slate-900">
+                        {player.name}
+                      </p>
+                    </div>
+                    <p className="text-sm font-bold text-sky-700">
                       {player.rankScore.toFixed(3)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                    </p>
+                  </div>
+                  <div className="mt-3 rounded-lg bg-slate-50 px-2.5 py-2.5">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <p className="font-semibold uppercase tracking-wide text-slate-500">
+                        {t("rankingPanel.winRate")}
+                      </p>
+                      <p className="font-bold text-slate-700">
+                        {Math.round(winRate)}%
+                      </p>
+                    </div>
+                    <div
+                      className="mt-2 h-2.5 overflow-hidden rounded-full bg-slate-200"
+                      role="progressbar"
+                      aria-label={`${t("rankingPanel.winRate")} ${player.name}`}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={Math.round(winRate)}
+                    >
+                      <div
+                        className={`h-full rounded-full ${progressTone}`}
+                        style={{ width: `${winRate}%` }}
+                      />
+                    </div>
+                    <p className="mt-1.5 text-[11px] text-slate-500">
+                      {t("rankingPanel.winsOutOfMatches", {
+                        wins: player.wins,
+                        matches: player.totalMatches,
+                      })}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+
+        {hasRankings ? (
+          <div className="hidden md:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="px-4 py-3 text-xs font-semibold text-slate-700 uppercase">
+                    {t("rankingPanel.rank")}
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold text-slate-700 uppercase">
+                    {t("rankingPanel.athlete")}
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold text-slate-700 uppercase text-center">
+                    {t("rankingPanel.winRate")}
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold text-slate-700 uppercase text-right">
+                    {t("rankingPanel.rankScore")}
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {rankings.map((player, index) => {
+                  const winRate = getWinRate(player.totalMatches, player.wins);
+                  const progressTone = getWinRateTone(winRate);
+
+                  return (
+                    <tr
+                      key={player.name}
+                      onClick={() => onSelectPlayer(player)}
+                      className="hover:bg-slate-50 transition-colors cursor-pointer"
+                    >
+                      <td className="px-4 py-3 font-semibold">
+                        {index < 3 ? (
+                          <span className="inline-flex">
+                            {index === 0 ? (
+                              <Award className="h-5 w-5 text-amber-500" />
+                            ) : index === 1 ? (
+                              <Award className="h-5 w-5 text-slate-400" />
+                            ) : (
+                              <Star className="h-5 w-5 text-orange-400" />
+                            )}
+                          </span>
+                        ) : (
+                          <span className="text-slate-500">#{index + 1}</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-slate-900">
+                        {player.name}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="mx-auto w-44">
+                          <div className="flex items-center justify-between text-[11px] font-medium text-slate-600">
+                            <span>{Math.round(winRate)}%</span>
+                            <span>
+                              {player.wins}/{player.totalMatches}
+                            </span>
+                          </div>
+                          <div
+                            className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-200"
+                            role="progressbar"
+                            aria-label={`${t("rankingPanel.winRate")} ${player.name}`}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-valuenow={Math.round(winRate)}
+                          >
+                            <div
+                              className={`h-full rounded-full ${progressTone}`}
+                              style={{ width: `${winRate}%` }}
+                            />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right font-bold text-sky-700">
+                        {player.rankScore.toFixed(3)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
       </div>
 
       <div className="space-y-3">
@@ -309,7 +314,7 @@ export default function RankingPanel({
             <button
               type="button"
               onClick={onClearHistory}
-              disabled={matches.length === 0}
+              disabled={!hasHistory}
               className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 text-xs font-semibold hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Trash2 className="h-3.5 w-3.5" />{" "}
@@ -317,15 +322,16 @@ export default function RankingPanel({
             </button>
           ) : null}
         </div>
+
         <div className="rounded-xl border border-slate-200 bg-white p-2.5 space-y-2">
-          {matches.length === 0 && (
+          {!hasHistory ? (
             <div className="p-4 rounded-lg border border-slate-100 bg-slate-50 text-center">
-              <p className="text-slate-400 text-sm inline-flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                {t("rankingPanel.noRankingBecauseNoMatches")}
+              <p className="text-slate-500 text-sm">
+                {t("rankingPanel.noHistory")}
               </p>
             </div>
-          )}
+          ) : null}
+
           {recentMatchGroups.map((group) => (
             <section key={group.label} className="space-y-2">
               <p className="px-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">

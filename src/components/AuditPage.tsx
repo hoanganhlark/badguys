@@ -8,12 +8,16 @@ import type { AuditEventRecord } from "../types";
 import RankingSidebar from "./ranking/RankingSidebar";
 import type { RankingView } from "./ranking/types";
 
+type AuditFilterType = "all" | "event" | "route_change";
+
 export default function AuditPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { currentUser } = useAuth();
 
   const [events, setEvents] = useState<AuditEventRecord[]>([]);
+  const [selectedUser, setSelectedUser] = useState("all");
+  const [selectedType, setSelectedType] = useState<AuditFilterType>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -35,6 +39,48 @@ export default function AuditPage() {
       .filter(Boolean);
     return new Set(usernames).size;
   }, [events]);
+
+  const userFilterOptions = useMemo(() => {
+    const usernames = events
+      .map((item) => String(item.userProperties?.username || "guest").trim())
+      .filter(Boolean);
+    return Array.from(new Set(usernames)).sort((a, b) =>
+      a.localeCompare(b, "vi"),
+    );
+  }, [events]);
+
+  const filteredEvents = useMemo(() => {
+    return events.filter((item) => {
+      const username = String(item.userProperties?.username || "guest").trim();
+      const eventType =
+        item.eventType === "route_change"
+          ? "route_change"
+          : item.eventType === "event"
+            ? "event"
+            : item.eventName === "route_change"
+              ? "route_change"
+              : "event";
+
+      const userMatches = selectedUser === "all" || username === selectedUser;
+      const typeMatches = selectedType === "all" || eventType === selectedType;
+      return userMatches && typeMatches;
+    });
+  }, [events, selectedType, selectedUser]);
+
+  const getEventTypeLabel = (event: AuditEventRecord): string => {
+    const eventType =
+      event.eventType === "route_change"
+        ? "route_change"
+        : event.eventType === "event"
+          ? "event"
+          : event.eventName === "route_change"
+            ? "route_change"
+            : "event";
+
+    return eventType === "route_change"
+      ? t("auditPage.typeRouteChange")
+      : t("auditPage.typeEvent");
+  };
 
   const formatLocalDateTime = (value?: string): string => {
     if (!value) return "-";
@@ -220,9 +266,48 @@ export default function AuditPage() {
                 </p>
               ) : null}
 
+              <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+                <label className="text-sm text-slate-700">
+                  {t("auditPage.filterByUser")}
+                  <select
+                    value={selectedUser}
+                    onChange={(event) => setSelectedUser(event.target.value)}
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5"
+                  >
+                    <option value="all">{t("auditPage.filterAllUsers")}</option>
+                    {userFilterOptions.map((username) => (
+                      <option key={username} value={username}>
+                        {username}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="text-sm text-slate-700">
+                  {t("auditPage.filterByType")}
+                  <select
+                    value={selectedType}
+                    onChange={(event) =>
+                      setSelectedType(event.target.value as AuditFilterType)
+                    }
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5"
+                  >
+                    <option value="all">{t("auditPage.filterAllTypes")}</option>
+                    <option value="event">{t("auditPage.typeEvent")}</option>
+                    <option value="route_change">
+                      {t("auditPage.typeRouteChange")}
+                    </option>
+                  </select>
+                </label>
+              </div>
+
               {loading ? (
                 <p className="text-sm text-slate-500">
                   {t("auditPage.loadingAudit")}
+                </p>
+              ) : filteredEvents.length === 0 ? (
+                <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-4 text-sm text-slate-500 text-center">
+                  {t("auditPage.noLogs")}
                 </p>
               ) : (
                 <div className="overflow-x-auto">
@@ -230,6 +315,7 @@ export default function AuditPage() {
                     <thead>
                       <tr className="border-b border-slate-200 text-xs uppercase text-slate-500">
                         <th className="px-2 py-3">{t("auditPage.time")}</th>
+                        <th className="px-2 py-3">{t("auditPage.type")}</th>
                         <th className="px-2 py-3">{t("auditPage.event")}</th>
                         <th className="px-2 py-3">{t("auditPage.user")}</th>
                         <th className="px-2 py-3">{t("auditPage.role")}</th>
@@ -238,13 +324,16 @@ export default function AuditPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {events.map((item) => (
+                      {filteredEvents.map((item) => (
                         <tr
                           key={item.id}
                           className="border-b border-slate-100 align-top"
                         >
                           <td className="px-2 py-3 text-slate-600">
                             {formatLocalDateTime(item.createdAt)}
+                          </td>
+                          <td className="px-2 py-3 text-slate-700">
+                            {getEventTypeLabel(item)}
                           </td>
                           <td className="px-2 py-3 font-semibold text-slate-900">
                             {item.eventName}

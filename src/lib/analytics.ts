@@ -5,6 +5,12 @@ export enum AnalyticsEventName {
   SaveSession = "save_session",
   RecordMatch = "record_match",
   SendTelegramNotification = "send_telegram_notification",
+  RouteChange = "route_change",
+}
+
+export enum AnalyticsEventType {
+  Event = "event",
+  RouteChange = "route_change",
 }
 
 export enum AnalyticsParamKey {
@@ -17,6 +23,8 @@ export enum AnalyticsParamKey {
   MatchType = "match_type",
   SetCount = "set_count",
   DurationMinutes = "duration_minutes",
+  FromPath = "from_path",
+  ToPath = "to_path",
 }
 
 export enum AnalyticsStatus {
@@ -104,12 +112,36 @@ export function trackEvent(
 
   void createAuditEvent({
     eventName,
+    eventType: AnalyticsEventType.Event,
     params: normalizedParams,
     userProperties: latestUserProperties,
     pagePath,
     mode: import.meta.env.MODE,
   }).catch((error) => {
     console.warn("Create audit event failed", error);
+  });
+}
+
+export function trackRouteChange(fromPath: string, toPath: string): void {
+  if (!initialized) return;
+
+  const previousPath = String(fromPath || "").trim();
+  const nextPath = String(toPath || "").trim();
+
+  if (!nextPath || previousPath === nextPath) return;
+
+  void createAuditEvent({
+    eventName: AnalyticsEventName.RouteChange,
+    eventType: AnalyticsEventType.RouteChange,
+    params: {
+      [AnalyticsParamKey.FromPath]: previousPath || null,
+      [AnalyticsParamKey.ToPath]: nextPath,
+    },
+    userProperties: latestUserProperties,
+    pagePath: nextPath,
+    mode: import.meta.env.MODE,
+  }).catch((error) => {
+    console.warn("Create route-change audit event failed", error);
   });
 }
 
