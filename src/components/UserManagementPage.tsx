@@ -188,7 +188,13 @@ export default function UserManagementPage() {
 
   return (
     <div className="min-h-screen dashboard-surface text-slate-900 font-sans">
-      <header className="app-topbar z-[80] md:left-72">
+      <header
+        className={`app-topbar z-[55] md:left-72 ${
+          mobileSidebarOpen
+            ? "opacity-0 pointer-events-none md:opacity-100 md:pointer-events-auto"
+            : ""
+        }`}
+      >
         <div className="flex h-14 items-center justify-between px-4 md:px-6">
           <div>
             {!mobileSidebarOpen ? (
@@ -271,7 +277,7 @@ export default function UserManagementPage() {
               >
                 <input
                   type="text"
-                  placeholder="Username"
+                  placeholder={t("userManagement.username")}
                   value={form.username}
                   onChange={(event) =>
                     setForm((prev) => ({
@@ -284,7 +290,7 @@ export default function UserManagementPage() {
                 />
                 <input
                   type="password"
-                  placeholder="Password"
+                  placeholder={t("userManagement.password")}
                   value={form.password}
                   onChange={(event) =>
                     setForm((prev) => ({
@@ -305,8 +311,8 @@ export default function UserManagementPage() {
                   }
                   className="mobile-focus-target dashboard-input"
                 >
-                  <option value="member">member</option>
-                  <option value="admin">admin</option>
+                  <option value="member">{t("userManagement.memberOption")}</option>
+                  <option value="admin">{t("userManagement.adminOption")}</option>
                 </select>
                 <button
                   type="submit"
@@ -343,7 +349,7 @@ export default function UserManagementPage() {
                   <table className="w-full min-w-[600px] text-left text-sm">
                     <thead>
                       <tr className="border-b border-slate-200 text-xs uppercase text-slate-500">
-                        <th className="px-2 py-3">Username</th>
+                        <th className="px-2 py-3">{t("userManagement.username")}</th>
                         <th className="px-2 py-3">
                           {t("userManagement.role")}
                         </th>
@@ -375,8 +381,8 @@ export default function UserManagementPage() {
                               disabled={!isAdmin}
                               className="dashboard-input py-1.5 text-xs"
                             >
-                              <option value="member">member</option>
-                              <option value="admin">admin</option>
+                              <option value="member">{t("userManagement.memberOption")}</option>
+                              <option value="admin">{t("userManagement.adminOption")}</option>
                             </select>
                           </td>
                           <td className="px-2 py-3 text-slate-600">

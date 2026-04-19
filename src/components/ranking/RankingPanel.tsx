@@ -7,6 +7,7 @@ import {
   User,
   Users,
 } from "react-feather";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { AdvancedStats, Match } from "./types";
 
@@ -23,6 +24,55 @@ interface RankingPanelProps {
 function formatMatchDateTime(dateText: string): string {
   if (!dateText) return "--/--/---- --:--";
   return dateText;
+}
+
+function parseMatchDate(match: Match): Date | null {
+  if (match.playedAt) {
+    const parsed = new Date(match.playedAt);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+
+  const normalized = String(match.date || "").trim();
+  if (!normalized) return null;
+
+  const [datePart] = normalized.split(" ");
+  const segments = datePart.split("/");
+  if (segments.length !== 3) return null;
+
+  const [dd, mm, yyyy] = segments.map((part) => Number.parseInt(part, 10));
+  if (!Number.isFinite(dd) || !Number.isFinite(mm) || !Number.isFinite(yyyy)) {
+    return null;
+  }
+
+  const fallbackDate = new Date(yyyy, mm - 1, dd);
+  if (Number.isNaN(fallbackDate.getTime())) return null;
+  return fallbackDate;
+}
+
+function getDateGroupKey(date: Date): string {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function formatVietnameseDateGroup(date: Date): string {
+  const weekdays = [
+    "Chủ nhật",
+    "Thứ hai",
+    "Thứ ba",
+    "Thứ tư",
+    "Thứ năm",
+    "Thứ sáu",
+    "Thứ bảy",
+  ];
+  const weekday = weekdays[date.getDay()] || "Không rõ";
+  const dd = String(date.getDate()).padStart(2, "0");
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const yyyy = date.getFullYear();
+  return `${weekday}, ${dd}/${mm}/${yyyy}`;
 }
 
 function getWinRate(matches: number, wins: number): number {
@@ -56,6 +106,43 @@ export default function RankingPanel({
   currentUserId,
 }: RankingPanelProps) {
   const { t } = useTranslation();
+
+  const recentMatchGroups = useMemo(() => {
+    const grouped = new Map<
+      string,
+      { label: string; order: number; items: Match[] }
+    >();
+
+    matches.slice(0, 10).forEach((match, index) => {
+      const parsedDate = parseMatchDate(match);
+      if (!parsedDate) {
+        const unknownKey = "unknown-date";
+        const currentUnknown = grouped.get(unknownKey) ?? {
+          label: t("rankingPanel.unknownDateGroup"),
+          order: -1,
+          items: [],
+        };
+        currentUnknown.items.push(match);
+        grouped.set(unknownKey, currentUnknown);
+        return;
+      }
+
+      const key = getDateGroupKey(parsedDate);
+      const existing = grouped.get(key);
+
+      if (existing) {
+        existing.items.push(match);
+      } else {
+        grouped.set(key, {
+          label: formatVietnameseDateGroup(parsedDate),
+          order: parsedDate.getTime() - index,
+          items: [match],
+        });
+      }
+    });
+
+    return Array.from(grouped.values()).sort((a, b) => b.order - a.order);
+  }, [matches, t]);
 
   return (
     <div className="max-w-5xl space-y-4 md:space-y-6">
@@ -145,7 +232,7 @@ export default function RankingPanel({
                   {t("rankingPanel.winRate")}
                 </th>
                 <th className="px-4 py-3 text-xs font-semibold text-slate-700 uppercase text-right">
-                  RankScore
+                  {t("rankingPanel.rankScore")}
                 </th>
               </tr>
             </thead>
@@ -239,57 +326,65 @@ export default function RankingPanel({
               </p>
             </div>
           )}
-          {matches.slice(0, 10).map((match) => (
-            <div
-              key={match.id}
-              className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-600">
-                  {match.type === "singles" ? (
-                    <User className="h-3.5 w-3.5" />
-                  ) : (
-                    <Users className="h-3.5 w-3.5" />
-                  )}
-                  {match.type === "singles"
-                    ? t("rankingPanel.singles")
-                    : t("rankingPanel.doubles")}
-                </div>
-                <div className="text-[11px] text-slate-500">
-                  {formatMatchDateTime(match.date)}
-                </div>
-              </div>
+          {recentMatchGroups.map((group) => (
+            <section key={group.label} className="space-y-2">
+              <p className="px-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                {group.label}
+              </p>
 
-              <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-[12px]">
-                <div className="font-medium text-slate-900 truncate">
-                  {match.team1.join(" & ")}
-                </div>
-                <div className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700">
-                  {match.sets.map(formatSet).join(", ")}
-                </div>
-                <div className="font-medium text-slate-900 truncate text-right">
-                  {match.team2.join(" & ")}
-                </div>
-              </div>
+              {group.items.map((match) => (
+                <div
+                  key={match.id}
+                  className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-600">
+                      {match.type === "singles" ? (
+                        <User className="h-3.5 w-3.5" />
+                      ) : (
+                        <Users className="h-3.5 w-3.5" />
+                      )}
+                      {match.type === "singles"
+                        ? t("rankingPanel.singles")
+                        : t("rankingPanel.doubles")}
+                    </div>
+                    <div className="text-[11px] text-slate-500">
+                      {formatMatchDateTime(match.date)}
+                    </div>
+                  </div>
 
-              <div className="mt-2 flex items-center justify-between gap-2">
-                <div className="text-[11px] text-slate-500 truncate">
-                  {t("rankingPanel.createdBy")}:{" "}
-                  {match.createdByUsername || match.createdBy || "-"}
+                  <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-[12px]">
+                    <div className="font-medium text-slate-900 truncate">
+                      {match.team1.join(" & ")}
+                    </div>
+                    <div className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700">
+                      {match.sets.map(formatSet).join(", ")}
+                    </div>
+                    <div className="font-medium text-slate-900 truncate text-right">
+                      {match.team2.join(" & ")}
+                    </div>
+                  </div>
+
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <div className="text-[11px] text-slate-500 truncate">
+                      {t("rankingPanel.createdBy")}: {" "}
+                      {match.createdByUsername || match.createdBy || "-"}
+                    </div>
+                    {isAdmin || match.createdBy === currentUserId ? (
+                      <button
+                        type="button"
+                        onClick={() => onDeleteMatch(match.id)}
+                        className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-red-600 hover:bg-red-50"
+                        aria-label={t("rankingPanel.deleteThisMatch")}
+                        title={t("rankingPanel.deleteThisMatch")}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
-                {isAdmin || match.createdBy === currentUserId ? (
-                  <button
-                    type="button"
-                    onClick={() => onDeleteMatch(match.id)}
-                    className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-red-600 hover:bg-red-50"
-                    aria-label={t("rankingPanel.deleteThisMatch")}
-                    title={t("rankingPanel.deleteThisMatch")}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                ) : null}
-              </div>
-            </div>
+              ))}
+            </section>
           ))}
         </div>
       </div>

@@ -38,7 +38,10 @@ export const envConfig: EnvConfig & { firebaseCollection: string } = {
   firebaseApiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
   firebaseProjectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "",
   appVersion: import.meta.env.VITE_APP_VERSION || "v0.0.0",
+  mode: import.meta.env.MODE,
+  isDevelopment: import.meta.env.DEV,
+  isProduction: import.meta.env.PROD,
   defaultConfig,
   firebaseCollection:
-    import.meta.env.VITE_FIREBASE_COLLECTION_SESSIONS || "dev-sessions",
+    import.meta.env.VITE_FIREBASE_COLLECTION_SESSIONS || "sessions",
 };
