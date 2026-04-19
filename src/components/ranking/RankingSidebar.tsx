@@ -1,5 +1,13 @@
 import { useEffect, type ComponentType } from "react";
-import { Award, Grid, Home, PlusCircle, Shield, X } from "react-feather";
+import {
+  Activity,
+  Award,
+  Grid,
+  Home,
+  PlusCircle,
+  Shield,
+  X,
+} from "react-feather";
 import { useTranslation } from "react-i18next";
 import type { RankingView } from "./types";
 
@@ -9,10 +17,12 @@ interface RankingSidebarProps {
   onGoHome: () => void;
   isAdmin: boolean;
   onGoUsers: () => void;
+  onGoAudit?: () => void;
   showMatchForm?: boolean;
   mobileOpen: boolean;
   onMobileClose: () => void;
   usersActive?: boolean;
+  auditActive?: boolean;
   activeView?: RankingView | null;
 }
 
@@ -50,10 +60,12 @@ export default function RankingSidebar({
   onGoHome,
   isAdmin,
   onGoUsers,
+  onGoAudit,
   showMatchForm = true,
   mobileOpen,
   onMobileClose,
   usersActive = false,
+  auditActive = false,
   activeView,
 }: RankingSidebarProps) {
   const { t } = useTranslation();
@@ -156,21 +168,41 @@ export default function RankingSidebar({
 
           <div className="mt-6 space-y-2">
             {isAdmin ? (
-              <button
-                type="button"
-                onClick={() => {
-                  onGoUsers();
-                  onMobileClose();
-                }}
-                className={`w-full rounded-xl border px-3 py-2.5 text-left text-sm font-semibold inline-flex items-center gap-2 transition-colors ${
-                  usersActive
-                    ? "border-slate-900 bg-slate-900 text-white"
-                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                }`}
-              >
-                <Shield className="h-4 w-4" />
-                <span>{t("rankingSidebar.userManagement")}</span>
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onGoUsers();
+                    onMobileClose();
+                  }}
+                  className={`w-full rounded-xl border px-3 py-2.5 text-left text-sm font-semibold inline-flex items-center gap-2 transition-colors ${
+                    usersActive
+                      ? "border-slate-900 bg-slate-900 text-white"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <Shield className="h-4 w-4" />
+                  <span>{t("rankingSidebar.userManagement")}</span>
+                </button>
+
+                {onGoAudit ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onGoAudit();
+                      onMobileClose();
+                    }}
+                    className={`w-full rounded-xl border px-3 py-2.5 text-left text-sm font-semibold inline-flex items-center gap-2 transition-colors ${
+                      auditActive
+                        ? "border-slate-900 bg-slate-900 text-white"
+                        : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    <Activity className="h-4 w-4" />
+                    <span>{t("rankingSidebar.auditLogs")}</span>
+                  </button>
+                ) : null}
+              </>
             ) : null}
 
             <button
@@ -231,17 +263,33 @@ export default function RankingSidebar({
         </nav>
 
         {isAdmin ? (
-          <button
-            type="button"
-            onClick={onGoUsers}
-            className={`mb-4 flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors ${
-              usersActive
-                ? "border-slate-900 bg-slate-900 text-white"
-                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-            }`}
-          >
-            <Shield className="h-4 w-4" /> {t("rankingSidebar.userManagement")}
-          </button>
+          <div className="mb-4 space-y-2">
+            <button
+              type="button"
+              onClick={onGoUsers}
+              className={`flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors ${
+                usersActive
+                  ? "border-slate-900 bg-slate-900 text-white"
+                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              <Shield className="h-4 w-4" />{" "}
+              {t("rankingSidebar.userManagement")}
+            </button>
+            {onGoAudit ? (
+              <button
+                type="button"
+                onClick={onGoAudit}
+                className={`flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors ${
+                  auditActive
+                    ? "border-slate-900 bg-slate-900 text-white"
+                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                <Activity className="h-4 w-4" /> {t("rankingSidebar.auditLogs")}
+              </button>
+            ) : null}
+          </div>
         ) : null}
 
         <div className="border-t border-slate-200 pt-4 text-xs text-slate-500">

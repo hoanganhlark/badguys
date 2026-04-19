@@ -254,10 +254,12 @@ export default function UserManagementPage() {
           onGoHome={() => navigate("/")}
           isAdmin={isAdmin}
           onGoUsers={() => navigate("/dashboard/users")}
+          onGoAudit={() => navigate("/dashboard/audit")}
           showMatchForm={true}
           mobileOpen={mobileSidebarOpen}
           onMobileClose={() => setMobileSidebarOpen(false)}
           usersActive={true}
+          auditActive={false}
           activeView={null}
         />
 

@@ -1,5 +1,6 @@
 import ReactGA from "react-ga4";
 import { envConfig } from "../env";
+import { createAuditEvent } from "./firebase";
 
 export enum AnalyticsEventName {
   CalculateSession = "calculate_session",
@@ -48,6 +49,35 @@ type UserProperties = Record<
 
 let initialized = false;
 const GA_MEASUREMENT_ID = envConfig.gaMeasurementId;
+let latestUserProperties: Record<string, string | number | boolean | null> = {};
+
+function normalizeAnalyticsObject(
+  input?: Record<string, AnalyticsScalar>,
+): Record<string, string | number | boolean | null> {
+  if (!input) return {};
+
+  return Object.entries(input).reduce<
+    Record<string, string | number | boolean | null>
+  >((acc, [key, value]) => {
+    if (value === undefined) return acc;
+    if (value === null) {
+      acc[key] = null;
+      return acc;
+    }
+    if (typeof value === "string") {
+      acc[key] = value;
+      return acc;
+    }
+    if (typeof value === "number" && Number.isFinite(value)) {
+      acc[key] = value;
+      return acc;
+    }
+    if (typeof value === "boolean") {
+      acc[key] = value;
+    }
+    return acc;
+  }, {});
+}
 
 function canTrack(): boolean {
   return !!GA_MEASUREMENT_ID;
@@ -80,16 +110,41 @@ export function trackEvent(
   if (!initialized || !eventName) return;
 
   ReactGA.event(eventName, params);
+
+  const normalizedParams = normalizeAnalyticsObject(
+    params as Record<string, AnalyticsScalar> | undefined,
+  );
+  const pagePath =
+    typeof window !== "undefined"
+      ? `${window.location.pathname}${window.location.search}${window.location.hash}`
+      : "";
+
+  void createAuditEvent({
+    eventName,
+    params: normalizedParams,
+    userProperties: latestUserProperties,
+    pagePath,
+    mode: import.meta.env.MODE,
+  }).catch((error) => {
+    console.warn("Create audit event failed", error);
+  });
 }
 
 export function setUserProperties(properties: UserProperties): void {
-  if (!initialized) return;
-
   const entries = Object.entries(properties).filter(([, value]) => {
     return value !== undefined && value !== null;
   });
 
-  if (entries.length === 0) return;
+  const normalizedProperties = normalizeAnalyticsObject(
+    Object.fromEntries(entries) as Record<string, AnalyticsScalar>,
+  );
 
-  ReactGA.set(Object.fromEntries(entries));
+  latestUserProperties = {
+    ...latestUserProperties,
+    ...normalizedProperties,
+  };
+
+  if (!initialized || entries.length === 0) return;
+
+  ReactGA.set(normalizedProperties);
 }

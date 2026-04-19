@@ -113,6 +113,16 @@ export type MatchRecord = {
   createdAt?: string;
 };
 
+export type AuditEventRecord = {
+  id: string;
+  eventName: string;
+  params?: Record<string, string | number | boolean | null>;
+  userProperties?: Record<string, string | number | boolean | null>;
+  pagePath?: string;
+  mode?: string;
+  createdAt?: string;
+};
+
 export type EnvConfig = {
   gaMeasurementId: string;
   telegramBotToken: string;

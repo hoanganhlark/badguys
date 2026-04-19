@@ -677,6 +677,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
           onGoHome={onClose}
           isAdmin={isAdmin}
           onGoUsers={() => navigate("/dashboard/users")}
+          onGoAudit={() => navigate("/dashboard/audit")}
           showMatchForm={!isPublicRankingRoute}
           mobileOpen={mobileSidebarOpen}
           onMobileClose={() => setMobileSidebarOpen(false)}

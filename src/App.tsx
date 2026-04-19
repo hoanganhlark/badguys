@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import ConfigSidebar from "./components/ConfigSidebar";
 import ExpensesSection from "./components/ExpensesSection";
+import AuditPage from "./components/AuditPage";
 import LoginModal from "./components/LoginModal";
 import PlayersSection from "./components/PlayersSection";
 import RankingPage from "./components/RankingPage";
@@ -557,6 +558,14 @@ export default function App() {
     return (
       <AdminRoute>
         <UserManagementPage />
+      </AdminRoute>
+    );
+  }
+
+  if (location.pathname === "/dashboard/audit") {
+    return (
+      <AdminRoute>
+        <AuditPage />
       </AdminRoute>
     );
   }
