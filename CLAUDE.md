@@ -24,11 +24,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `src/components/auth/AdminRoute.tsx` — Protected route component requiring admin role
 - `src/components/auth/ProtectedRoute.tsx` — Protected route component requiring authentication
 - `src/lib/core.ts` — Core business logic: `parsePlayersBulk()`, `calculateResult()`, `buildSummaryText()`, `buildSessionPayload()`
-- `src/types.ts` — Shared types: `Player`, `AppConfig`, `CalcResult`, `SessionRecord`
+- `src/types.ts` — Shared types: `Player`, `AppConfig`, `CalcResult`, `SessionRecord`, `RankingSettings`, `RankingMetricVisibility`
 - `src/env.ts` — Parses `VITE_*` env vars with fallback defaults
 - `src/lib/firebase.ts` — Firestore init, session CRUD, user management (auth, password), and subscriptions
 - `src/lib/telegram.ts` — Async Telegram notification (silent failure on error)
 - `src/lib/platform.ts` — localStorage, clipboard, URL params, device detection
+- `src/lib/rankingStats.ts` — Glicko2-based rating calculations for tournament rankings; computes skill rating, rating deviation, volatility, and activity metrics
 - `src/components/RankingPage.tsx` — Ranking system: manages member CRUD, match recording (singles/doubles), and ranking display; supports public guest view and authenticated user access
 - `vite.config.ts` — Base path is `/` in dev, `/badguys/` in production build
 
@@ -64,6 +65,10 @@ User authentication via `AuthContext` (login with username/password, MD5-hashed 
 **Roles:**
 - `admin` — Can manage users, edit all members/matches, delete any content
 - `user` — Can record matches, manage own matches, view rankings
+
+### Ranking system
+
+Player ratings use the **Glicko2** algorithm (a Bayesian rating system accounting for rating deviation and volatility). Matches are processed periodically to update ratings. Match records include `playedAt` (timestamp) and `durationMinutes` (optional match length) for more accurate rating updates. Configurable via `RankingSettings`: tau parameter (player rating volatility) and penaltyCoefficient (activity-based penalties).
 
 ### State management
 

@@ -10,13 +10,15 @@ import {
 } from "../lib/firebase";
 import { matchPath, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { calculateAdvancedStats } from "../lib/rankingStats";
+import { calculateRankingStats } from "../lib/rankingStats";
 import {
   buildMembersFromMatches,
   loadMatchesFromStorage,
   loadMembersFromStorage,
+  loadRankingSettingsFromStorage,
   saveMatchesToStorage,
   saveMembersToStorage,
+  saveRankingSettingsToStorage,
 } from "../lib/rankingStorage";
 import MatchFormPanel from "./ranking/MatchFormPanel";
 import MembersPanel from "./ranking/MembersPanel";
@@ -30,7 +32,7 @@ import type {
   Member,
   RankingView,
 } from "./ranking/types";
-import type { MatchRecord, RankingLevel } from "../types";
+import type { MatchRecord, RankingLevel, RankingSettings } from "../types";
 import { Award, BarChart2, LogIn, LogOut, Menu, Settings } from "react-feather";
 
 interface RankingPageProps {
@@ -88,8 +90,12 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   const [matchData, setMatchData] = useState({
     team1: [] as string[],
     team2: [] as string[],
-    sets: [{ team1Score: "", team2Score: "" }] as MatchSetInput[],
+    sets: [{ team1Score: "", team2Score: "", minutes: "" }] as MatchSetInput[],
+    playedAt: toDateTimeLocal(new Date()),
   });
+  const [rankingSettings, setRankingSettings] = useState<RankingSettings>(() =>
+    loadRankingSettingsFromStorage(),
+  );
 
   useEffect(() => {
     if (!isOpen) return;
@@ -340,6 +346,10 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     saveMatchesToStorage(matches);
   }, [matches, isRemoteHydrated]);
 
+  useEffect(() => {
+    saveRankingSettingsToStorage(rankingSettings);
+  }, [rankingSettings]);
+
   // Logic: Thành viên
   const handleAddMember = () => {
     if (!isAdmin) return;
@@ -434,20 +444,32 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
       .map((set) => {
         const scoreA = Number.parseInt(set.team1Score, 10);
         const scoreB = Number.parseInt(set.team2Score, 10);
+        const minutes = Number.parseInt(String(set.minutes || ""), 10);
 
         if (Number.isNaN(scoreA) || Number.isNaN(scoreB)) return null;
         if (scoreA < 0 || scoreB < 0) return null;
-        return `${scoreA}-${scoreB}`;
+        if (!Number.isNaN(minutes) && minutes < 0) return null;
+
+        return `${scoreA}-${scoreB}${Number.isFinite(minutes) && minutes > 0 ? `@${minutes}` : ""}`;
       })
       .filter((score): score is string => score !== null);
 
     if (parsedSets.length === 0) return;
+
+    const totalMinutes = sets.reduce((sum, set) => {
+      const minutes = Number.parseInt(String(set.minutes || ""), 10);
+      if (!Number.isFinite(minutes) || minutes <= 0) return sum;
+      return sum + minutes;
+    }, 0);
+    const playedAtIso = parseToIsoDate(matchData.playedAt);
 
     try {
       const created = await createMatch({
         playerA: selectedTeam1.join(" / "),
         playerB: selectedTeam2.join(" / "),
         score: parsedSets.join(","),
+        playedAt: playedAtIso,
+        durationMinutes: totalMinutes > 0 ? totalMinutes : undefined,
         createdBy: currentUser.userId,
         createdByUsername: currentUser.username,
       });
@@ -457,7 +479,8 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
       setMatchData({
         team1: [],
         team2: [],
-        sets: [{ team1Score: "", team2Score: "" }],
+        sets: [{ team1Score: "", team2Score: "", minutes: "" }],
+        playedAt: toDateTimeLocal(new Date()),
       });
       setViewWithRoute("ranking", "push");
     } catch (error) {
@@ -468,9 +491,16 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
 
   // Advanced Rankings with Stats
   const rankings = useMemo(() => {
-    const stats = members.map((m) => calculateAdvancedStats(m.name, matches));
-    return stats.sort((a, b) => b.rankScore - a.rankScore);
-  }, [members, matches]);
+    return calculateRankingStats(members, matches, {
+      tau: rankingSettings.tau,
+      penaltyCoefficient: rankingSettings.penaltyCoefficient,
+    });
+  }, [
+    members,
+    matches,
+    rankingSettings.penaltyCoefficient,
+    rankingSettings.tau,
+  ]);
 
   const matchesForDisplay = useMemo(
     () =>
@@ -641,7 +671,8 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                 )}
               </h1>
               <p className="text-slate-500 text-xs md:text-sm mt-1.5">
-                Hệ thống theo dõi trình độ và kết quả thi đấu
+                He thong theo doi trinh do va ket qua thi dau theo mo hinh
+                Glicko-2 hybrid
               </p>
             </header>
 
@@ -668,16 +699,106 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
 
             {/* View: Dashboard (Members) */}
             {view === "member" && (
-              <MembersPanel
-                isEditing={isEditing}
-                newMember={newMember}
-                members={members}
-                onSetNewMember={setNewMember}
-                onAddOrUpdateMember={handleAddMember}
-                onStartEdit={startEdit}
-                onDeleteMember={deleteMember}
-                canManage={isAdmin}
-              />
+              <div className="space-y-4">
+                <MembersPanel
+                  isEditing={isEditing}
+                  newMember={newMember}
+                  members={members}
+                  onSetNewMember={setNewMember}
+                  onAddOrUpdateMember={handleAddMember}
+                  onStartEdit={startEdit}
+                  onDeleteMember={deleteMember}
+                  canManage={isAdmin}
+                />
+                {isAdmin ? (
+                  <div className="max-w-5xl rounded-2xl border border-slate-200 bg-white p-4 md:p-5 space-y-3">
+                    <h3 className="text-sm font-semibold uppercase text-slate-700">
+                      Cau hinh Ranking
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <label className="text-sm text-slate-700">
+                        Tau (0.3 - 1.2)
+                        <input
+                          type="number"
+                          min={0.3}
+                          max={1.2}
+                          step={0.1}
+                          className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200"
+                          value={rankingSettings.tau}
+                          onChange={(e) => {
+                            const value = Number(e.target.value);
+                            if (!Number.isFinite(value)) return;
+                            setRankingSettings((prev) => ({
+                              ...prev,
+                              tau: Math.min(1.2, Math.max(0.3, value)),
+                            }));
+                          }}
+                        />
+                      </label>
+                      <label className="text-sm text-slate-700">
+                        He so phat
+                        <input
+                          type="number"
+                          min={0}
+                          max={2}
+                          step={0.05}
+                          className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200"
+                          value={rankingSettings.penaltyCoefficient}
+                          onChange={(e) => {
+                            const value = Number(e.target.value);
+                            if (!Number.isFinite(value)) return;
+                            setRankingSettings((prev) => ({
+                              ...prev,
+                              penaltyCoefficient: Math.min(
+                                2,
+                                Math.max(0, value),
+                              ),
+                            }));
+                          }}
+                        />
+                      </label>
+                    </div>
+                    <div className="space-y-1.5">
+                      <p className="text-xs font-semibold uppercase text-slate-500">
+                        Hien thi chi so trong modal
+                      </p>
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                        {[
+                          ["skill", "Ky nang"],
+                          ["stability", "Do on dinh"],
+                          ["uncertainty", "Do bat dinh"],
+                          ["motivation", "Dong luc"],
+                          ["winRate", "Ti le thang"],
+                        ].map(([key, label]) => (
+                          <label
+                            key={key}
+                            className="inline-flex items-center gap-2 text-xs text-slate-700"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={
+                                rankingSettings.metricVisibility[
+                                  key as keyof RankingSettings["metricVisibility"]
+                                ]
+                              }
+                              onChange={(e) =>
+                                setRankingSettings((prev) => ({
+                                  ...prev,
+                                  metricVisibility: {
+                                    ...prev.metricVisibility,
+                                    [key]: e.target.checked,
+                                  },
+                                }))
+                              }
+                            />
+                            {label}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
             )}
 
             {/* View: Match Form */}
@@ -712,6 +833,8 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
       {selectedPlayer && (
         <PlayerStatsModal
           stats={selectedPlayer}
+          penaltyCoefficient={rankingSettings.penaltyCoefficient}
+          metricVisibility={rankingSettings.metricVisibility}
           onClose={() => setSelectedPlayer(null)}
         />
       )}
@@ -740,7 +863,9 @@ function mapMatchRecordToRankingMatch(record: MatchRecord): Match {
     team1,
     team2,
     sets,
-    date: formatDateTime(record.createdAt),
+    date: formatDateTime(record.playedAt || record.createdAt),
+    playedAt: record.playedAt,
+    durationMinutes: record.durationMinutes,
     createdBy: record.createdBy,
     createdByUsername: record.createdByUsername,
   };
@@ -759,4 +884,21 @@ function formatDateTime(value?: string): string {
   const min = String(date.getMinutes()).padStart(2, "0");
 
   return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+}
+
+function parseToIsoDate(input: string): string {
+  const trimmed = String(input || "").trim();
+  if (!trimmed) return new Date().toISOString();
+  const date = new Date(trimmed);
+  if (Number.isNaN(date.getTime())) return new Date().toISOString();
+  return date.toISOString();
+}
+
+function toDateTimeLocal(date: Date): string {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  const hh = String(date.getHours()).padStart(2, "0");
+  const min = String(date.getMinutes()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
 }
