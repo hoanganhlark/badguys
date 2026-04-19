@@ -38,6 +38,17 @@ body {
   padding-bottom: calc(6rem + var(--mobile-keyboard-inset));
 }
 
+.app-topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  border-bottom: 1px solid #e2e8f0;
+  background: rgba(250, 250, 250, 0.92);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
+}
+
 .mobile-focus-target {
   scroll-margin-top: 5.5rem;
   scroll-margin-bottom: 10rem;

@@ -30,6 +30,25 @@ export default function MatchFormPanel({
   onSaveMatch,
 }: MatchFormPanelProps) {
   const { t } = useTranslation();
+  const slotCount = matchType === "singles" ? 1 : 2;
+  const selectedTeam1 = matchData.team1
+    .slice(0, slotCount)
+    .filter((name) => name?.trim());
+  const selectedTeam2 = matchData.team2
+    .slice(0, slotCount)
+    .filter((name) => name?.trim());
+  const hasValidTeams =
+    selectedTeam1.length === slotCount && selectedTeam2.length === slotCount;
+  const hasValidSet = matchData.sets.some((set) => {
+    const scoreA = Number.parseInt(set.team1Score, 10);
+    const scoreB = Number.parseInt(set.team2Score, 10);
+    const minutes = Number.parseInt(String(set.minutes || ""), 10);
+    if (Number.isNaN(scoreA) || Number.isNaN(scoreB)) return false;
+    if (scoreA < 0 || scoreB < 0) return false;
+    if (!Number.isNaN(minutes) && minutes < 0) return false;
+    return true;
+  });
+  const canSaveMatch = hasValidTeams && hasValidSet;
 
   const getSelectableMembers = (team: "team1" | "team2", index: number) => {
     const currentSelection = matchData[team][index];
@@ -229,7 +248,8 @@ export default function MatchFormPanel({
 
       <button
         onClick={onSaveMatch}
-        className="w-full bg-slate-900 text-white py-2.5 rounded-xl font-semibold hover:bg-slate-800 transition-all inline-flex items-center justify-center gap-2"
+        disabled={!canSaveMatch}
+        className="w-full bg-slate-900 text-white py-2.5 rounded-xl font-semibold hover:bg-slate-800 transition-all inline-flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
       >
         <CheckCircle className="h-4 w-4" /> {t("matchForm.saveResult")}
       </button>

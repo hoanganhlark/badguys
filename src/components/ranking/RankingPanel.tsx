@@ -234,7 +234,8 @@ export default function RankingPanel({
           {matches.length === 0 && (
             <div className="p-4 rounded-lg border border-slate-100 bg-slate-50 text-center">
               <p className="text-slate-400 text-sm inline-flex items-center gap-2">
-                <FileText className="h-4 w-4" /> {t("rankingPanel.noMatches")}
+                <FileText className="h-4 w-4" />
+                {t("rankingPanel.noRankingBecauseNoMatches")}
               </p>
             </div>
           )}

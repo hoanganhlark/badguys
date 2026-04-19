@@ -22,6 +22,8 @@ export default function LoginModal({
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const canSubmit =
+    username.trim().length > 0 && password.trim().length > 0 && !submitting;
 
   if (!open) return null;
 
@@ -31,7 +33,7 @@ export default function LoginModal({
     setError("");
 
     try {
-      await login(username, password);
+      await login(username.trim(), password);
       onSuccess(redirectTo);
     } catch (loginError) {
       setError(
@@ -118,7 +120,7 @@ export default function LoginModal({
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={!canSubmit}
             className="w-full rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:opacity-60"
           >
             {submitting ? t("login.submitting") : t("common.login")}

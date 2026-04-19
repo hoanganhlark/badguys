@@ -17,6 +17,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const canSubmit =
+    username.trim().length > 0 && password.trim().length > 0 && !submitting;
 
   const redirectTo =
     (
@@ -29,7 +31,7 @@ export default function LoginPage() {
     setError("");
 
     try {
-      await login(username, password);
+      await login(username.trim(), password);
       navigate(redirectTo, { replace: true });
     } catch (loginError) {
       setError(
@@ -93,7 +95,7 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={!canSubmit}
             className="w-full rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:opacity-60"
           >
             {submitting ? t("login.submitting") : t("common.login")}
