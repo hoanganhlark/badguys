@@ -117,7 +117,6 @@ export default function App() {
   const resetTimerRef = useRef<number | null>(null);
   const rankingMenuRef = useRef<HTMLDivElement | null>(null);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
-  const lastCalculationTrackedRef = useRef("");
   const previousPathRef = useRef("");
 
   const {
@@ -142,25 +141,6 @@ export default function App() {
   );
 
   const showResult = players.length > 0 && calc.total !== 0;
-
-  const calculationTrackingKey = useMemo(() => {
-    if (!showResult) return "";
-
-    return JSON.stringify({
-      playersCount: players.length,
-      courtFee,
-      shuttleCount,
-      courtCount,
-      total: calc.total,
-    });
-  }, [
-    showResult,
-    players.length,
-    courtFee,
-    shuttleCount,
-    courtCount,
-    calc.total,
-  ]);
 
   useEffect(() => {
     initAnalytics();
@@ -193,26 +173,6 @@ export default function App() {
       [AnalyticsUserPropertyKey.Username]: currentUser?.username || "guest",
     });
   }, [isAuthenticated, currentUser?.role, currentUser?.username]);
-
-  useEffect(() => {
-    if (!calculationTrackingKey) return;
-    if (lastCalculationTrackedRef.current === calculationTrackingKey) return;
-
-    lastCalculationTrackedRef.current = calculationTrackingKey;
-
-    trackEvent(AnalyticsEventName.CalculateSession, {
-      [AnalyticsParamKey.PlayersCount]: players.length,
-      [AnalyticsParamKey.MaleCount]: calc.malesCount,
-      [AnalyticsParamKey.FemaleCount]: calc.femalesCount,
-      [AnalyticsParamKey.TotalFeeK]: calc.total,
-    });
-  }, [
-    calculationTrackingKey,
-    players.length,
-    calc.malesCount,
-    calc.femalesCount,
-    calc.total,
-  ]);
 
   useEffect(() => {
     saveConfig(config, storageScopeKey);
@@ -350,6 +310,13 @@ export default function App() {
   }
 
   async function handleCopySummary() {
+    trackEvent(AnalyticsEventName.CalculateSession, {
+      [AnalyticsParamKey.PlayersCount]: players.length,
+      [AnalyticsParamKey.MaleCount]: calc.malesCount,
+      [AnalyticsParamKey.FemaleCount]: calc.femalesCount,
+      [AnalyticsParamKey.TotalFeeK]: calc.total,
+    });
+
     const summaryText = buildSummaryText(
       players,
       config,

@@ -29,7 +29,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `src/lib/firebase.ts` — Firestore init, session CRUD, user management (auth, password), and subscriptions
 - `src/lib/telegram.ts` — Async Telegram notification (silent failure on error)
 - `src/lib/analytics.ts` — Audit event logging to Firestore; provides `initAnalytics()`, `trackPageView()`, `trackEvent()`, `trackRouteChange()`, and `setUserProperties()`
-- `src/lib/platform.ts` — localStorage, clipboard, URL params, device detection
+- `src/lib/platform.ts` — localStorage (with user-scoped storage support), clipboard, URL params, device detection
 - `src/lib/rankingStats.ts` — Glicko2-based rating calculations for tournament rankings; computes skill rating, rating deviation, volatility, and activity metrics
 - `src/components/RankingPage.tsx` — Ranking system: manages member CRUD, match recording (singles/doubles), and ranking display; supports public guest view and authenticated user access
 - `src/components/AuditPage.tsx` — Audit event log viewer (admin-only); displays all tracked events with user properties, timestamps, and page context
@@ -79,7 +79,7 @@ Player ratings use the **Glicko2** algorithm (a Bayesian rating system accountin
 
 ### State management
 
-Pure React hooks (`useState`, `useEffect`, `useMemo`) with i18next for internationalization. `localStorage` persists config, input drafts, members, matches, and language preference. Authentication state managed via `AuthContext`. App language is fixed to Vietnamese; language switching is not supported.
+Pure React hooks (`useState`, `useEffect`, `useMemo`) with i18next for internationalization. `localStorage` persists config, input drafts, members, matches, and language preference—scoped per authenticated user (fallback to "guest" for unauthenticated access). Authentication state managed via `AuthContext`. App language is fixed to Vietnamese; language switching is not supported.
 
 ### Testing
 
