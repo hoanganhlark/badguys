@@ -1,5 +1,6 @@
 import { FormEvent, useState } from "react";
 import { X } from "react-feather";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 
 type LoginModalProps = {
@@ -16,6 +17,7 @@ export default function LoginModal({
   onSuccess,
 }: LoginModalProps) {
   const { login } = useAuth();
+  const { t } = useTranslation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -33,9 +35,7 @@ export default function LoginModal({
       onSuccess(redirectTo);
     } catch (loginError) {
       setError(
-        loginError instanceof Error
-          ? loginError.message
-          : "Đăng nhập thất bại. Vui lòng thử lại.",
+        loginError instanceof Error ? loginError.message : t("login.failed"),
       );
     } finally {
       setSubmitting(false);
@@ -55,16 +55,18 @@ export default function LoginModal({
       >
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-2xl font-bold text-slate-900">Đăng nhập</h3>
+            <h3 className="text-2xl font-bold text-slate-900">
+              {t("login.title")}
+            </h3>
             <p className="mt-1 text-sm text-slate-600">
-              Nhập tài khoản để truy cập Dashboard.
+              {t("login.subtitleModal")}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="rounded-lg p-1 text-slate-400 hover:text-slate-700"
-            aria-label="Đóng đăng nhập"
+            aria-label={t("login.close")}
           >
             <X className="h-5 w-5" />
           </button>
@@ -119,7 +121,7 @@ export default function LoginModal({
             disabled={submitting}
             className="w-full rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:opacity-60"
           >
-            {submitting ? "Đang đăng nhập..." : "Đăng nhập"}
+            {submitting ? t("login.submitting") : t("common.login")}
           </button>
         </form>
       </div>

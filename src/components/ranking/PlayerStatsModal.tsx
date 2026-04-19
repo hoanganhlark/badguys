@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, X } from "react-feather";
+import { useTranslation } from "react-i18next";
 import type { RankingMetricVisibility } from "../../types";
 import type { AdvancedStats } from "./types";
 
@@ -18,26 +19,29 @@ function toPercent(value: number): number {
   return clamp(value, 0, 1) * 100;
 }
 
-function getVolBadge(vol: number): string {
-  if (vol <= 0.05) return "Rat on dinh";
-  if (vol <= 0.07) return "Binh thuong";
-  if (vol < 0.1) return "That thuong";
-  return "Kho du doan";
+function getVolBadge(vol: number, t: (key: string) => string): string {
+  if (vol <= 0.05) return t("playerStats.veryStable");
+  if (vol <= 0.07) return t("playerStats.normal");
+  if (vol < 0.1) return t("playerStats.volatile");
+  return t("playerStats.hardToPredict");
 }
 
-function getUncertaintyBadge(uncertaintyNorm: number): string {
-  if (uncertaintyNorm > 1.2) return "Rat it du lieu";
-  if (uncertaintyNorm >= 1.0) return "Biet so bo";
-  if (uncertaintyNorm >= 0.7) return "Bat dau tin duoc";
-  if (uncertaintyNorm >= 0.4) return "Kha chac";
-  return "Rat chac";
+function getUncertaintyBadge(
+  uncertaintyNorm: number,
+  t: (key: string) => string,
+): string {
+  if (uncertaintyNorm > 1.2) return t("playerStats.veryLittleData");
+  if (uncertaintyNorm >= 1.0) return t("playerStats.roughEstimate");
+  if (uncertaintyNorm >= 0.7) return t("playerStats.becomingReliable");
+  if (uncertaintyNorm >= 0.4) return t("playerStats.fairlyCertain");
+  return t("playerStats.veryCertain");
 }
 
-function getSkillBadge(rating: number): string {
-  if (rating < 1300) return "Khong phan biet duoc";
-  if (rating < 1500) return "Nhinh hon nhe";
-  if (rating <= 1700) return "Hon ro";
-  return "Khac dang cap";
+function getSkillBadge(rating: number, t: (key: string) => string): string {
+  if (rating < 1300) return t("playerStats.notDistinguishable");
+  if (rating < 1500) return t("playerStats.slightlyBetter");
+  if (rating <= 1700) return t("playerStats.clearlyBetter");
+  return t("playerStats.differentClass");
 }
 
 export default function PlayerStatsModal({
@@ -46,6 +50,7 @@ export default function PlayerStatsModal({
   metricVisibility,
   onClose,
 }: PlayerStatsModalProps) {
+  const { t } = useTranslation();
   const [expandedMetric, setExpandedMetric] = useState<string | null>(null);
   const [isSimpleExplainOpen, setIsSimpleExplainOpen] = useState(false);
 
@@ -68,47 +73,43 @@ export default function PlayerStatsModal({
   const metricItems = [
     {
       id: "skill",
-      label: "Ky nang",
-      displayValue: `${stats.rating.toFixed(2)} (${getSkillBadge(stats.rating)})`,
+      label: t("playerStats.skill"),
+      displayValue: `${stats.rating.toFixed(2)} (${getSkillBadge(stats.rating, t)})`,
       progress: toPercent(skillProgress),
       tone: "bg-blue-500",
-      description:
-        "Dua tren Glicko-2 rating. Cang thang nhieu doi thu manh, rating cang cao. Goc: 1500.",
+      description: t("playerStats.descriptionSkill"),
     },
     {
       id: "stability",
-      label: "Do on dinh",
-      displayValue: `${stats.vol.toFixed(4)} (${getVolBadge(stats.vol)})`,
+      label: t("playerStats.stability"),
+      displayValue: `${stats.vol.toFixed(4)} (${getVolBadge(stats.vol, t)})`,
       progress: toPercent(stabilityProgress),
       tone: "bg-emerald-500",
-      description:
-        "Dua tren Volatility (sigma) Glicko-2. Phong do cang deu thi sigma cang thap, diem cang cao.",
+      description: t("playerStats.descriptionStability"),
     },
     {
       id: "uncertainty",
-      label: "Do bat dinh",
-      displayValue: `${stats.uncertaintyNorm.toFixed(3)} (${getUncertaintyBadge(stats.uncertaintyNorm)})`,
+      label: t("playerStats.uncertainty"),
+      displayValue: `${stats.uncertaintyNorm.toFixed(3)} (${getUncertaintyBadge(stats.uncertaintyNorm, t)})`,
       progress: toPercent(uncertaintyProgress),
       tone: "bg-amber-500",
-      description:
-        "Dua tren Rating Deviation (RD). Cang it tran hoac lau khong thi dau thi RD cao, diem thap.",
+      description: t("playerStats.descriptionUncertainty"),
     },
     {
       id: "motivation",
-      label: "Dong luc",
+      label: t("playerStats.motivation"),
       displayValue: stats.motivation.toFixed(3),
       progress: toPercent(motivationProgress),
       tone: "bg-violet-500",
-      description:
-        "Tan suat thi dau gan day so voi trung binh. > 1 = dang tich cuc hon binh thuong.",
+      description: t("playerStats.descriptionMotivation"),
     },
     {
       id: "winRate",
-      label: "Ti le thang",
+      label: t("playerStats.winRate"),
       displayValue: `${Math.round(stats.winRate * 100)}% (${stats.wins}/${stats.totalMatches})`,
       progress: toPercent(stats.winRate),
       tone: "bg-cyan-500",
-      description: "So tran thang / tong so tran da thi dau.",
+      description: t("playerStats.descriptionWinRate"),
     },
   ].filter(
     (item) => metricVisibility[item.id as keyof RankingMetricVisibility],
@@ -121,7 +122,7 @@ export default function PlayerStatsModal({
           <div>
             <h2 className="text-2xl font-bold text-gray-900">{stats.name}</h2>
             <p className="text-sm text-gray-500 mt-1">
-              Diem xep hang: {stats.rankScore.toFixed(4)}
+              {t("playerStats.rankScore")}: {stats.rankScore.toFixed(4)}
             </p>
           </div>
           <button
@@ -172,10 +173,14 @@ export default function PlayerStatsModal({
                 <div className="overflow-hidden">
                   <p className="text-xs text-gray-500">{item.description}</p>
                   <p className="mt-1 text-[11px] text-gray-500">
-                    Gia tri hien tai: {item.displayValue}
+                    {t("playerStats.currentValue", {
+                      value: item.displayValue,
+                    })}
                   </p>
                   <p className="mt-1 text-[11px] text-gray-500">
-                    Progress hien thi: {item.progress.toFixed(1)}%
+                    {t("playerStats.progressShown", {
+                      value: item.progress.toFixed(1),
+                    })}
                   </p>
                 </div>
               </div>
@@ -185,9 +190,10 @@ export default function PlayerStatsModal({
 
         <div className="text-xs text-gray-600 pt-2 border-t space-y-2">
           <p>
-            <strong>Cong thuc diem xep hang:</strong> Diem xep hang = Ky nang -
-            (Do bat dinh x Phong do on dinh x {penaltyCoefficient.toFixed(2)} x
-            Dong luc)
+            <strong>{t("playerStats.formulaTitle")}</strong>{" "}
+            {t("playerStats.formulaText", {
+              penalty: penaltyCoefficient.toFixed(2),
+            })}
           </p>
           <p className="text-gray-500">
             {stats.skillNorm.toFixed(4)} - ({stats.uncertaintyNorm.toFixed(4)} x
@@ -200,7 +206,9 @@ export default function PlayerStatsModal({
             className="w-full mt-1 p-2 rounded bg-gray-50 text-left inline-flex items-center justify-between"
             aria-expanded={isSimpleExplainOpen}
           >
-            <span className="font-semibold text-gray-700">Hieu don gian</span>
+            <span className="font-semibold text-gray-700">
+              {t("playerStats.simpleExplanation")}
+            </span>
             <ChevronDown
               className={`h-4 w-4 text-gray-500 transition-transform duration-300 ${
                 isSimpleExplainOpen ? "rotate-180" : "rotate-0"
@@ -216,9 +224,7 @@ export default function PlayerStatsModal({
           >
             <div className="overflow-hidden">
               <p className="text-gray-500 mt-1">
-                Ky nang cang cao thi diem cang tot. Do bat dinh (RD) cao se bi
-                tru vi du lieu chua du. Vol cao (phong do that thuong) bi tru
-                them. Dong luc thap lam muc phat nhe hon.
+                {t("playerStats.simpleText")}
               </p>
             </div>
           </div>
@@ -228,7 +234,7 @@ export default function PlayerStatsModal({
           onClick={onClose}
           className="w-full bg-blue-600 text-white py-2 rounded font-semibold hover:bg-blue-700 transition-colors"
         >
-          Dong
+          {t("common.close")}
         </button>
       </div>
     </div>

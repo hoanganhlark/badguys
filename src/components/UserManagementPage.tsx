@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Menu, Shield, Users } from "react-feather";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -15,6 +16,7 @@ import type { RankingView } from "./ranking/types";
 
 export default function UserManagementPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { currentUser } = useAuth();
 
   const [users, setUsers] = useState<UserRecord[]>([]);
@@ -56,7 +58,7 @@ export default function UserManagementPage() {
           setError(
             loadError instanceof Error
               ? loadError.message
-              : "Không tải được danh sách users.",
+              : t("userManagement.loadUsersFailed"),
           );
           setLoading(false);
         },
@@ -65,7 +67,7 @@ export default function UserManagementPage() {
       setError(
         loadError instanceof Error
           ? loadError.message
-          : "Không tải được danh sách users.",
+          : t("userManagement.loadUsersFailed"),
       );
       setLoading(false);
     }
@@ -119,7 +121,7 @@ export default function UserManagementPage() {
     const password = form.password;
 
     if (!username || !password) {
-      setError("Vui lòng nhập username và password.");
+      setError(t("userManagement.enterUsernamePassword"));
       return;
     }
 
@@ -137,7 +139,7 @@ export default function UserManagementPage() {
       setError(
         createError instanceof Error
           ? createError.message
-          : "Tạo user thất bại.",
+          : t("userManagement.createUserFailed"),
       );
     } finally {
       setSaving(false);
@@ -147,11 +149,11 @@ export default function UserManagementPage() {
   async function handleDeleteUser(user: UserRecord) {
     if (!isAdmin) return;
     if (user.id === currentUser?.userId) {
-      setError("Không thể xóa chính tài khoản đang đăng nhập.");
+      setError(t("userManagement.cannotDeleteSelf"));
       return;
     }
 
-    const confirmed = window.confirm("Bạn có chắc chắn muốn xóa không?");
+    const confirmed = window.confirm(t("common.confirmDelete"));
     if (!confirmed) return;
 
     try {
@@ -160,7 +162,7 @@ export default function UserManagementPage() {
       setError(
         deleteError instanceof Error
           ? deleteError.message
-          : "Xóa user thất bại.",
+          : t("userManagement.deleteUserFailed"),
       );
     }
   }
@@ -174,7 +176,7 @@ export default function UserManagementPage() {
       setError(
         updateError instanceof Error
           ? updateError.message
-          : "Cập nhật role thất bại.",
+          : t("userManagement.updateRoleFailed"),
       );
     }
   }
@@ -186,7 +188,7 @@ export default function UserManagementPage() {
           type="button"
           onClick={() => setMobileSidebarOpen(true)}
           className="md:hidden fixed top-5 left-5 z-[70] h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm inline-flex items-center justify-center hover:bg-slate-50"
-          aria-label="Mở menu dashboard"
+          aria-label={t("userManagement.menu")}
         >
           <Menu className="h-5 w-5" />
         </button>
@@ -211,26 +213,32 @@ export default function UserManagementPage() {
             <header className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm md:px-6 md:py-5">
               <h1 className="text-xl md:text-3xl font-bold text-slate-900 inline-flex items-center gap-3">
                 <Shield className="h-6 w-6 md:h-8 md:w-8 text-sky-600" />
-                Quản lý user
+                {t("userManagement.title")}
               </h1>
               <p className="mt-1.5 text-xs md:text-sm text-slate-500">
-                Quản lý tài khoản đăng nhập và phân quyền dashboard.
+                {t("userManagement.subtitle")}
               </p>
             </header>
 
             <section className="grid grid-cols-3 gap-2 md:max-w-2xl">
               <div className="dashboard-card px-3 py-2.5">
-                <p className="text-[11px] text-slate-500">Tổng users</p>
+                <p className="text-[11px] text-slate-500">
+                  {t("userManagement.totalUsers")}
+                </p>
                 <p className="text-lg font-bold text-slate-900">
                   {sortedUsers.length}
                 </p>
               </div>
               <div className="dashboard-card px-3 py-2.5">
-                <p className="text-[11px] text-slate-500">Admin</p>
+                <p className="text-[11px] text-slate-500">
+                  {t("userManagement.admin")}
+                </p>
                 <p className="text-lg font-bold text-slate-900">{adminCount}</p>
               </div>
               <div className="dashboard-card px-3 py-2.5">
-                <p className="text-[11px] text-slate-500">Member</p>
+                <p className="text-[11px] text-slate-500">
+                  {t("userManagement.member")}
+                </p>
                 <p className="text-lg font-bold text-slate-900">
                   {Math.max(0, sortedUsers.length - adminCount)}
                 </p>
@@ -239,7 +247,7 @@ export default function UserManagementPage() {
 
             <section className="dashboard-card p-4 md:p-5">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
-                Tạo user mới
+                {t("userManagement.createTitle")}
               </h2>
               <form
                 className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-4"
@@ -289,17 +297,19 @@ export default function UserManagementPage() {
                   disabled={saving || !isAdmin}
                   className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
                 >
-                  {saving ? "Đang tạo..." : "Tạo user"}
+                  {saving
+                    ? t("userManagement.creating")
+                    : t("userManagement.createButton")}
                 </button>
               </form>
               <p className="mt-2 text-xs text-slate-500">
-                Password sẽ được lưu dưới dạng MD5 hash.
+                {t("userManagement.passwordStoredMd5")}
               </p>
             </section>
 
             <section className="dashboard-card p-4 md:p-5">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700 inline-flex items-center gap-2">
-                <Users className="h-4 w-4" /> Danh sách users
+                <Users className="h-4 w-4" /> {t("userManagement.usersList")}
               </h2>
 
               {error ? (
@@ -309,16 +319,24 @@ export default function UserManagementPage() {
               ) : null}
 
               {loading ? (
-                <p className="mt-3 text-sm text-slate-500">Đang tải users...</p>
+                <p className="mt-3 text-sm text-slate-500">
+                  {t("userManagement.loadingUsers")}
+                </p>
               ) : (
                 <div className="mt-3 overflow-x-auto">
                   <table className="w-full min-w-[600px] text-left text-sm">
                     <thead>
                       <tr className="border-b border-slate-200 text-xs uppercase text-slate-500">
                         <th className="px-2 py-3">Username</th>
-                        <th className="px-2 py-3">Role</th>
-                        <th className="px-2 py-3">CreatedAt</th>
-                        <th className="px-2 py-3 text-right">Actions</th>
+                        <th className="px-2 py-3">
+                          {t("userManagement.role")}
+                        </th>
+                        <th className="px-2 py-3">
+                          {t("userManagement.createdAt")}
+                        </th>
+                        <th className="px-2 py-3 text-right">
+                          {t("userManagement.actions")}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -357,7 +375,7 @@ export default function UserManagementPage() {
                               }
                               className="rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
                             >
-                              Xóa
+                              {t("userManagement.delete")}
                             </button>
                           </td>
                         </tr>

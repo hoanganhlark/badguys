@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import {
   createMatch,
   deleteMatch,
@@ -46,6 +47,7 @@ function isRankingView(value: string | null): value is RankingView {
 
 export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   const { currentUser, isAdmin, logout } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const isPublicRankingRoute = location.pathname.startsWith("/ranking");
@@ -369,7 +371,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
 
   const deleteMember = (id: number) => {
     if (!isAdmin) return;
-    const confirmed = window.confirm("Bạn có chắc chắn muốn xóa không?");
+    const confirmed = window.confirm(t("common.confirmDelete"));
     if (!confirmed) return;
     setMembers(members.filter((m) => m.id !== id));
   };
@@ -384,7 +386,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     if (!isAdmin) return;
     if (matches.length === 0) return;
 
-    const confirmed = window.confirm("Bạn có chắc chắn muốn xóa không?");
+    const confirmed = window.confirm(t("common.confirmDelete"));
     if (!confirmed) return;
 
     try {
@@ -402,11 +404,11 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     if (!target || !currentUser) return;
 
     if (!isAdmin && target.createdBy !== currentUser.userId) {
-      window.alert("Bạn chỉ có thể xóa trận do chính bạn tạo.");
+      window.alert(t("rankingPage.onlyDeleteOwnMatch"));
       return;
     }
 
-    const confirmed = window.confirm("Bạn có chắc chắn muốn xóa không?");
+    const confirmed = window.confirm(t("common.confirmDelete"));
     if (!confirmed) return;
 
     try {
@@ -485,7 +487,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
       setViewWithRoute("ranking", "push");
     } catch (error) {
       console.error("Failed to save match", error);
-      window.alert("Không thể lưu trận đấu. Vui lòng thử lại.");
+      window.alert(t("rankingPage.cannotSaveMatch"));
     }
   };
 
@@ -535,7 +537,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
             type="button"
             onClick={() => setMobileSidebarOpen(true)}
             className="md:hidden fixed top-5 left-5 z-[70] h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm inline-flex items-center justify-center hover:bg-slate-50"
-            aria-label="Mở menu dashboard"
+            aria-label={t("rankingPage.menu")}
           >
             <Menu className="h-5 w-5" />
           </button>
@@ -550,8 +552,12 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
               type="button"
               onClick={() => setUserMenuOpen((prev) => !prev)}
               className="h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm inline-flex items-center justify-center text-sm font-bold uppercase hover:bg-slate-50"
-              title={`Đăng nhập: ${currentUser.username}`}
-              aria-label={`Đăng nhập: ${currentUser.username}`}
+              title={t("rankingPage.userMenuTitle", {
+                username: currentUser.username,
+              })}
+              aria-label={t("rankingPage.userMenuTitle", {
+                username: currentUser.username,
+              })}
             >
               {currentUserInitial}
             </button>
@@ -570,7 +576,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                   className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center gap-2"
                 >
                   <Award className="h-4 w-4" />
-                  Về trang chủ
+                  {t("app.home")}
                 </button>
                 <button
                   type="button"
@@ -581,7 +587,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                   }}
                   className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-red-600 hover:bg-red-50 inline-flex items-center gap-2"
                 >
-                  <LogOut className="h-4 w-4" /> Đăng xuất
+                  <LogOut className="h-4 w-4" /> {t("common.logout")}
                 </button>
               </div>
             ) : null}
@@ -596,7 +602,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
             <button
               type="button"
               onClick={() => setGuestMenuOpen((prev) => !prev)}
-              aria-label="Mở menu đăng nhập"
+              aria-label={t("rankingPage.guestMenu")}
               className="h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
             >
               <LogIn className="h-5 w-5" />
@@ -612,7 +618,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                   }}
                   className="w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
                 >
-                  Về trang chủ
+                  {t("app.home")}
                 </button>
                 <button
                   type="button"
@@ -624,7 +630,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                   }}
                   className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
                 >
-                  Đăng nhập
+                  {t("common.login")}
                 </button>
               </div>
             ) : null}
@@ -654,43 +660,48 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                 {view === "member" && (
                   <>
                     <Settings className="h-6 w-6 md:h-8 md:w-8 text-sky-600" />{" "}
-                    Quản lý thành viên
+                    {t("rankingPage.memberManagement")}
                   </>
                 )}
                 {view === "match-form" && (
                   <>
                     <BarChart2 className="h-6 w-6 md:h-8 md:w-8 text-sky-600" />
-                    Ghi nhận kết quả
+                    {t("rankingPage.recordResult")}
                   </>
                 )}
                 {view === "ranking" && (
                   <>
                     <Award className="h-6 w-6 md:h-8 md:w-8 text-sky-600" />{" "}
-                    Bảng xếp hạng câu lạc bộ
+                    {t("rankingPage.clubRanking")}
                   </>
                 )}
               </h1>
               <p className="text-slate-500 text-xs md:text-sm mt-1.5">
-                He thong theo doi trinh do va ket qua thi dau theo mo hinh
-                Glicko-2 hybrid
+                {t("rankingPage.systemDescription")}
               </p>
             </header>
 
             <section className="grid grid-cols-3 gap-2 mb-4 md:mb-6 md:max-w-2xl">
               <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
-                <p className="text-[11px] text-slate-500">Thành viên</p>
+                <p className="text-[11px] text-slate-500">
+                  {t("rankingPage.members")}
+                </p>
                 <p className="text-lg font-bold text-slate-900">
                   {members.length}
                 </p>
               </div>
               <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
-                <p className="text-[11px] text-slate-500">Trận đấu</p>
+                <p className="text-[11px] text-slate-500">
+                  {t("rankingPage.matches")}
+                </p>
                 <p className="text-lg font-bold text-slate-900">
                   {matches.length}
                 </p>
               </div>
               <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
-                <p className="text-[11px] text-slate-500">Top rank</p>
+                <p className="text-[11px] text-slate-500">
+                  {t("rankingPage.topRank")}
+                </p>
                 <p className="text-sm md:text-base font-bold text-slate-900 truncate">
                   {rankings[0]?.name ?? "-"}
                 </p>
@@ -713,7 +724,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                 {isAdmin ? (
                   <div className="max-w-5xl rounded-2xl border border-slate-200 bg-white p-4 md:p-5 space-y-3">
                     <h3 className="text-sm font-semibold uppercase text-slate-700">
-                      Cau hinh Ranking
+                      {t("rankingPage.rankingConfig")}
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <label className="text-sm text-slate-700">
@@ -736,7 +747,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                         />
                       </label>
                       <label className="text-sm text-slate-700">
-                        He so phat
+                        {t("rankingPage.penaltyCoefficient")}
                         <input
                           type="number"
                           min={0}
@@ -760,15 +771,15 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                     </div>
                     <div className="space-y-1.5">
                       <p className="text-xs font-semibold uppercase text-slate-500">
-                        Hien thi chi so trong modal
+                        {t("rankingPage.showMetricsInModal")}
                       </p>
                       <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                         {[
-                          ["skill", "Ky nang"],
-                          ["stability", "Do on dinh"],
-                          ["uncertainty", "Do bat dinh"],
-                          ["motivation", "Dong luc"],
-                          ["winRate", "Ti le thang"],
+                          ["skill", t("rankingPage.skill")],
+                          ["stability", t("rankingPage.stability")],
+                          ["uncertainty", t("rankingPage.uncertainty")],
+                          ["motivation", t("rankingPage.motivation")],
+                          ["winRate", t("rankingPage.winRate")],
                         ].map(([key, label]) => (
                           <label
                             key={key}

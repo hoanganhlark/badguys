@@ -1,5 +1,6 @@
 import { useEffect, type ComponentType } from "react";
 import { Award, Grid, Home, PlusCircle, Shield, X } from "react-feather";
+import { useTranslation } from "react-i18next";
 import type { RankingView } from "./types";
 
 interface RankingSidebarProps {
@@ -53,19 +54,21 @@ export default function RankingSidebar({
   onMobileClose,
   usersActive = false,
 }: RankingSidebarProps) {
+  const { t } = useTranslation();
+
   const navItems: Array<{
     icon: ComponentType<{ className?: string }>;
     label: string;
     id: RankingView;
   }> = [
-    { icon: Grid, label: "Thành viên", id: "member" },
-    { icon: Award, label: "Bảng xếp hạng", id: "ranking" },
+    { icon: Grid, label: t("rankingSidebar.members"), id: "member" },
+    { icon: Award, label: t("rankingSidebar.ranking"), id: "ranking" },
   ];
 
   if (showMatchForm) {
     navItems.splice(1, 0, {
       icon: PlusCircle,
-      label: "Nhập trận đấu",
+      label: t("rankingSidebar.addMatch"),
       id: "match-form",
     });
   }
@@ -115,14 +118,16 @@ export default function RankingSidebar({
                 <p className="text-base font-bold text-slate-900 leading-none">
                   BadGuys
                 </p>
-                <p className="text-[11px] text-slate-500 mt-1">Dashboard</p>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  {t("rankingSidebar.dashboard")}
+                </p>
               </span>
             </button>
             <button
               type="button"
               onClick={onMobileClose}
               className="text-slate-400 hover:text-slate-700"
-              aria-label="Đóng menu"
+              aria-label={t("rankingSidebar.closeMenu")}
             >
               <X className="h-5 w-5" />
             </button>
@@ -161,7 +166,7 @@ export default function RankingSidebar({
                 }`}
               >
                 <Shield className="h-4 w-4" />
-                <span>Quản lý user</span>
+                <span>{t("rankingSidebar.userManagement")}</span>
               </button>
             ) : null}
 
@@ -174,7 +179,7 @@ export default function RankingSidebar({
               className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 inline-flex items-center gap-2"
             >
               <Home className="h-4 w-4" />
-              <span>Trang chủ</span>
+              <span>{t("rankingSidebar.home")}</span>
             </button>
           </div>
 
@@ -199,7 +204,7 @@ export default function RankingSidebar({
         <nav className="space-y-2.5 flex-1">
           <SidebarItem
             icon={Grid}
-            label="Thành viên"
+            label={t("rankingSidebar.members")}
             id="member"
             currentView={currentView}
             onSetView={onSetView}
@@ -207,7 +212,7 @@ export default function RankingSidebar({
           {showMatchForm ? (
             <SidebarItem
               icon={PlusCircle}
-              label="Nhập trận đấu"
+              label={t("rankingSidebar.addMatch")}
               id="match-form"
               currentView={currentView}
               onSetView={onSetView}
@@ -215,7 +220,7 @@ export default function RankingSidebar({
           ) : null}
           <SidebarItem
             icon={Award}
-            label="Bảng xếp hạng"
+            label={t("rankingSidebar.ranking")}
             id="ranking"
             currentView={currentView}
             onSetView={onSetView}
@@ -232,7 +237,7 @@ export default function RankingSidebar({
                 : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
             }`}
           >
-            <Shield className="h-4 w-4" /> Quản lý user
+            <Shield className="h-4 w-4" /> {t("rankingSidebar.userManagement")}
           </button>
         ) : null}
 

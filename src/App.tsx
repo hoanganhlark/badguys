@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Award, Key, LogOut, Settings, X } from "react-feather";
+import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import ConfigSidebar from "./components/ConfigSidebar";
 import ExpensesSection from "./components/ExpensesSection";
@@ -59,6 +60,7 @@ interface LocationState {
 
 export default function App() {
   const { currentUser, isAuthenticated, isAdmin, logout } = useAuth();
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -214,7 +216,7 @@ export default function App() {
   }
 
   function handleRemovePlayer(index: number) {
-    const confirmed = window.confirm("Bạn có chắc chắn muốn xóa không?");
+    const confirmed = window.confirm(t("common.confirmDelete"));
     if (!confirmed) return;
 
     const next = players.filter((_, i) => i !== index);
@@ -253,9 +255,9 @@ export default function App() {
 
     try {
       await copyText(summaryText);
-      showToast("Đã sao chép bảng kê! ✨");
+      showToast(t("app.toastCopiedSummary"));
     } catch {
-      showToast("Sao chép thất bại.");
+      showToast(t("common.copyFailed"));
       return;
     }
 
@@ -273,9 +275,7 @@ export default function App() {
 
     try {
       if (!isFirebaseReady()) {
-        setSessionsError(
-          "Firebase chưa khởi tạo được. Kiểm tra kết nối mạng hoặc cấu hình Firestore.",
-        );
+        setSessionsError(t("app.loadSessionsFirebaseError"));
         return;
       }
 
@@ -283,9 +283,7 @@ export default function App() {
       setSessions(items);
     } catch (error) {
       console.warn("Load recent sessions failed", error);
-      setSessionsError(
-        "Không thể tải lịch sử. Kiểm tra quyền Firestore và thử lại.",
-      );
+      setSessionsError(t("app.loadSessionsFailed"));
     } finally {
       setSessionsLoading(false);
     }
@@ -298,25 +296,25 @@ export default function App() {
 
   async function handleRemoveSession(sessionId: string) {
     if (!sessionId) {
-      showToast("Thiếu mã buổi cần xóa.");
+      showToast(t("app.toastMissingSessionId"));
       return;
     }
 
     if (!isFirebaseReady()) {
-      showToast("Chưa thể xóa lúc này. Firebase chưa sẵn sàng.");
+      showToast(t("app.toastFirebaseNotReadyDelete"));
       return;
     }
 
-    const confirmed = window.confirm("Bạn có chắc chắn muốn xóa không?");
+    const confirmed = window.confirm(t("common.confirmDelete"));
     if (!confirmed) return;
 
     try {
       await removeSession(sessionId);
-      showToast("Đã xóa buổi khỏi lịch sử.");
+      showToast(t("app.toastDeletedSession"));
       loadLastSessions();
     } catch (error) {
       console.warn("Remove session failed", error);
-      showToast("Xóa thất bại. Vui lòng thử lại.");
+      showToast(t("app.toastDeleteFailed"));
     }
   }
 
@@ -324,9 +322,9 @@ export default function App() {
     if (!summaryText) return;
     try {
       await copyText(normalizeKLabels(summaryText));
-      showToast("Đã copy note!");
+      showToast(t("app.toastCopiedNote"));
     } catch {
-      showToast("Sao chép thất bại.");
+      showToast(t("common.copyFailed"));
     }
   }
 
@@ -343,7 +341,7 @@ export default function App() {
       setBulkInput("");
       setPlayers([]);
       clearInputDraft();
-      showToast("Dữ liệu đã được xóa.");
+      showToast(t("app.toastClearedData"));
       return;
     }
 
@@ -358,7 +356,7 @@ export default function App() {
     event.preventDefault();
 
     if (!currentUser) {
-      setChangePasswordError("Bạn chưa đăng nhập.");
+      setChangePasswordError(t("app.notLoggedIn"));
       return;
     }
 
@@ -367,22 +365,22 @@ export default function App() {
     const confirmPassword = String(passwordForm.confirmPassword || "");
 
     if (!currentPassword || !newPassword || !confirmPassword) {
-      setChangePasswordError("Vui lòng nhập đầy đủ thông tin.");
+      setChangePasswordError(t("app.fillAllFields"));
       return;
     }
 
     if (newPassword.length < 4) {
-      setChangePasswordError("Mật khẩu mới cần ít nhất 4 ký tự.");
+      setChangePasswordError(t("app.newPasswordMinLength"));
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setChangePasswordError("Mật khẩu xác nhận không khớp.");
+      setChangePasswordError(t("app.confirmPasswordMismatch"));
       return;
     }
 
     if (newPassword === currentPassword) {
-      setChangePasswordError("Mật khẩu mới phải khác mật khẩu hiện tại.");
+      setChangePasswordError(t("app.newPasswordMustDiffer"));
       return;
     }
 
@@ -392,12 +390,12 @@ export default function App() {
     try {
       const userRecord = await getUserByUsername(currentUser.username);
       if (!userRecord || userRecord.id !== currentUser.userId) {
-        throw new Error("Không tìm thấy tài khoản hiện tại.");
+        throw new Error(t("app.currentAccountNotFound"));
       }
 
       const currentPasswordHash = hashMd5(currentPassword);
       if (currentPasswordHash !== userRecord.password) {
-        throw new Error("Mật khẩu hiện tại không đúng.");
+        throw new Error(t("app.currentPasswordIncorrect"));
       }
 
       await updateUserPassword(userRecord.id, hashMd5(newPassword));
@@ -409,12 +407,10 @@ export default function App() {
       });
       setChangePasswordOpen(false);
       setUserMenuOpen(false);
-      showToast("Đổi mật khẩu thành công.");
+      showToast(t("app.toastPasswordChanged"));
     } catch (error) {
       setChangePasswordError(
-        error instanceof Error
-          ? error.message
-          : "Đổi mật khẩu thất bại. Vui lòng thử lại.",
+        error instanceof Error ? error.message : t("app.changePasswordFailed"),
       );
     } finally {
       setChangePasswordSubmitting(false);
@@ -493,7 +489,7 @@ export default function App() {
       <div className="max-w-md mx-auto">
         <button
           onClick={openConfig}
-          aria-label="Mở cấu hình"
+          aria-label={t("app.openConfig")}
           className="fixed top-5 left-5 md:top-8 md:left-8 z-30 h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
         >
           <Settings className="h-5 w-5" />
@@ -510,7 +506,7 @@ export default function App() {
                 if (currentUser) return;
                 setRankingMenuOpen((prev) => !prev);
               }}
-              aria-label="Bảng xếp hạng"
+              aria-label={t("app.ranking")}
               className="h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
             >
               <Award className="h-5 w-5" />
@@ -526,7 +522,7 @@ export default function App() {
                   }}
                   className="w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
                 >
-                  Xem xếp hạng
+                  {t("app.viewRanking")}
                 </button>
                 <button
                   type="button"
@@ -538,7 +534,7 @@ export default function App() {
                   }}
                   className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
                 >
-                  Đăng nhập
+                  {t("common.login")}
                 </button>
               </div>
             ) : null}
@@ -553,7 +549,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => setUserMenuOpen((prev) => !prev)}
-              aria-label="Mở menu tài khoản"
+              aria-label={t("app.openAccountMenu")}
               className="h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center text-sm font-bold uppercase"
             >
               {currentUser?.username?.charAt(0) || "U"}
@@ -572,7 +568,7 @@ export default function App() {
                   }}
                   className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center gap-2"
                 >
-                  <Award className="h-4 w-4" /> Mở dashboard
+                  <Award className="h-4 w-4" /> {t("app.openDashboard")}
                 </button>
                 <button
                   type="button"
@@ -582,7 +578,7 @@ export default function App() {
                   }}
                   className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center gap-2"
                 >
-                  <Key className="h-4 w-4" /> Đổi mật khẩu
+                  <Key className="h-4 w-4" /> {t("app.changePasswordTitle")}
                 </button>
                 <button
                   type="button"
@@ -593,7 +589,7 @@ export default function App() {
                   }}
                   className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-red-600 hover:bg-red-50 inline-flex items-center gap-2"
                 >
-                  <LogOut className="h-4 w-4" /> Đăng xuất
+                  <LogOut className="h-4 w-4" /> {t("common.logout")}
                 </button>
               </div>
             ) : null}
@@ -607,7 +603,10 @@ export default function App() {
           </h1>
           {currentUser ? (
             <p className="mt-2 text-xs text-slate-500">
-              {`Đăng nhập: ${currentUser.username} (${currentUser.role})`}
+              {t("app.loggedIn", {
+                username: currentUser.username,
+                role: currentUser.role,
+              })}
             </p>
           ) : null}
         </header>
@@ -647,7 +646,7 @@ export default function App() {
               resetArmed ? "text-red-600" : "text-slate-400 hover:text-red-500"
             }`}
           >
-            {resetArmed ? "XÁC NHẬN XÓA?" : "LÀM MỚI DỮ LIỆU"}
+            {resetArmed ? t("app.resetConfirm") : t("app.resetData")}
           </button>
         </div>
       </div>
@@ -691,7 +690,7 @@ export default function App() {
           <div className="mx-auto mt-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-semibold text-slate-900">
-                Đổi mật khẩu
+                {t("app.changePasswordTitle")}
               </h3>
               <button
                 type="button"
@@ -700,7 +699,7 @@ export default function App() {
                   setChangePasswordError("");
                 }}
                 className="rounded-md p-1 text-slate-400 hover:text-slate-700"
-                aria-label="Đóng đổi mật khẩu"
+                aria-label={t("app.closeChangePassword")}
               >
                 <X className="h-5 w-5" />
               </button>
@@ -712,7 +711,7 @@ export default function App() {
             >
               <div>
                 <label className="block text-xs font-semibold uppercase text-slate-600">
-                  Mật khẩu hiện tại
+                  {t("app.currentPassword")}
                 </label>
                 <input
                   type="password"
@@ -730,7 +729,7 @@ export default function App() {
               </div>
               <div>
                 <label className="block text-xs font-semibold uppercase text-slate-600">
-                  Mật khẩu mới
+                  {t("app.newPassword")}
                 </label>
                 <input
                   type="password"
@@ -748,7 +747,7 @@ export default function App() {
               </div>
               <div>
                 <label className="block text-xs font-semibold uppercase text-slate-600">
-                  Xác nhận mật khẩu mới
+                  {t("app.confirmNewPassword")}
                 </label>
                 <input
                   type="password"
@@ -780,14 +779,16 @@ export default function App() {
                   }}
                   className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                 >
-                  Hủy
+                  {t("common.cancel")}
                 </button>
                 <button
                   type="submit"
                   disabled={changePasswordSubmitting}
                   className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
                 >
-                  {changePasswordSubmitting ? "Đang lưu..." : "Lưu mật khẩu"}
+                  {changePasswordSubmitting
+                    ? t("app.saving")
+                    : t("app.savePassword")}
                 </button>
               </div>
             </form>

@@ -1,4 +1,5 @@
 import { FormEvent, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -8,6 +9,7 @@ interface LocationState {
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -31,9 +33,7 @@ export default function LoginPage() {
       navigate(redirectTo, { replace: true });
     } catch (loginError) {
       setError(
-        loginError instanceof Error
-          ? loginError.message
-          : "Đăng nhập thất bại. Vui lòng thử lại.",
+        loginError instanceof Error ? loginError.message : t("login.failed"),
       );
     } finally {
       setSubmitting(false);
@@ -44,11 +44,9 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-sky-50 to-cyan-100 p-4 flex items-center justify-center">
       <div className="w-full max-w-md rounded-3xl border border-white/80 bg-white/90 p-6 shadow-xl backdrop-blur md:p-8">
         <h1 className="text-2xl font-bold text-slate-900">
-          Đăng nhập Dashboard
+          {t("login.titleDashboard")}
         </h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Nhập tài khoản để truy cập Ranking, Match recording và Members.
-        </p>
+        <p className="mt-2 text-sm text-slate-600">{t("login.subtitlePage")}</p>
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <div>
@@ -98,7 +96,7 @@ export default function LoginPage() {
             disabled={submitting}
             className="w-full rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:opacity-60"
           >
-            {submitting ? "Đang đăng nhập..." : "Đăng nhập"}
+            {submitting ? t("login.submitting") : t("common.login")}
           </button>
         </form>
 
@@ -107,7 +105,7 @@ export default function LoginPage() {
           onClick={() => navigate("/")}
           className="mt-3 w-full rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
         >
-          Về trang chủ
+          {t("login.backHome")}
         </button>
       </div>
     </div>
