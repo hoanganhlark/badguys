@@ -118,5 +118,8 @@ export type EnvConfig = {
   firebaseApiKey: string;
   firebaseProjectId: string;
   appVersion: string;
+  mode: string;
+  isDevelopment: boolean;
+  isProduction: boolean;
   defaultConfig: AppConfig;
 };

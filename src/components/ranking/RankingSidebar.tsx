@@ -95,11 +95,11 @@ export default function RankingSidebar({
     <>
       <div
         onClick={onMobileClose}
-        className={`${mobileOpen ? "" : "hidden"} fixed inset-0 panel-backdrop z-40 md:hidden`}
+        className={`${mobileOpen ? "" : "hidden"} fixed inset-0 panel-backdrop z-[60] md:hidden`}
       />
 
       <aside
-        className={`${mobileOpen ? "translate-x-0" : "-translate-x-full"} fixed left-0 top-0 z-50 h-full w-full max-w-sm sidebar-panel p-5 overflow-y-auto transition-transform duration-200 ease-out md:hidden`}
+        className={`${mobileOpen ? "translate-x-0" : "-translate-x-full"} fixed left-0 top-0 z-[65] h-full w-full max-w-sm sidebar-panel p-5 overflow-y-auto transition-transform duration-200 ease-out md:hidden`}
       >
         <div className="min-h-full flex flex-col">
           <div className="flex items-center justify-between mb-6">

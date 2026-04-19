@@ -33,8 +33,8 @@ let ready = false;
 const RANKING_MEMBERS_COLLECTION = "ranking-members";
 const RANKING_MATCHES_COLLECTION = "ranking-matches";
 const RANKING_STATE_DOC_ID = "state";
-const USERS_COLLECTION = "dev-users";
-const MATCHES_COLLECTION = "dev-matches";
+const USERS_COLLECTION = "users";
+const MATCHES_COLLECTION = "matches";
 
 function getSessionDateKey(now?: Date): string {
   const current = now || new Date();
@@ -74,17 +74,24 @@ function ensureFirebase() {
   return { app, db: getFirestore(app), ready: true };
 }
 
-function withDevCollectionPrefix(collectionName: string): string {
+function withEnvironmentCollectionPrefix(collectionName: string): string {
   const normalized = String(collectionName || "").trim();
   if (!normalized) return normalized;
-  if (!normalized.startsWith("dev-")) {
-    return `dev-${normalized}`;
+
+  const withoutDevPrefix = normalized.startsWith("dev-")
+    ? normalized.slice(4)
+    : normalized;
+
+  if (envConfig.isDevelopment) {
+    if (!withoutDevPrefix) return "";
+    return `dev-${withoutDevPrefix}`;
   }
-  return normalized;
+
+  return withoutDevPrefix;
 }
 
 function getCollectionPath(collectionName: string): string {
-  return withDevCollectionPrefix(collectionName);
+  return withEnvironmentCollectionPrefix(collectionName);
 }
 
 export function isFirebaseReady(): boolean {
