@@ -556,7 +556,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     <div className="fixed inset-0 z-[60] bg-slate-950/40 flex">
       <div className="dashboard-surface flex flex-col md:flex-row min-h-screen w-full text-slate-900 font-sans">
         <header
-          className={`app-topbar z-[55] md:left-72 ${
+          className={`app-topbar dashboard-topbar z-[55] ${
             mobileSidebarOpen
               ? "opacity-0 pointer-events-none md:opacity-100 md:pointer-events-auto"
               : ""

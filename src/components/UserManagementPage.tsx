@@ -222,7 +222,7 @@ export default function UserManagementPage() {
   return (
     <div className="min-h-screen dashboard-surface text-slate-900 font-sans">
       <header
-        className={`app-topbar z-[55] md:left-72 ${
+        className={`app-topbar dashboard-topbar z-[55] ${
           mobileSidebarOpen
             ? "opacity-0 pointer-events-none md:opacity-100 md:pointer-events-auto"
             : ""

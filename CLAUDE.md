@@ -28,7 +28,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `src/env.ts` — Parses `VITE_*` env vars with fallback defaults
 - `src/lib/firebase.ts` — Firestore init, session CRUD, user management (auth, password), and subscriptions
 - `src/lib/telegram.ts` — Async Telegram notification (silent failure on error)
-- `src/lib/analytics.ts` — Google Analytics 4 tracking; provides `initAnalytics()`, `trackPageView()`, `trackEvent()`, and `setUserProperties()`
+- `src/lib/analytics.ts` — Audit event logging to Firestore; provides `initAnalytics()`, `trackPageView()`, `trackEvent()`, and `setUserProperties()`
 - `src/lib/platform.ts` — localStorage, clipboard, URL params, device detection
 - `src/lib/rankingStats.ts` — Glicko2-based rating calculations for tournament rankings; computes skill rating, rating deviation, volatility, and activity metrics
 - `src/components/RankingPage.tsx` — Ranking system: manages member CRUD, match recording (singles/doubles), and ranking display; supports public guest view and authenticated user access
@@ -107,9 +107,6 @@ Copy `.env.example` to `.env.local` for local development.
 - `VITE_BADGUY_ROUND_RESULT` — Round cost results to nearest 1k (default: true)
 - `VITE_BADGUY_ENABLE_COURT_COUNT` — Show court count input field (default: true)
 - `VITE_BADGUY_ENABLE_TELEGRAM_NOTIFICATION` — Enable Telegram notifications (default: true)
-
-**Analytics:**
-- `VITE_GA_MEASUREMENT_ID` — Google Analytics 4 measurement ID for event tracking
 
 **Other:**
 - `VITE_APP_VERSION` — Version string displayed in UI (auto-generated in CI)
