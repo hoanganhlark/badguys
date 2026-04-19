@@ -532,110 +532,110 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   return (
     <div className="fixed inset-0 z-[60] bg-slate-950/40 flex">
       <div className="dashboard-surface flex flex-col md:flex-row min-h-screen w-full text-slate-900 font-sans">
-        {!mobileSidebarOpen ? (
-          <button
-            type="button"
-            onClick={() => setMobileSidebarOpen(true)}
-            className="md:hidden fixed top-5 left-5 z-[70] h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm inline-flex items-center justify-center hover:bg-slate-50"
-            aria-label={t("rankingPage.menu")}
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-        ) : null}
-
-        {currentUser && !hideFloatingHeaderActions ? (
-          <div
-            ref={userMenuRef}
-            className="fixed top-5 right-5 md:top-8 md:right-8 z-[70]"
-          >
-            <button
-              type="button"
-              onClick={() => setUserMenuOpen((prev) => !prev)}
-              className="h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm inline-flex items-center justify-center text-sm font-bold uppercase hover:bg-slate-50"
-              title={t("rankingPage.userMenuTitle", {
-                username: currentUser.username,
-              })}
-              aria-label={t("rankingPage.userMenuTitle", {
-                username: currentUser.username,
-              })}
-            >
-              {currentUserInitial}
-            </button>
-
-            {userMenuOpen ? (
-              <div className="fixed top-16 right-5 md:top-20 md:right-8 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
-                <p className="px-2 py-1 text-xs font-semibold text-slate-500 truncate">
-                  {currentUser.username}
-                </p>
+        <header className="app-topbar z-[70] md:left-72">
+          <div className="flex h-14 items-center justify-between px-4 md:px-6">
+            <div>
+              {!mobileSidebarOpen ? (
                 <button
                   type="button"
-                  onClick={() => {
-                    setUserMenuOpen(false);
-                    navigate("/");
-                  }}
-                  className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center gap-2"
+                  onClick={() => setMobileSidebarOpen(true)}
+                  className="md:hidden h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm inline-flex items-center justify-center hover:bg-slate-50"
+                  aria-label={t("rankingPage.menu")}
                 >
-                  <Award className="h-4 w-4" />
-                  {t("app.home")}
+                  <Menu className="h-5 w-5" />
                 </button>
+              ) : null}
+            </div>
+
+            {currentUser && !hideFloatingHeaderActions ? (
+              <div ref={userMenuRef} className="relative">
                 <button
                   type="button"
-                  onClick={() => {
-                    setUserMenuOpen(false);
-                    navigate("/");
-                    logout();
-                  }}
-                  className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-red-600 hover:bg-red-50 inline-flex items-center gap-2"
+                  onClick={() => setUserMenuOpen((prev) => !prev)}
+                  className="h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm inline-flex items-center justify-center text-sm font-bold uppercase hover:bg-slate-50"
+                  title={t("rankingPage.userMenuTitle", {
+                    username: currentUser.username,
+                  })}
+                  aria-label={t("rankingPage.userMenuTitle", {
+                    username: currentUser.username,
+                  })}
                 >
-                  <LogOut className="h-4 w-4" /> {t("common.logout")}
+                  {currentUserInitial}
                 </button>
+
+                {userMenuOpen ? (
+                  <div className="absolute right-0 top-12 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+                    <p className="px-2 py-1 text-xs font-semibold text-slate-500 truncate">
+                      {currentUser.username}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        navigate("/");
+                      }}
+                      className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center gap-2"
+                    >
+                      <Award className="h-4 w-4" />
+                      {t("app.home")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        navigate("/");
+                        logout();
+                      }}
+                      className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-red-600 hover:bg-red-50 inline-flex items-center gap-2"
+                    >
+                      <LogOut className="h-4 w-4" /> {t("common.logout")}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {isPublicRankingRoute && !currentUser && !hideFloatingHeaderActions ? (
+              <div ref={guestMenuRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setGuestMenuOpen((prev) => !prev)}
+                  aria-label={t("rankingPage.guestMenu")}
+                  className="h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
+                >
+                  <LogIn className="h-5 w-5" />
+                </button>
+
+                {guestMenuOpen ? (
+                  <div className="absolute right-0 top-12 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGuestMenuOpen(false);
+                        navigate("/");
+                      }}
+                      className="w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                    >
+                      {t("app.home")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGuestMenuOpen(false);
+                        navigate("/ranking/login", {
+                          state: { from: `${location.pathname}${location.search}` },
+                        });
+                      }}
+                      className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                    >
+                      {t("common.login")}
+                    </button>
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </div>
-        ) : null}
-
-        {isPublicRankingRoute && !currentUser && !hideFloatingHeaderActions ? (
-          <div
-            ref={guestMenuRef}
-            className="fixed top-5 right-5 md:top-8 md:right-8 z-[70]"
-          >
-            <button
-              type="button"
-              onClick={() => setGuestMenuOpen((prev) => !prev)}
-              aria-label={t("rankingPage.guestMenu")}
-              className="h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
-            >
-              <LogIn className="h-5 w-5" />
-            </button>
-
-            {guestMenuOpen ? (
-              <div className="fixed top-16 right-5 md:top-20 md:right-8 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setGuestMenuOpen(false);
-                    navigate("/");
-                  }}
-                  className="w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                >
-                  {t("app.home")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setGuestMenuOpen(false);
-                    navigate("/ranking/login", {
-                      state: { from: `${location.pathname}${location.search}` },
-                    });
-                  }}
-                  className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                >
-                  {t("common.login")}
-                </button>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
+        </header>
 
         {/* Sidebar */}
         <RankingSidebar
@@ -652,7 +652,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
         {/* Main Content */}
         <main
           ref={mainContentRef}
-          className="dashboard-main-scroll flex-1 px-4 pt-4 md:p-8 overflow-auto relative"
+          className="dashboard-main-scroll flex-1 overflow-auto px-4 pt-20 md:p-8 md:pt-20 relative"
         >
           <div className="max-w-7xl mx-auto">
             <header className="mb-5 rounded-2xl border border-slate-200 bg-white px-4 py-4 md:px-6 md:py-5">

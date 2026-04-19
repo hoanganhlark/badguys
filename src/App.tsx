@@ -458,6 +458,12 @@ export default function App() {
 
   const loginModalOpen =
     location.pathname === "/login" || location.pathname === "/ranking/login";
+  const passwordFormValid =
+    passwordForm.currentPassword.trim().length > 0 &&
+    passwordForm.newPassword.trim().length >= 4 &&
+    passwordForm.confirmPassword.trim().length > 0 &&
+    passwordForm.newPassword !== passwordForm.currentPassword &&
+    passwordForm.newPassword === passwordForm.confirmPassword;
 
   if (location.pathname === "/users") {
     return (
@@ -485,35 +491,33 @@ export default function App() {
   }
 
   return (
-    <div className="p-5 md:p-12 relative">
-      <div className="max-w-md mx-auto">
-        <button
-          onClick={openConfig}
-          aria-label={t("app.openConfig")}
-          className="fixed top-5 left-5 md:top-8 md:left-8 z-30 h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
-        >
-          <Settings className="h-5 w-5" />
-        </button>
-
-        {!currentUser ? (
-          <div
-            ref={rankingMenuRef}
-            className="fixed top-5 right-5 md:top-8 md:right-8 z-30"
+    <div className="relative min-h-screen bg-[#fafafa]">
+      <header className="app-topbar z-40">
+        <div className="mx-auto flex h-14 w-full max-w-4xl items-center justify-between px-4 md:px-6">
+          <button
+            onClick={openConfig}
+            aria-label={t("app.openConfig")}
+            className="h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
           >
-            <button
-              type="button"
-              onClick={() => {
-                if (currentUser) return;
-                setRankingMenuOpen((prev) => !prev);
-              }}
-              aria-label={t("app.ranking")}
-              className="h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
-            >
-              <Award className="h-5 w-5" />
-            </button>
+            <Settings className="h-5 w-5" />
+          </button>
 
-            {rankingMenuOpen ? (
-              <div className="fixed top-16 right-5 md:top-20 md:right-8 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+          {!currentUser ? (
+            <div ref={rankingMenuRef} className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  if (currentUser) return;
+                  setRankingMenuOpen((prev) => !prev);
+                }}
+                aria-label={t("app.ranking")}
+                className="h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center"
+              >
+                <Award className="h-5 w-5" />
+              </button>
+
+              {rankingMenuOpen ? (
+                <div className="absolute right-0 top-12 z-50 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
                 <button
                   type="button"
                   onClick={() => {
@@ -537,26 +541,23 @@ export default function App() {
                   {t("common.login")}
                 </button>
               </div>
-            ) : null}
-          </div>
-        ) : null}
+              ) : null}
+            </div>
+          ) : null}
 
-        {isAuthenticated ? (
-          <div
-            ref={userMenuRef}
-            className="fixed top-5 right-5 md:top-8 md:right-8 z-40"
-          >
-            <button
-              type="button"
-              onClick={() => setUserMenuOpen((prev) => !prev)}
-              aria-label={t("app.openAccountMenu")}
-              className="h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center text-sm font-bold uppercase"
-            >
-              {currentUser?.username?.charAt(0) || "U"}
-            </button>
+          {isAuthenticated ? (
+            <div ref={userMenuRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setUserMenuOpen((prev) => !prev)}
+                aria-label={t("app.openAccountMenu")}
+                className="h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center text-sm font-bold uppercase"
+              >
+                {currentUser?.username?.charAt(0) || "U"}
+              </button>
 
-            {userMenuOpen ? (
-              <div className="fixed top-16 right-5 md:top-20 md:right-8 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+              {userMenuOpen ? (
+                <div className="absolute right-0 top-12 z-50 w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
                 <p className="px-2 py-1 text-xs font-semibold text-slate-500 truncate">
                   {currentUser?.username}
                 </p>
@@ -592,9 +593,14 @@ export default function App() {
                   <LogOut className="h-4 w-4" /> {t("common.logout")}
                 </button>
               </div>
-            ) : null}
-          </div>
-        ) : null}
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      </header>
+
+      <div className="px-5 pb-5 pt-20 md:px-12 md:pb-12">
+        <div className="max-w-md mx-auto">
 
         <header className="mb-12 text-center">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
@@ -648,6 +654,7 @@ export default function App() {
           >
             {resetArmed ? t("app.resetConfirm") : t("app.resetData")}
           </button>
+        </div>
         </div>
       </div>
 
@@ -783,7 +790,7 @@ export default function App() {
                 </button>
                 <button
                   type="submit"
-                  disabled={changePasswordSubmitting}
+                  disabled={!passwordFormValid || changePasswordSubmitting}
                   className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
                 >
                   {changePasswordSubmitting

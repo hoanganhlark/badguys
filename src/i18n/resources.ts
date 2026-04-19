@@ -178,6 +178,8 @@ export const resources = {
         recentHistory: "Lịch sử gần đây",
         clearHistory: "Xóa lịch sử",
         noMatches: "Chưa có trận đấu",
+        noRankingBecauseNoMatches:
+          "Chưa có bảng xếp hạng vì chưa có trận đấu nào được ghi nhận.",
         singles: "Đơn",
         doubles: "Đôi",
         createdBy: "Tạo bởi",
@@ -266,6 +268,10 @@ export const resources = {
         home: "Home",
         ranking: "Ranking",
         viewRanking: "View ranking",
+      },
+      rankingPanel: {
+        noRankingBecauseNoMatches:
+          "No rankings yet because no matches have been recorded.",
       },
     },
   },

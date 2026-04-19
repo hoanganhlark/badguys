@@ -41,6 +41,11 @@ export default function UserManagementPage() {
     () => sortedUsers.filter((user) => user.role === "admin").length,
     [sortedUsers],
   );
+  const canCreateUser =
+    isAdmin &&
+    form.username.trim().length > 0 &&
+    form.password.trim().length > 0 &&
+    !saving;
 
   useEffect(() => {
     setLoading(true);
@@ -183,16 +188,27 @@ export default function UserManagementPage() {
 
   return (
     <div className="min-h-screen dashboard-surface text-slate-900 font-sans">
-      <div className="flex min-h-screen flex-col md:flex-row">
-        <button
-          type="button"
-          onClick={() => setMobileSidebarOpen(true)}
-          className="md:hidden fixed top-5 left-5 z-[70] h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm inline-flex items-center justify-center hover:bg-slate-50"
-          aria-label={t("userManagement.menu")}
-        >
-          <Menu className="h-5 w-5" />
-        </button>
+      <header className="app-topbar z-[80] md:left-72">
+        <div className="flex h-14 items-center justify-between px-4 md:px-6">
+          <div>
+            {!mobileSidebarOpen ? (
+              <button
+                type="button"
+                onClick={() => setMobileSidebarOpen(true)}
+                className="md:hidden h-10 w-10 rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm inline-flex items-center justify-center hover:bg-slate-50"
+                aria-label={t("userManagement.menu")}
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+            ) : null}
+          </div>
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            {t("userManagement.title")}
+          </span>
+        </div>
+      </header>
 
+      <div className="flex min-h-screen flex-col md:flex-row">
         <RankingSidebar
           currentView="ranking"
           onSetView={handleSetDashboardView}
@@ -207,7 +223,7 @@ export default function UserManagementPage() {
 
         <main
           ref={mainContentRef}
-          className="dashboard-main-scroll flex-1 px-4 pt-4 md:p-8 overflow-auto"
+          className="dashboard-main-scroll flex-1 overflow-auto px-4 pt-20 md:p-8 md:pt-20"
         >
           <div className="mx-auto max-w-7xl space-y-5 md:space-y-6">
             <header className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm md:px-6 md:py-5">
@@ -294,7 +310,7 @@ export default function UserManagementPage() {
                 </select>
                 <button
                   type="submit"
-                  disabled={saving || !isAdmin}
+                  disabled={!canCreateUser}
                   className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
                 >
                   {saving
