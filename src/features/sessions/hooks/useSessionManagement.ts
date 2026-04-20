@@ -3,7 +3,7 @@ import {
   getRecentSessions,
   isFirebaseReady,
   removeSession,
-} from "../../../lib/firebase";
+} from "../../../lib/api";
 import { copyText } from "../../../lib/platform";
 import type { SessionRecord } from "../../../types";
 import { SESSIONS_FETCH_LIMIT } from "../../../lib/constants";

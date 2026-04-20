@@ -22,7 +22,7 @@ import {
   deleteRankingCategory,
   subscribeRankingCategories,
   updateRankingCategory,
-} from "../lib/firebase";
+} from "../lib/api";
 import type { RankingCategory } from "../types";
 import { useAuth } from "../context/AuthContext";
 import RankingSidebar from "./ranking/RankingSidebar";

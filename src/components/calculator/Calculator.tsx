@@ -12,7 +12,7 @@ import {
 import {
   RESET_CONFIRM_TIMEOUT_MS,
 } from "../../lib/constants";
-import { saveDailySummary } from "../../lib/firebase";
+import { saveDailySummary } from "../../lib/api";
 import {
   copyText,
 } from "../../lib/platform";

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import {
   subscribeRankingCategories,
-} from "../../../lib/firebase";
+} from "../../../lib/api";
 import type { RankingCategory } from "../../../types";
 
 export interface UseRankingCategoriesReturn {

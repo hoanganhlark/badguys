@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { getUserByUsername, updateUserPassword } from "../../../lib/firebase";
+import { getUserByUsername, updateUserPassword } from "../../../lib/api";
 import { hashMd5 } from "../../../lib/hash";
 import type { AuthUser } from "../../../types";
 

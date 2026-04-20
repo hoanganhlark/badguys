@@ -3,7 +3,7 @@ import {
   getRankingMembers,
   subscribeMatches,
   isFirebaseReady,
-} from "../../../lib/firebase";
+} from "../../../lib/api";
 import {
   buildMembersFromMatches,
   loadMembersFromStorage,

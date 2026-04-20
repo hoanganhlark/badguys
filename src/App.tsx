@@ -45,7 +45,7 @@ import {
   isFirebaseReady,
   removeSession,
   updateUserPassword,
-} from "./lib/firebase";
+} from "./lib/api";
 import { hashMd5 } from "./lib/hash";
 import {
   copyText,

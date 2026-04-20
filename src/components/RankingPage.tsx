@@ -13,7 +13,7 @@ import {
   isFirebaseReady,
   saveRankingSnapshot,
   subscribeUsers,
-} from "../lib/firebase";
+} from "../lib/api";
 import {
   useRankingData,
   useRankingMembers,

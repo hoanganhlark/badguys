@@ -15,7 +15,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { subscribeAuditEvents } from "../lib/firebase";
+import { subscribeAuditEvents } from "../lib/api";
 import type { AuditEventRecord } from "../types";
 import RankingSidebar from "./ranking/RankingSidebar";
 import type { RankingView } from "./ranking/types";

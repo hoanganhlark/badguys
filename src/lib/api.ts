@@ -12,12 +12,31 @@ import {
   createMatch as fbCreateMatch,
   deleteMatch as fbDeleteMatch,
   getMatches as fbGetMatches,
+  subscribeMatches as fbSubscribeMatches,
+  createRankingCategory as fbCreateRankingCategory,
+  deleteRankingCategory as fbDeleteRankingCategory,
+  subscribeRankingCategories as fbSubscribeRankingCategories,
+  updateRankingCategory as fbUpdateRankingCategory,
+  getLatestRankingSnapshot as fbGetLatestRankingSnapshot,
+  saveRankingSnapshot as fbSaveRankingSnapshot,
+  subscribeAuditEvents as fbSubscribeAuditEvents,
+  saveDailySummary as fbSaveDailySummary,
+  getRecentSessions as fbGetRecentSessions,
+  removeSession as fbRemoveSession,
+  getUserByUsername as fbGetUserByUsername,
+  updateUserLastLogin as fbUpdateUserLastLogin,
+  updateUserPassword as fbUpdateUserPassword,
 } from "./firebase";
 import type {
   UserRecord,
   UserRole,
   RankingMember,
   MatchRecord,
+  RankingCategory,
+  RankingSnapshot,
+  SessionPayload,
+  SessionRecord,
+  AuditEventRecord,
 } from "../types";
 
 // Users API
@@ -95,6 +114,104 @@ export async function deleteMatch(matchId: string): Promise<void> {
 
 export async function getMatches(): Promise<MatchRecord[]> {
   return fbGetMatches();
+}
+
+// Ranking Categories API
+
+export function subscribeRankingCategories(
+  onData: (categories: RankingCategory[]) => void,
+  onError?: (error: Error) => void,
+): () => void {
+  return fbSubscribeRankingCategories(onData, onError);
+}
+
+export async function createRankingCategory(input: {
+  name: string;
+  displayName: string;
+  order: number;
+}): Promise<RankingCategory> {
+  return fbCreateRankingCategory(input);
+}
+
+export async function updateRankingCategory(
+  id: string,
+  patch: Partial<{ displayName: string; order: number }>,
+): Promise<void> {
+  return fbUpdateRankingCategory(id, patch);
+}
+
+export async function deleteRankingCategory(id: string): Promise<void> {
+  return fbDeleteRankingCategory(id);
+}
+
+// Ranking Snapshots API
+
+export async function getLatestRankingSnapshot(): Promise<RankingSnapshot | null> {
+  return fbGetLatestRankingSnapshot();
+}
+
+export async function saveRankingSnapshot(
+  ranks: any[],
+): Promise<void> {
+  return fbSaveRankingSnapshot(ranks);
+}
+
+// Audit Events API
+
+export function subscribeAuditEvents(
+  onData: (events: AuditEventRecord[]) => void,
+  onError?: (error: Error) => void,
+  maxItems?: number,
+): () => void {
+  return fbSubscribeAuditEvents(onData, onError, maxItems);
+}
+
+// Sessions API
+
+export async function saveDailySummary(
+  payload: SessionPayload,
+): Promise<{ dateKey: string }> {
+  return fbSaveDailySummary(payload);
+}
+
+// Matches API (subscriptions)
+
+export function subscribeMatches(
+  onData: (matches: MatchRecord[]) => void,
+  onError?: (error: Error) => void,
+): () => void {
+  return fbSubscribeMatches(onData, onError);
+}
+
+// Sessions API
+
+export async function getRecentSessions(
+  maxItems?: number,
+): Promise<SessionRecord[]> {
+  return fbGetRecentSessions(maxItems);
+}
+
+export async function removeSession(sessionId: string): Promise<{ id: string }> {
+  return fbRemoveSession(sessionId);
+}
+
+// User Auth API
+
+export async function getUserByUsername(
+  username: string,
+): Promise<UserRecord | null> {
+  return fbGetUserByUsername(username);
+}
+
+export async function updateUserLastLogin(userId: string): Promise<void> {
+  return fbUpdateUserLastLogin(userId);
+}
+
+export async function updateUserPassword(
+  userId: string,
+  passwordHash: string,
+): Promise<void> {
+  return fbUpdateUserPassword(userId, passwordHash);
 }
 
 // Utilities

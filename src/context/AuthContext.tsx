@@ -6,7 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { getUserByUsername, updateUserLastLogin } from "../lib/firebase";
+import { getUserByUsername, updateUserLastLogin } from "../lib/api";
 import { hashMd5 } from "../lib/hash";
 import { AnalyticsUserPropertyKey, setUserProperties } from "../lib/analytics";
 import type { AuthUser } from "../types";
