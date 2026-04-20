@@ -652,6 +652,8 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     }, {});
   }, [latestSnapshot, rankings]);
 
+  const showRankTrend = matches.length > 1;
+
   const memberLevelById = useMemo<Record<number, string>>(
     () =>
       members.reduce<Record<number, string>>((acc, member) => {
@@ -1001,6 +1003,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                     rankings={rankings}
                     matches={matchesForDisplay}
                     rankTrends={rankTrends}
+                    showRankTrend={showRankTrend}
                     categories={categories}
                     selectedCategoryId={selectedCategoryId}
                     onSelectCategory={setSelectedCategoryId}

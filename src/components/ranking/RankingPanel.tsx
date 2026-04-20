@@ -9,6 +9,7 @@ interface RankingPanelProps {
   rankings: AdvancedStats[];
   matches: Match[];
   rankTrends: Record<number, number | "NEW">;
+  showRankTrend: boolean;
   categories: RankingCategory[];
   selectedCategoryId: string | null;
   onSelectCategory: (categoryId: string | null) => void;
@@ -107,6 +108,7 @@ export default function RankingPanel({
   rankings,
   matches,
   rankTrends,
+  showRankTrend,
   categories,
   selectedCategoryId,
   onSelectCategory,
@@ -195,9 +197,9 @@ export default function RankingPanel({
       ),
       dataIndex: "rank",
       key: "rank",
-      width: 90,
+      width: 72,
       render: (rank: number, row) => {
-        const trend = rankTrends[row.player.id];
+        const trend = showRankTrend ? rankTrends[row.player.id] : undefined;
         let trendText = "-";
         let trendClassName = "text-slate-400";
 
@@ -213,14 +215,15 @@ export default function RankingPanel({
         }
 
         return (
-          <div className="leading-tight">
-            <Typography.Text strong>#{rank}</Typography.Text>
-            <div className={`text-[11px] font-semibold ${trendClassName}`}>
-              {trendText}
+            <div className="flex leading-tight whitespace-nowrap">
+              <Typography.Text className="text-slate-400">{rank}</Typography.Text>
+              <span className={`text-[12px] font-semibold pt-1 pl-1 ${trendClassName}`}>
+                {trendText}
+              </span>
             </div>
-          </div>
         );
       },
+
     },
     {
       title: (
@@ -230,11 +233,13 @@ export default function RankingPanel({
       ),
       dataIndex: ["player", "name"],
       key: "name",
+      width: 140,
+      ellipsis: true,
       render: (name: string) => {
         const displayName = formatDisplayName(name);
 
         return (
-          <Typography.Text>
+          <Typography.Text ellipsis={{ tooltip: String(name || "") }}>
             {displayName.firstName}{" "}
             {displayName.lastName ? <strong>{displayName.lastName}</strong> : null}
           </Typography.Text>
@@ -248,7 +253,7 @@ export default function RankingPanel({
         </span>
       ),
       key: "rankScore",
-      width: 130,
+      width: 104,
       align: "right",
       render: (_, row) => (
         <Typography.Text strong className="text-slate-700">
@@ -301,16 +306,8 @@ export default function RankingPanel({
             dataSource={rankingRows}
             size="small"
             showSorterTooltip={false}
-            pagination={{
-              defaultPageSize: 10,
-              pageSizeOptions: ["5", "10", "20", "50"],
-              showSizeChanger: true,
-              showQuickJumper: true,
-              hideOnSinglePage: false,
-              position: ["bottomCenter"],
-              showTotal: (total, range) => `${range[0]}-${range[1]} / ${total}`,
-            }}
-            scroll={{ x: 720 }}
+            pagination={false}
+            scroll={{ x: 340 }}
             className="ranking-ui-table"
             onRow={(row) => ({
               onClick: () => onSelectPlayer(row.player),
