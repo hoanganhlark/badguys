@@ -119,9 +119,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   const [latestSnapshot, setLatestSnapshot] =
     useState<RankingSnapshot | null>(null);
   const [categories, setCategories] = useState<RankingCategory[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
-    null,
-  );
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const sortedCategories = useMemo(
     () =>
       [...categories].sort(
@@ -316,10 +314,9 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
       (nextCategories) => {
         setCategories(nextCategories);
         setSelectedCategoryId((current) =>
-          current &&
-          !nextCategories.some((category) => category.id === current)
-            ? null
-            : current,
+          nextCategories.some((category) => category.id === current)
+            ? current
+            : (nextCategories[0]?.id ?? ""),
         );
       },
       (error) => {
@@ -351,6 +348,19 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
       };
     });
   }, [defaultMemberLevel, isEditing, sortedCategories]);
+
+  useEffect(() => {
+    if (!sortedCategories.length) {
+      setSelectedCategoryId("");
+      return;
+    }
+
+    setSelectedCategoryId((current) =>
+      sortedCategories.some((category) => category.id === current)
+        ? current
+        : sortedCategories[0].id,
+    );
+  }, [sortedCategories]);
 
   useEffect(() => {
     setMobileSidebarOpen(false);

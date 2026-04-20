@@ -1,5 +1,11 @@
 import { ChevronDown, ChevronRight, Clock, Trash2, User, Users } from "react-feather";
 import { useMemo } from "react";
+import {
+  CaretDownOutlined,
+  CaretUpOutlined,
+  MinusOutlined,
+  PlusOutlined,
+} from "@ant-design/icons";
 import { Button, Table, Typography, type TableColumnsType } from "antd";
 import { useTranslation } from "react-i18next";
 import type { RankingCategory } from "../../types";
@@ -20,8 +26,8 @@ interface RankingPanelProps {
   rankTrends: Record<number, number | "NEW">;
   showRankTrend: boolean;
   categories: RankingCategory[];
-  selectedCategoryId: string | null;
-  onSelectCategory: (categoryId: string | null) => void;
+  selectedCategoryId: string;
+  onSelectCategory: (categoryId: string) => void;
   memberLevelById: Record<number, string>;
   onSelectPlayer: (player: AdvancedStats) => void;
   onClearHistory: () => void | Promise<void>;
@@ -99,12 +105,14 @@ export default function RankingPanel({
   );
 
   const selectedCategory = useMemo(
-    () => sortedCategories.find((category) => category.id === selectedCategoryId),
+    () =>
+      sortedCategories.find((category) => category.id === selectedCategoryId) ||
+      sortedCategories[0],
     [selectedCategoryId, sortedCategories],
   );
 
   const filteredRankings = useMemo(() => {
-    if (!selectedCategory) return rankings;
+    if (!selectedCategory) return [];
     return rankings.filter(
       (player) => memberLevelById[player.id] === selectedCategory.name,
     );
@@ -128,25 +136,40 @@ export default function RankingPanel({
       width: 72,
       render: (rank: number, row) => {
         const trend = showRankTrend ? rankTrends[row.player.id] : undefined;
-        let trendText = "-";
         let trendClassName = "text-slate-400";
+        let trendDisplay = <MinusOutlined className="text-[11px]" />;
 
         if (trend === "NEW") {
-          trendText = "NEW";
           trendClassName = "text-blue-600";
+          trendDisplay = (
+            <>
+              <PlusOutlined className="text-[11px]" />
+              <span>NEW</span>
+            </>
+          );
         } else if (typeof trend === "number" && trend > 0) {
-          trendText = `▲${trend}`;
           trendClassName = "text-green-600";
+          trendDisplay = (
+            <>
+              <CaretUpOutlined className="text-[14px]" />
+              <span>{trend}</span>
+            </>
+          );
         } else if (typeof trend === "number" && trend < 0) {
-          trendText = `▼${Math.abs(trend)}`;
           trendClassName = "text-red-500";
+          trendDisplay = (
+            <>
+              <CaretDownOutlined className="text-[14px]" />
+              <span>{Math.abs(trend)}</span>
+            </>
+          );
         }
 
         return (
             <div className="flex leading-tight whitespace-nowrap">
-              <Typography.Text className="text-slate-400">{rank}</Typography.Text>
-              <span className={`text-[12px] font-semibold pt-1 pl-1 ${trendClassName}`}>
-                {trendText}
+              <Typography.Text className="text-slate-400 text-xs">{rank}</Typography.Text>
+              <span className={`inline-flex items-center gap-1 text-[12px] font-semibold pl-2 ${trendClassName}`}>
+                {trendDisplay}
               </span>
             </div>
         );
@@ -185,7 +208,7 @@ export default function RankingPanel({
       align: "right",
       render: (_, row) => (
         <Typography.Text strong className="text-slate-700">
-          {Math.round(row.player.rating).toLocaleString()}
+          {row.player.rankScore.toFixed(4)}
         </Typography.Text>
       ),
     },
@@ -193,41 +216,22 @@ export default function RankingPanel({
 
   const historyColumns: TableColumnsType<Match> = [
     {
-      title: t("rankingPanel.historyType"),
-      key: "type",
-      width: 96,
-      render: (_, row) => (
-        <div className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600">
-          {row.type === "singles" ? (
-            <User className="h-3.5 w-3.5" />
-          ) : (
-            <Users className="h-3.5 w-3.5" />
-          )}
-          {row.type === "singles"
-            ? t("rankingPanel.singles")
-            : t("rankingPanel.doubles")}
-        </div>
-      ),
-    },
-    {
-      title: t("rankingPanel.historyTime"),
-      dataIndex: "date",
-      key: "date",
-      width: 148,
-      render: (value: string) => (
-        <Typography.Text className="text-xs text-slate-500">
-          {formatMatchDateTime(value)}
-        </Typography.Text>
-      ),
-    },
-    {
       title: t("rankingPanel.historyTeams"),
       key: "teams",
-      width: 260,
+      width: 300,
       ellipsis: true,
       render: (_, row) => (
         <Typography.Text ellipsis={{ tooltip: `${row.team1.join(" & ")} vs ${row.team2.join(" & ")}` }}>
-          {row.team1.join(" & ")} <span className="mx-1 text-slate-400">vs</span> {row.team2.join(" & ")}
+          <span className="inline-flex items-center gap-1.5">
+            {row.type === "singles" ? (
+              <User className="h-3.5 w-3.5 text-slate-500" />
+            ) : (
+              <Users className="h-3.5 w-3.5 text-slate-500" />
+            )}
+            <span>
+              {row.team1.join(" & ")} <span className="mx-1 text-slate-400">vs</span> {row.team2.join(" & ")}
+            </span>
+          </span>
         </Typography.Text>
       ),
     },
@@ -249,6 +253,17 @@ export default function RankingPanel({
       render: (_, row) => (
         <Typography.Text ellipsis className="text-xs text-slate-500">
           {row.createdByUsername || row.createdBy || "-"}
+        </Typography.Text>
+      ),
+    },
+    {
+      title: t("rankingPanel.historyTime"),
+      dataIndex: "date",
+      key: "date",
+      width: 148,
+      render: (value: string) => (
+        <Typography.Text className="text-xs text-slate-500">
+          {formatMatchDateTime(value)}
         </Typography.Text>
       ),
     },
@@ -276,17 +291,6 @@ export default function RankingPanel({
     <div className="max-w-5xl space-y-4 md:space-y-6">
       <div className="rounded-xl border border-slate-200 bg-white p-3 md:p-4">
         <div className="mb-3 flex flex-wrap items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => onSelectCategory(null)}
-            className={`rounded-sm border px-5 py-2 text-xs font-semibold transition-colors ${
-              selectedCategoryId === null
-                ? "border-red-500 bg-red-500 text-white"
-                : "border-transparent bg-transparent text-slate-700 hover:bg-slate-100"
-            }`}
-          >
-            {t("rankingPanel.allCategories")}
-          </button>
           {sortedCategories.map((category) => (
             <button
               key={category.id}
