@@ -47,7 +47,7 @@ export type SessionRecord = {
 
 export type SessionPayload = Omit<SessionRecord, "id">;
 
-export type RankingLevel = "Yo" | "Lo" | "Nè";
+export type RankingLevel = string;
 
 export type RankingMember = {
   id: number;

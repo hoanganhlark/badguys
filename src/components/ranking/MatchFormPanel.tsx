@@ -22,11 +22,14 @@ import {
   Typography,
 } from "antd";
 import dayjs from "dayjs";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { MatchSetInput, Member } from "./types";
+import type { RankingCategory } from "../../types";
 
 interface MatchFormPanelProps {
   members: Member[];
+  categories: RankingCategory[];
   matchType: "singles" | "doubles";
   matchData: {
     team1: string[];
@@ -46,6 +49,7 @@ interface MatchFormPanelProps {
 
 export default function MatchFormPanel({
   members,
+  categories,
   matchType,
   matchData,
   onSetMatchType,
@@ -53,6 +57,20 @@ export default function MatchFormPanel({
   onSaveMatch,
 }: MatchFormPanelProps) {
   const { t } = useTranslation();
+  const categoryOrderByName = useMemo(
+    () =>
+      [...categories]
+        .sort(
+          (a, b) =>
+            a.order - b.order || a.displayName.localeCompare(b.displayName, "vi"),
+        )
+        .reduce<Record<string, number>>((acc, category, index) => {
+          acc[category.name] = index;
+          return acc;
+        }, {}),
+    [categories],
+  );
+
   const slotCount = matchType === "singles" ? 1 : 2;
   const selectedTeam1 = matchData.team1
     .slice(0, slotCount)
@@ -81,7 +99,17 @@ export default function MatchFormPanel({
       ),
     );
 
-    return members.filter((member) => !selectedInOtherSlots.has(member.name));
+    return members
+      .filter((member) => !selectedInOtherSlots.has(member.name))
+      .sort((a, b) => {
+        const orderA =
+          categoryOrderByName[a.level] ?? Number.MAX_SAFE_INTEGER;
+        const orderB =
+          categoryOrderByName[b.level] ?? Number.MAX_SAFE_INTEGER;
+        if (orderA !== orderB) return orderA - orderB;
+
+        return a.name.localeCompare(b.name, "vi", { sensitivity: "base" });
+      });
   };
 
   const addSetInput = () => {

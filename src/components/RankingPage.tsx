@@ -117,6 +117,15 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     null,
   );
+  const sortedCategories = useMemo(
+    () =>
+      [...categories].sort(
+        (a, b) =>
+          a.order - b.order || a.displayName.localeCompare(b.displayName, "vi"),
+      ),
+    [categories],
+  );
+  const defaultMemberLevel = sortedCategories[0]?.name || "Lo";
 
   // Member Form State
   const [isEditing, setIsEditing] = useState<number | null>(null);
@@ -314,6 +323,26 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   }, []);
 
   useEffect(() => {
+    if (isEditing !== null) return;
+
+    setNewMember((current) => {
+      if (!sortedCategories.length) {
+        return current.level ? current : { ...current, level: "Lo" };
+      }
+
+      const hasCurrentLevel = sortedCategories.some(
+        (category) => category.name === current.level,
+      );
+      if (hasCurrentLevel) return current;
+
+      return {
+        ...current,
+        level: defaultMemberLevel,
+      };
+    });
+  }, [defaultMemberLevel, isEditing, sortedCategories]);
+
+  useEffect(() => {
     setMobileSidebarOpen(false);
   }, [view, location.pathname]);
 
@@ -416,7 +445,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     } else {
       setMembers([...members, { ...newMember, id: Date.now() }]);
     }
-    setNewMember({ name: "", level: "Lo" });
+    setNewMember({ name: "", level: defaultMemberLevel });
   };
 
   const deleteMember = (id: number) => {
@@ -842,6 +871,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                       isEditing={isEditing}
                       newMember={newMember}
                       members={members}
+                      categories={sortedCategories}
                       onSetNewMember={setNewMember}
                       onAddOrUpdateMember={handleAddMember}
                       onStartEdit={startEdit}
@@ -943,6 +973,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                 {view === "match-form" && (
                   <MatchFormPanel
                     members={members}
+                    categories={sortedCategories}
                     matchType={matchType}
                     matchData={matchData}
                     onSetMatchType={setMatchType}

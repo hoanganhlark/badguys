@@ -1,6 +1,6 @@
 import { Clock, Trash2, User, Users } from "react-feather";
 import { useMemo } from "react";
-import { Progress, Table, Typography, type TableColumnsType } from "antd";
+import { Table, Typography, type TableColumnsType } from "antd";
 import { useTranslation } from "react-i18next";
 import type { RankingCategory } from "../../types";
 import type { AdvancedStats, Match } from "./types";
@@ -74,18 +74,6 @@ function formatVietnameseDateGroup(date: Date): string {
   return `${weekday}, ${dd}/${mm}/${yyyy}`;
 }
 
-function getWinRate(matches: number, wins: number): number {
-  if (matches <= 0) return 0;
-  return Math.max(0, Math.min(100, (wins / matches) * 100));
-}
-
-function getWinRateTone(winRate: number): string {
-  if (winRate >= 70) return "#10b981";
-  if (winRate >= 50) return "#0ea5e9";
-  if (winRate >= 35) return "#f59e0b";
-  return "#f43f5e";
-}
-
 function formatSet(setText: string): string {
   const [score, minutes] = String(setText || "").split("@");
   const normalizedMinutes = Number.parseInt(String(minutes || ""), 10);
@@ -93,26 +81,6 @@ function formatSet(setText: string): string {
     return score;
   }
   return `${score} (${normalizedMinutes}p)`;
-}
-
-const AVATAR_COLORS = [
-  "#ef5350",
-  "#ec407a",
-  "#ab47bc",
-  "#7e57c2",
-  "#42a5f5",
-  "#26a69a",
-  "#66bb6a",
-  "#ffa726",
-  "#ff7043",
-];
-
-function getAvatarColor(name: string): string {
-  let hash = 0;
-  for (const ch of name) {
-    hash = (hash * 31 + ch.charCodeAt(0)) & 0xffffffff;
-  }
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
 function formatDisplayName(name: string): { firstName: string; lastName: string } {
@@ -133,12 +101,6 @@ function formatDisplayName(name: string): { firstName: string; lastName: string 
     firstName: tokens.slice(0, -1).join(" "),
     lastName: tokens[tokens.length - 1].toUpperCase(),
   };
-}
-
-function getNationText(playerId: number, memberLevelById: Record<number, string>): string {
-  const level = String(memberLevelById[playerId] || "").trim();
-  if (!level) return "--";
-  return level.toUpperCase();
 }
 
 export default function RankingPanel({
@@ -222,7 +184,6 @@ export default function RankingPanel({
     key: player.name,
     rank: rankings.findIndex((entry) => entry.id === player.id) + 1,
     player,
-    nation: getNationText(player.id, memberLevelById),
   }));
 
   const rankingColumns: TableColumnsType<(typeof rankingRows)[number]> = [
@@ -262,25 +223,6 @@ export default function RankingPanel({
       },
     },
     {
-      title: "",
-      key: "avatar",
-      width: 70,
-      render: (_, row) => {
-        const displayName = formatDisplayName(row.player.name);
-        const avatarText = displayName.firstName.charAt(0).toUpperCase();
-        const avatarColor = getAvatarColor(row.player.name);
-
-        return (
-          <div
-            className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white"
-            style={{ backgroundColor: avatarColor }}
-          >
-            {avatarText || "?"}
-          </div>
-        );
-      },
-    },
-    {
       title: (
         <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
           {t("rankingPanel.athlete")}
@@ -302,27 +244,6 @@ export default function RankingPanel({
     {
       title: (
         <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
-          {t("rankingPanel.nation")}
-        </span>
-      ),
-      key: "nation",
-      width: 100,
-      align: "center",
-      render: (_, row) => (
-        <div className="inline-flex items-center gap-2">
-          <span
-            className="inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[10px] font-semibold text-white"
-            style={{ backgroundColor: getAvatarColor(row.nation) }}
-          >
-            {row.nation.slice(0, 2)}
-          </span>
-          <span className="text-[11px] text-slate-500">{row.nation}</span>
-        </div>
-      ),
-    },
-    {
-      title: (
-        <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
           {t("rankingPanel.points")}
         </span>
       ),
@@ -334,35 +255,6 @@ export default function RankingPanel({
           {Math.round(row.player.rating).toLocaleString()}
         </Typography.Text>
       ),
-    },
-    {
-      title: (
-        <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
-          {t("rankingPanel.form")}
-        </span>
-      ),
-      key: "form",
-      width: 120,
-      align: "right",
-      render: (_, row) => {
-        const winRate = getWinRate(row.player.totalMatches, row.player.wins);
-        return (
-          <div className="w-[90px]">
-            <div className="flex items-center justify-between text-[10px] text-slate-500">
-              <span>{Math.round(winRate)}%</span>
-              <span>
-                {row.player.wins}/{row.player.totalMatches}
-              </span>
-            </div>
-            <Progress
-              percent={Math.round(winRate)}
-              showInfo={false}
-              strokeColor={getWinRateTone(winRate)}
-              size="small"
-            />
-          </div>
-        );
-      },
     },
   ];
 

@@ -20,17 +20,17 @@ import {
 } from "antd";
 import { useTranslation } from "react-i18next";
 import type { Member } from "./types";
-import type { RankingLevel } from "../../types";
+import type { RankingCategory, RankingLevel } from "../../types";
 import {
   getRankingLevelDisplay,
   normalizeRankingLevel,
-  sortMembersByLevelAndName,
 } from "../../lib/rankingLevel";
 
 interface MembersPanelProps {
   isEditing: number | null;
   newMember: { name: string; level: RankingLevel };
   members: Member[];
+  categories: RankingCategory[];
   canManage: boolean;
   onSetNewMember: (next: { name: string; level: RankingLevel }) => void;
   onAddOrUpdateMember: () => void;
@@ -42,6 +42,7 @@ export default function MembersPanel({
   isEditing,
   newMember,
   members,
+  categories,
   canManage,
   onSetNewMember,
   onAddOrUpdateMember,
@@ -49,7 +50,75 @@ export default function MembersPanel({
   onDeleteMember,
 }: MembersPanelProps) {
   const { t } = useTranslation();
-  const sortedMembers = sortMembersByLevelAndName(members);
+
+  const sortedCategories = [...categories].sort(
+    (a, b) =>
+      a.order - b.order || a.displayName.localeCompare(b.displayName, "vi"),
+  );
+  const categoryByName = sortedCategories.reduce<
+    Record<string, RankingCategory>
+  >((acc, category) => {
+    acc[category.name] = category;
+    return acc;
+  }, {});
+  const categoryOrderByName = sortedCategories.reduce<Record<string, number>>(
+    (acc, category, index) => {
+      acc[category.name] = index;
+      return acc;
+    },
+    {},
+  );
+
+  const categoryOptions =
+    sortedCategories.length > 0
+      ? sortedCategories.map((category) => ({
+          value: category.name,
+          label: category.displayName,
+        }))
+      : [
+          { value: "Yo", label: "Yo" },
+          { value: "Lo", label: "Lo" },
+          { value: "Nè", label: "Nè" },
+        ];
+
+  const knownCategoryValues = new Set(categoryOptions.map((option) => option.value));
+  if (newMember.level && !knownCategoryValues.has(newMember.level)) {
+    categoryOptions.push({
+      value: newMember.level,
+      label: getRankingLevelDisplay(newMember.level),
+    });
+  }
+
+  const filterValues = Array.from(
+    new Set([
+      ...categoryOptions.map((option) => option.value),
+      ...members.map((member) => member.level),
+    ]),
+  );
+
+  const sortedMembers = [...members].sort((a, b) => {
+    const levelA = String(a.level || "").trim();
+    const levelB = String(b.level || "").trim();
+    const orderA =
+      Object.prototype.hasOwnProperty.call(categoryOrderByName, levelA)
+        ? categoryOrderByName[levelA]
+        : Number.MAX_SAFE_INTEGER;
+    const orderB =
+      Object.prototype.hasOwnProperty.call(categoryOrderByName, levelB)
+        ? categoryOrderByName[levelB]
+        : Number.MAX_SAFE_INTEGER;
+
+    if (orderA !== orderB) return orderA - orderB;
+
+    const labelA = categoryByName[levelA]?.displayName || levelA;
+    const labelB = categoryByName[levelB]?.displayName || levelB;
+    const levelDiff = labelA.localeCompare(labelB, "vi", {
+      sensitivity: "base",
+    });
+    if (levelDiff !== 0) return levelDiff;
+
+    return a.name.localeCompare(b.name, "vi", { sensitivity: "base" });
+  });
 
   const baseColumns: TableColumnsType<Member> = [
     {
@@ -65,25 +134,37 @@ export default function MembersPanel({
       title: t("membersPanel.rank"),
       key: "level",
       dataIndex: "level",
-      filters: ["Yo", "Lo", "Nè"].map((level) => ({
-        text: getRankingLevelDisplay(level as RankingLevel),
+      filters: filterValues.map((level) => ({
+        text: categoryByName[level]?.displayName || getRankingLevelDisplay(level),
         value: level,
       })),
       onFilter: (value, record) => record.level === value,
       sorter: (a, b) => {
-        if (a.level === b.level) {
-          return a.name.localeCompare(b.name, "vi");
-        }
-        const rankOrder: Record<RankingLevel, number> = {
-          Yo: 0,
-          Lo: 1,
-          "Nè": 2,
-        };
-        return rankOrder[a.level] - rankOrder[b.level];
+        const levelA = String(a.level || "").trim();
+        const levelB = String(b.level || "").trim();
+        const orderA =
+          Object.prototype.hasOwnProperty.call(categoryOrderByName, levelA)
+            ? categoryOrderByName[levelA]
+            : Number.MAX_SAFE_INTEGER;
+        const orderB =
+          Object.prototype.hasOwnProperty.call(categoryOrderByName, levelB)
+            ? categoryOrderByName[levelB]
+            : Number.MAX_SAFE_INTEGER;
+
+        if (orderA !== orderB) return orderA - orderB;
+
+        const labelA = categoryByName[levelA]?.displayName || levelA;
+        const labelB = categoryByName[levelB]?.displayName || levelB;
+        const levelDiff = labelA.localeCompare(labelB, "vi", {
+          sensitivity: "base",
+        });
+        if (levelDiff !== 0) return levelDiff;
+
+        return a.name.localeCompare(b.name, "vi", { sensitivity: "base" });
       },
       render: (level: RankingLevel) => (
-        <Tag color={getRankingLevelColor(level)}>
-          {getRankingLevelDisplay(level)}
+        <Tag color={getRankingLevelColor(level, categoryOrderByName)}>
+          {categoryByName[level]?.displayName || getRankingLevelDisplay(level)}
         </Tag>
       ),
     },
@@ -160,11 +241,7 @@ export default function MembersPanel({
                 style={{ marginBottom: 0 }}
               >
                 <Select
-                  options={[
-                    { value: "Yo", label: "Yo" },
-                    { value: "Lo", label: "Lo" },
-                    { value: "Nè", label: "Nè" },
-                  ]}
+                  options={categoryOptions}
                   value={newMember.level}
                   onChange={(value: RankingLevel) =>
                     onSetNewMember({
@@ -208,8 +285,18 @@ export default function MembersPanel({
   );
 }
 
-function getRankingLevelColor(level: RankingLevel): string {
+function getRankingLevelColor(
+  level: RankingLevel,
+  categoryOrderByName: Record<string, number>,
+): string {
   if (level === "Yo") return "green";
   if (level === "Lo") return "blue";
-  return "gold";
+  if (level === "Nè") return "gold";
+
+  const palette = ["purple", "magenta", "cyan", "geekblue", "volcano"];
+  const order = categoryOrderByName[level];
+  if (Number.isFinite(order) && order >= 0) {
+    return palette[order % palette.length];
+  }
+  return "default";
 }
