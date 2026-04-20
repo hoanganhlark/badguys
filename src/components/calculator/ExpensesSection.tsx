@@ -1,4 +1,5 @@
 import { InputNumber, Typography } from "antd";
+import { memo } from "react";
 import { useTranslation } from "react-i18next";
 
 type Props = {
@@ -11,7 +12,7 @@ type Props = {
   onCourtCountChange: (value: string) => void;
 };
 
-export default function ExpensesSection({
+function ExpensesSection({
   courtFee,
   shuttleCount,
   courtCount,
@@ -73,3 +74,5 @@ export default function ExpensesSection({
     </section>
   );
 }
+
+export default memo(ExpensesSection);

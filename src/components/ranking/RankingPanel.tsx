@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight, Clock, Trash2, User, Users } from "react-feather";
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import {
   CaretDownOutlined,
   CaretUpOutlined,
@@ -70,7 +70,7 @@ function formatDisplayName(name: string): { firstName: string; lastName: string 
   };
 }
 
-export default function RankingPanel({
+function RankingPanel({
   rankings,
   historyMatches,
   isHistoryExpanded,
@@ -403,3 +403,5 @@ export default function RankingPanel({
     </div>
   );
 }
+
+export default memo(RankingPanel);

@@ -19,6 +19,7 @@ import {
   Typography,
   type TableColumnsType,
 } from "antd";
+import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import type { Member } from "./types";
 import type { RankingCategory, RankingLevel } from "../../types";
@@ -39,7 +40,7 @@ interface MembersPanelProps {
   onDeleteMember: (id: number) => void;
 }
 
-export default function MembersPanel({
+function MembersPanel({
   isEditing,
   newMember,
   members,
@@ -294,6 +295,8 @@ export default function MembersPanel({
     </Space>
   );
 }
+
+export default memo(MembersPanel);
 
 function getRankingLevelColor(
   level: RankingLevel,

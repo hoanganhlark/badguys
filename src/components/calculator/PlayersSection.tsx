@@ -1,4 +1,5 @@
 import { Alert, Input, Tag, Typography } from "antd";
+import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import type { Player } from "../../types";
 
@@ -12,7 +13,7 @@ type Props = {
   onRemovePlayer: (index: number) => void;
 };
 
-export default function PlayersSection({
+function PlayersSection({
   bulkInput,
   players,
   onBulkInputChange,
@@ -126,3 +127,5 @@ export default function PlayersSection({
     </section>
   );
 }
+
+export default memo(PlayersSection);

@@ -22,7 +22,7 @@ import {
   Typography,
 } from "antd";
 import dayjs from "dayjs";
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { MatchSetInput, Member } from "./types";
 import type { RankingCategory } from "../../types";
@@ -47,7 +47,7 @@ interface MatchFormPanelProps {
   onSaveMatch: () => void;
 }
 
-export default function MatchFormPanel({
+function MatchFormPanel({
   members,
   categories,
   matchType,
@@ -379,3 +379,5 @@ export default function MatchFormPanel({
     </Card>
   );
 }
+
+export default memo(MatchFormPanel);

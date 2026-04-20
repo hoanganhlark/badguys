@@ -1,4 +1,5 @@
 import { Button, Card, Divider, Flex, Statistic, Typography } from "antd";
+import { memo } from "react";
 import { useTranslation } from "react-i18next";
 
 type Props = {
@@ -10,7 +11,7 @@ type Props = {
   onCopy: () => void;
 };
 
-export default function ResultCard({
+function ResultCard({
   visible,
   totalLabel,
   maleFeeLabel,
@@ -51,3 +52,5 @@ export default function ResultCard({
     </section>
   );
 }
+
+export default memo(ResultCard);
