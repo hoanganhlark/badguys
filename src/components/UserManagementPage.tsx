@@ -17,15 +17,11 @@ import {
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import {
-  createUser,
-  deleteUser,
-  setUserDisabled,
-  subscribeUsers,
-  updateUserRole,
-} from "../lib/api";
-import { hashMd5 } from "../lib/hash";
+import { useUsers } from "../hooks/queries";
+import { hashPassword } from "../lib/api";
 import type { UserRecord, UserRole } from "../types";
+import DashboardSectionHeader from "./dashboard/DashboardSectionHeader";
+import DashboardSummaryCards from "./dashboard/DashboardSummaryCards";
 import RankingSidebar from "./ranking/RankingSidebar";
 import type { RankingView } from "./ranking/types";
 
@@ -47,15 +43,23 @@ export default function UserManagementPage() {
   const { t } = useTranslation();
   const { currentUser } = useAuth();
 
-  const [users, setUsers] = useState<UserRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const {
+    users,
+    isLoading,
+    error,
+    createUserAsync,
+    deleteUserAsync,
+    updateRoleAsync,
+    toggleDisabledAsync,
+    isCreating,
+  } = useUsers();
+
   const [form, setForm] = useState({
     username: "",
     password: "",
     role: "member" as UserRole,
   });
-  const [saving, setSaving] = useState(false);
+  const [localError, setLocalError] = useState("");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const mainContentRef = useRef<HTMLElement | null>(null);
 
@@ -73,7 +77,7 @@ export default function UserManagementPage() {
     isAdmin &&
     form.username.trim().length > 0 &&
     form.password.trim().length > 0 &&
-    !saving;
+    !isCreating;
 
   const usernameFilters = useMemo(
     () =>
@@ -199,43 +203,6 @@ export default function UserManagementPage() {
   ];
 
   useEffect(() => {
-    setLoading(true);
-    setError("");
-
-    let unsubscribe: (() => void) | null = null;
-
-    try {
-      unsubscribe = subscribeUsers(
-        (nextUsers) => {
-          setUsers(nextUsers);
-          setLoading(false);
-        },
-        (loadError) => {
-          setError(
-            loadError instanceof Error
-              ? loadError.message
-              : t("userManagement.loadUsersFailed"),
-          );
-          setLoading(false);
-        },
-      );
-    } catch (loadError) {
-      setError(
-        loadError instanceof Error
-          ? loadError.message
-          : t("userManagement.loadUsersFailed"),
-      );
-      setLoading(false);
-    }
-
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
-  }, []);
-
-  useEffect(() => {
     const container = mainContentRef.current;
     if (!container) return;
 
@@ -305,42 +272,40 @@ export default function UserManagementPage() {
     const password = form.password;
 
     if (!username || !password) {
-      setError(t("userManagement.enterUsernamePassword"));
+      setLocalError(t("userManagement.enterUsernamePassword"));
       return;
     }
 
-    setSaving(true);
-    setError("");
+    setLocalError("");
 
     try {
-      await createUser({
+      const passwordHash = await hashPassword(password);
+      await createUserAsync({
         username,
-        passwordHash: hashMd5(password),
+        passwordHash,
         role: form.role,
       });
       setForm({ username: "", password: "", role: "member" });
     } catch (createError) {
-      setError(
+      setLocalError(
         createError instanceof Error
           ? createError.message
           : t("userManagement.createUserFailed"),
       );
-    } finally {
-      setSaving(false);
     }
   }
 
   async function handleDeleteUser(user: UserRecord) {
     if (!isAdmin) return;
     if (user.id === currentUser?.userId) {
-      setError(t("userManagement.cannotDeleteSelf"));
+      setLocalError(t("userManagement.cannotDeleteSelf"));
       return;
     }
 
     try {
-      await deleteUser(user.id);
+      await deleteUserAsync(user.id);
     } catch (deleteError) {
-      setError(
+      setLocalError(
         deleteError instanceof Error
           ? deleteError.message
           : t("userManagement.deleteUserFailed"),
@@ -352,9 +317,9 @@ export default function UserManagementPage() {
     if (!isAdmin) return;
 
     try {
-      await updateUserRole(user.id, nextRole);
+      await updateRoleAsync({ userId: user.id, role: nextRole });
     } catch (updateError) {
-      setError(
+      setLocalError(
         updateError instanceof Error
           ? updateError.message
           : t("userManagement.updateRoleFailed"),
@@ -365,14 +330,17 @@ export default function UserManagementPage() {
   async function handleToggleLockUser(user: UserRecord) {
     if (!isAdmin) return;
     if (user.id === currentUser?.userId) {
-      setError(t("userManagement.cannotLockSelf"));
+      setLocalError(t("userManagement.cannotLockSelf"));
       return;
     }
 
     try {
-      await setUserDisabled(user.id, !user.isDisabled);
+      await toggleDisabledAsync({
+        userId: user.id,
+        disabled: !user.isDisabled,
+      });
     } catch (updateError) {
-      setError(
+      setLocalError(
         updateError instanceof Error
           ? updateError.message
           : t("userManagement.updateLockFailed"),
@@ -429,40 +397,31 @@ export default function UserManagementPage() {
           }}
         >
           <div className="mx-auto max-w-7xl space-y-5 md:space-y-6">
-            <header className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm md:px-6 md:py-5">
-              <h1 className="text-xl md:text-3xl font-bold text-slate-900 inline-flex items-center gap-3">
-                <Shield className="h-6 w-6 md:h-8 md:w-8 text-sky-600" />
-                {t("userManagement.title")}
-              </h1>
-              <p className="mt-1.5 text-xs md:text-sm text-slate-500">
-                {t("userManagement.subtitle")}
-              </p>
-            </header>
+            <DashboardSectionHeader
+              icon={<Shield className="h-6 w-6 text-sky-600 md:h-8 md:w-8" />}
+              title={t("userManagement.title")}
+              subtitle={t("userManagement.subtitle")}
+            />
 
-            <section className="grid grid-cols-3 gap-2 mb-4 md:mb-6 md:max-w-2xl">
-              <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
-                <p className="text-[11px] text-slate-500">
-                  {t("userManagement.totalUsers")}
-                </p>
-                <p className="text-lg font-bold text-slate-900">
-                  {sortedUsers.length}
-                </p>
-              </div>
-              <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
-                <p className="text-[11px] text-slate-500">
-                  {t("userManagement.admin")}
-                </p>
-                <p className="text-lg font-bold text-slate-900">{adminCount}</p>
-              </div>
-              <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
-                <p className="text-[11px] text-slate-500">
-                  {t("userManagement.member")}
-                </p>
-                <p className="text-lg font-bold text-slate-900">
-                  {Math.max(0, sortedUsers.length - adminCount)}
-                </p>
-              </div>
-            </section>
+            <DashboardSummaryCards
+              items={[
+                {
+                  key: "total-users",
+                  label: t("userManagement.totalUsers"),
+                  value: sortedUsers.length,
+                },
+                {
+                  key: "admin-count",
+                  label: t("userManagement.admin"),
+                  value: adminCount,
+                },
+                {
+                  key: "member-count",
+                  label: t("userManagement.member"),
+                  value: Math.max(0, sortedUsers.length - adminCount),
+                },
+              ]}
+            />
 
             <Card title={t("userManagement.createTitle")}>
               <Form
@@ -530,11 +489,11 @@ export default function UserManagementPage() {
                     <Button
                       type="primary"
                       htmlType="submit"
-                      loading={saving}
+                      loading={isCreating}
                       disabled={!canCreateUser}
                       block
                     >
-                      {saving
+                      {isCreating
                         ? t("userManagement.creating")
                         : t("userManagement.createButton")}
                     </Button>
@@ -553,13 +512,13 @@ export default function UserManagementPage() {
                 </span>
               }
             >
-              {error ? (
+              {error?.message || localError ? (
                 <p className="mb-3 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
-                  {error}
+                  {error?.message || localError}
                 </p>
               ) : null}
 
-              {loading ? (
+              {isLoading ? (
                 <div className="py-8 text-center">
                   <Spin tip={t("userManagement.loadingUsers")} />
                 </div>

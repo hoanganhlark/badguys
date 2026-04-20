@@ -1,4 +1,6 @@
 .env
+.temp
+.idea
 .env.*
 .claude
 index.local.html

@@ -28,7 +28,7 @@ const defaultConfig: AppConfig = {
   ),
 };
 
-export const envConfig: EnvConfig & { firebaseCollection: string } = {
+export const envConfig: EnvConfig = {
   gaMeasurementId: import.meta.env.VITE_GA_MEASUREMENT_ID || "",
   telegramBotToken: import.meta.env.VITE_TELEGRAM_BOT_TOKEN || "",
   telegramGroupChatId: import.meta.env.VITE_TELEGRAM_GROUP_CHAT_ID || "",
@@ -36,13 +36,11 @@ export const envConfig: EnvConfig & { firebaseCollection: string } = {
     import.meta.env.VITE_BADGUY_ENABLE_TELEGRAM_NOTIFICATION,
     true,
   ),
-  firebaseApiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
-  firebaseProjectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "",
+  supabaseUrl: import.meta.env.VITE_SUPABASE_URL || "",
+  supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY || "",
   appVersion: import.meta.env.VITE_APP_VERSION || "v0.0.0",
   mode: import.meta.env.MODE,
   isDevelopment: import.meta.env.DEV,
   isProduction: import.meta.env.PROD,
   defaultConfig,
-  firebaseCollection:
-    import.meta.env.VITE_FIREBASE_COLLECTION_SESSIONS || "sessions",
 };

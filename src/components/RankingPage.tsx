@@ -10,12 +10,11 @@ import {
 } from "@ant-design/icons";
 import {
   getLatestRankingSnapshot,
-  isFirebaseReady,
+  isSupabaseReady,
   saveRankingSnapshot,
-  subscribeUsers,
 } from "../lib/api";
+import { useUsers } from "../hooks/queries";
 import {
-  useRankingData,
   useRankingMembers,
   useRankingMatches,
   useRankingCategories,
@@ -29,25 +28,15 @@ import {
   AnalyticsParamKey,
   trackEvent,
 } from "../lib/analytics";
-import {
-  loadRankingSettingsFromStorage,
-  saveRankingSettingsToStorage,
-} from "../lib/rankingStorage";
+import DashboardSectionHeader from "./dashboard/DashboardSectionHeader";
+import DashboardSummaryCards from "./dashboard/DashboardSummaryCards";
 import MatchFormPanel from "./ranking/MatchFormPanel";
 import MembersPanel from "./ranking/MembersPanel";
 import PlayerStatsModal from "./ranking/PlayerStatsModal";
 import RankingPanel from "./ranking/RankingPanel";
 import RankingSidebar from "./ranking/RankingSidebar";
-import type {
-  AdvancedStats,
-  Member,
-  RankingView,
-} from "./ranking/types";
-import type {
-  RankingSettings,
-  RankingSnapshot,
-  RankingLevel,
-} from "../types";
+import type { AdvancedStats, Member, RankingView } from "./ranking/types";
+import type { RankingSnapshot, RankingLevel } from "../types";
 import { Award, BarChart2, Settings } from "react-feather";
 
 interface RankingPageProps {
@@ -73,8 +62,22 @@ function isRankingView(value: string | null): value is RankingView {
 }
 
 function normalizeMemberNameKey(name: string): string {
-  return String(name || "").trim().toLowerCase();
+  return String(name || "")
+    .trim()
+    .toLowerCase();
 }
+
+const DEFAULT_RANKING_CONFIG = {
+  tau: 0.5,
+  penaltyCoefficient: 0.3,
+  metricVisibility: {
+    skill: true,
+    stability: true,
+    uncertainty: true,
+    motivation: true,
+    winRate: true,
+  },
+} as const;
 
 export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   const { currentUser, isAdmin, logout } = useAuth();
@@ -92,8 +95,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     isPublicRankingRoute && parsedView === "match-form"
       ? "ranking"
       : parsedView;
-  // Hooks for ranking data management
-  const { members } = useRankingData();
+  const { users } = useUsers();
   const {
     members: hookMembers,
     addMember,
@@ -114,11 +116,8 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     resetHistoryPagination,
     clearAllMatches,
   } = useRankingMatches();
-  const {
-    categories,
-    sortedCategories,
-    defaultMemberLevel,
-  } = useRankingCategories();
+  const { categories, sortedCategories, defaultMemberLevel } =
+    useRankingCategories();
   const {
     matchType,
     team1,
@@ -143,17 +142,13 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   );
   const mainContentRef = useRef<HTMLElement | null>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [latestSnapshot, setLatestSnapshot] =
-    useState<RankingSnapshot | null>(null);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
-  const [rankingSettings, setRankingSettings] = useState<RankingSettings>(() =>
-    loadRankingSettingsFromStorage(currentUser?.userId || "guest"),
+  const [latestSnapshot, setLatestSnapshot] = useState<RankingSnapshot | null>(
+    null,
   );
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
-  const rankingSettingsStorageScope = currentUser?.userId || "guest";
 
-  // Use members from hook (with fallback to useRankingData for remote hydration)
-  const displayMembers = hookMembers.length > 0 ? hookMembers : members;
+  const displayMembers = hookMembers;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -196,7 +191,6 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     navigate(`${routeBase}/ranking`, { replace: true });
   }, [isOpen, isPublicRankingRoute, navigate, routeBase, tab]);
 
-
   useEffect(() => {
     let mounted = true;
 
@@ -219,25 +213,14 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   }, []);
 
   useEffect(() => {
-    if (!isOpen || !isFirebaseReady()) return;
+    if (!isOpen || !isSupabaseReady()) return;
 
-    const unsubscribe = subscribeUsers(
-      (users) => {
-        const nextMap = users.reduce<Record<string, string>>((acc, user) => {
-          acc[user.id] = user.username;
-          return acc;
-        }, {});
-        setUsernamesById(nextMap);
-      },
-      () => {
-        setUsernamesById({});
-      },
-    );
-
-    return () => {
-      unsubscribe();
-    };
-  }, [isOpen]);
+    const nextMap = users.reduce<Record<string, string>>((acc, user) => {
+      acc[user.id] = user.username;
+      return acc;
+    }, {});
+    setUsernamesById(nextMap);
+  }, [isOpen, users]);
 
   // Update selectedCategoryId when categories change
   useEffect(() => {
@@ -252,7 +235,6 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
         : (categories[0]?.id ?? ""),
     );
   }, [categories]);
-
 
   useEffect(() => {
     setMobileSidebarOpen(false);
@@ -317,17 +299,6 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     };
   }, []);
 
-
-  useEffect(() => {
-    saveRankingSettingsToStorage(rankingSettings, rankingSettingsStorageScope);
-  }, [rankingSettings, rankingSettingsStorageScope]);
-
-  useEffect(() => {
-    setRankingSettings(
-      loadRankingSettingsFromStorage(rankingSettingsStorageScope),
-    );
-  }, [rankingSettingsStorageScope]);
-
   // Local state for member form editing
   const [isEditing, setIsEditing] = useState<number | null>(null);
   const [memberFormName, setMemberFormName] = useState("");
@@ -347,32 +318,42 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     }
     setMemberFormName("");
     setMemberFormLevel(defaultMemberLevel);
-  }, [isAdmin, sortedCategories, isEditing, memberFormName, memberFormLevel, defaultMemberLevel, editMember, addMember]);
+  }, [
+    isAdmin,
+    sortedCategories,
+    isEditing,
+    memberFormName,
+    memberFormLevel,
+    defaultMemberLevel,
+    editMember,
+    addMember,
+  ]);
 
-  const handleDeleteMember = useCallback((id: number) => {
-    if (!isAdmin) return;
-    deleteMember(id);
-  }, [isAdmin, deleteMember]);
+  const handleDeleteMember = useCallback(
+    (id: number) => {
+      if (!isAdmin) return;
+      deleteMember(id);
+    },
+    [isAdmin, deleteMember],
+  );
 
-  const handleStartEditMember = useCallback((member: Member) => {
-    if (!isAdmin) return;
-    setIsEditing(member.id);
-    setMemberFormName(member.name);
-    setMemberFormLevel(member.level);
-  }, [isAdmin]);
+  const handleStartEditMember = useCallback(
+    (member: Member) => {
+      if (!isAdmin) return;
+      setIsEditing(member.id);
+      setMemberFormName(member.name);
+      setMemberFormLevel(member.level);
+    },
+    [isAdmin],
+  );
 
   // Calculate rankings before handlers that might use it
   const rankings = useMemo(() => {
     return calculateRankingStats(displayMembers, matches, {
-      tau: rankingSettings.tau,
-      penaltyCoefficient: rankingSettings.penaltyCoefficient,
+      tau: DEFAULT_RANKING_CONFIG.tau,
+      penaltyCoefficient: DEFAULT_RANKING_CONFIG.penaltyCoefficient,
     });
-  }, [
-    displayMembers,
-    matches,
-    rankingSettings.penaltyCoefficient,
-    rankingSettings.tau,
-  ]);
+  }, [displayMembers, matches]);
 
   const handleClearHistory = useCallback(async () => {
     if (!isAdmin) return;
@@ -393,7 +374,10 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
             })),
           );
         } catch (snapshotError) {
-          console.error("Failed to save ranking snapshot before clear", snapshotError);
+          console.error(
+            "Failed to save ranking snapshot before clear",
+            snapshotError,
+          );
         }
       }
 
@@ -409,7 +393,15 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     } catch (error) {
       console.error("Failed to clear matches", error);
     }
-  }, [isAdmin, matches.length, rankings, t, clearAllMatches, resetHistoryPagination, currentUser?.userId]);
+  }, [
+    isAdmin,
+    matches.length,
+    rankings,
+    t,
+    clearAllMatches,
+    resetHistoryPagination,
+    currentUser?.userId,
+  ]);
 
   const handleDeleteMatch = useCallback(
     async (matchId: number | string) => {
@@ -460,7 +452,15 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     }
 
     try {
-      await addMatch(matchType, team1, team2, sets, playedAt, currentUser.userId, currentUser.username);
+      await addMatch(
+        matchType,
+        team1,
+        team2,
+        sets,
+        playedAt,
+        currentUser.userId,
+        currentUser.username,
+      );
 
       const validSetCount = sets.filter((set) => {
         const scoreA = Number.parseInt(set.team1Score, 10);
@@ -474,10 +474,32 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
         return sum + minutes;
       }, 0);
 
+      // Save ranking snapshot after match to update trends
+      try {
+        if (rankings.length > 0) {
+          await saveRankingSnapshot(
+            rankings.map((player, index) => ({
+              memberId: player.id,
+              memberName: player.name,
+              rank: index + 1,
+              rankScore: player.rankScore,
+            })),
+          );
+          const snapshot = await getLatestRankingSnapshot();
+          setLatestSnapshot(snapshot);
+        }
+      } catch (snapshotError) {
+        console.error(
+          "Failed to save ranking snapshot after match",
+          snapshotError,
+        );
+      }
+
       trackEvent(AnalyticsEventName.RecordMatch, {
         [AnalyticsParamKey.MatchType]: matchType,
         [AnalyticsParamKey.SetCount]: validSetCount,
-        [AnalyticsParamKey.DurationMinutes]: totalMinutes > 0 ? totalMinutes : 0,
+        [AnalyticsParamKey.DurationMinutes]:
+          totalMinutes > 0 ? totalMinutes : 0,
       });
       messageApi.success(t("rankingPage.toastMatchSaved"));
       resetForm();
@@ -485,9 +507,21 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
       console.error("Failed to save match", error);
       messageApi.error(t("rankingPage.cannotSaveMatch"));
     }
-  }, [currentUser, getValidationError, addMatch, matchType, team1, team2, sets, playedAt, trackEvent, messageApi, t, resetForm]);
-
-
+  }, [
+    currentUser,
+    getValidationError,
+    addMatch,
+    matchType,
+    team1,
+    team2,
+    sets,
+    playedAt,
+    trackEvent,
+    messageApi,
+    t,
+    resetForm,
+    rankings,
+  ]);
 
   const historyMatchesForDisplay = useMemo(
     () =>
@@ -517,18 +551,21 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
       }
     });
 
-    return rankings.reduce<Record<number, number | "NEW">>((acc, player, idx) => {
-      const currentRank = idx + 1;
-      const previousRank =
-        previousRanksByMemberId.get(player.id) ??
-        previousRanksByMemberName.get(normalizeMemberNameKey(player.name));
-      if (previousRank === undefined) {
-        acc[player.id] = "NEW";
-      } else {
-        acc[player.id] = previousRank - currentRank;
-      }
-      return acc;
-    }, {});
+    return rankings.reduce<Record<number, number | "NEW">>(
+      (acc, player, idx) => {
+        const currentRank = idx + 1;
+        const previousRank =
+          previousRanksByMemberId.get(player.id) ??
+          previousRanksByMemberName.get(normalizeMemberNameKey(player.name));
+        if (previousRank === undefined) {
+          acc[player.id] = "NEW";
+        } else {
+          acc[player.id] = previousRank - currentRank;
+        }
+        return acc;
+      },
+      {},
+    );
   }, [latestSnapshot, rankings]);
 
   const showRankTrend = matches.length > 1;
@@ -705,65 +742,57 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
               }}
             >
               <div className="max-w-7xl mx-auto">
-                <header className="mb-5 rounded-2xl border border-slate-200 bg-white px-4 py-4 md:px-6 md:py-5">
-                  <h1 className="text-xl md:text-3xl font-bold text-slate-900 flex items-center gap-3">
-                    {view === "member" && (
-                      <>
-                        <Settings className="h-6 w-6 md:h-8 md:w-8 text-sky-600" />{" "}
-                        {t("rankingPage.memberManagement")}
-                      </>
-                    )}
-                    {view === "match-form" && (
-                      <>
-                        <BarChart2 className="h-6 w-6 md:h-8 md:w-8 text-sky-600" />
-                        {t("rankingPage.recordResult")}
-                      </>
-                    )}
-                    {view === "ranking" && (
-                      <>
-                        <Award className="h-6 w-6 md:h-8 md:w-8 text-sky-600" />{" "}
-                        {t("rankingPage.clubRanking")}
-                      </>
-                    )}
-                  </h1>
-                  <p className="text-slate-500 text-xs md:text-sm mt-1.5">
-                    {t("rankingPage.systemDescription")}
-                  </p>
-                </header>
+                <DashboardSectionHeader
+                  className="mb-5"
+                  icon={
+                    view === "member" ? (
+                      <Settings className="h-6 w-6 text-sky-600 md:h-8 md:w-8" />
+                    ) : view === "match-form" ? (
+                      <BarChart2 className="h-6 w-6 text-sky-600 md:h-8 md:w-8" />
+                    ) : (
+                      <Award className="h-6 w-6 text-sky-600 md:h-8 md:w-8" />
+                    )
+                  }
+                  title={
+                    view === "member"
+                      ? t("rankingPage.memberManagement")
+                      : view === "match-form"
+                        ? t("rankingPage.recordResult")
+                        : t("rankingPage.clubRanking")
+                  }
+                  subtitle={t("rankingPage.systemDescription")}
+                />
 
-                <section className="grid grid-cols-3 gap-2 mb-4 md:mb-6 md:max-w-2xl">
-                  <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
-                    <p className="text-[11px] text-slate-500">
-                      {t("rankingPage.members")}
-                    </p>
-                    <p className="text-lg font-bold text-slate-900">
-                      {members.length}
-                    </p>
-                  </div>
-                  <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
-                    <p className="text-[11px] text-slate-500">
-                      {t("rankingPage.matches")}
-                    </p>
-                    <p className="text-lg font-bold text-slate-900">
-                      {matches.length}
-                    </p>
-                  </div>
-                  <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
-                    <p className="text-[11px] text-slate-500">
-                      {t("rankingPage.topRank")}
-                    </p>
-                    <p className="text-sm md:text-base font-bold text-slate-900 truncate">
-                      {rankings[0]?.name ?? "-"}
-                    </p>
-                  </div>
-                </section>
+                <DashboardSummaryCards
+                  items={[
+                    {
+                      key: "members",
+                      label: t("rankingPage.members"),
+                      value: displayMembers.length,
+                    },
+                    {
+                      key: "matches",
+                      label: t("rankingPage.matches"),
+                      value: matches.length,
+                    },
+                    {
+                      key: "top-rank",
+                      label: t("rankingPage.topRank"),
+                      value: rankings[0]?.name ?? "-",
+                      valueClassName: "text-sm md:text-base truncate",
+                    },
+                  ]}
+                />
 
                 {/* View: Dashboard (Members) */}
                 {view === "member" && (
                   <div className="space-y-4">
                     <MembersPanel
                       isEditing={isEditing}
-                      newMember={{ name: memberFormName, level: memberFormLevel }}
+                      newMember={{
+                        name: memberFormName,
+                        level: memberFormLevel,
+                      }}
                       members={displayMembers}
                       categories={sortedCategories}
                       onSetNewMember={(newMember) => {
@@ -775,94 +804,6 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                       onDeleteMember={handleDeleteMember}
                       canManage={isAdmin}
                     />
-                    {isAdmin ? (
-                      <div className="max-w-5xl rounded-2xl border border-slate-200 bg-white p-4 md:p-5 space-y-3">
-                        <h3 className="text-sm font-semibold uppercase text-slate-700">
-                          {t("rankingPage.rankingConfig")}
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <label className="text-sm text-slate-700">
-                            Tau (0.3 - 1.2)
-                            <input
-                              type="number"
-                              min={0.3}
-                              max={1.2}
-                              step={0.1}
-                              className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200"
-                              value={rankingSettings.tau}
-                              onChange={(e) => {
-                                const value = Number(e.target.value);
-                                if (!Number.isFinite(value)) return;
-                                setRankingSettings((prev) => ({
-                                  ...prev,
-                                  tau: Math.min(1.2, Math.max(0.3, value)),
-                                }));
-                              }}
-                            />
-                          </label>
-                          <label className="text-sm text-slate-700">
-                            {t("rankingPage.penaltyCoefficient")}
-                            <input
-                              type="number"
-                              min={0}
-                              max={2}
-                              step={0.05}
-                              className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200"
-                              value={rankingSettings.penaltyCoefficient}
-                              onChange={(e) => {
-                                const value = Number(e.target.value);
-                                if (!Number.isFinite(value)) return;
-                                setRankingSettings((prev) => ({
-                                  ...prev,
-                                  penaltyCoefficient: Math.min(
-                                    2,
-                                    Math.max(0, value),
-                                  ),
-                                }));
-                              }}
-                            />
-                          </label>
-                        </div>
-                        <div className="space-y-1.5">
-                          <p className="text-xs font-semibold uppercase text-slate-500">
-                            {t("rankingPage.showMetricsInModal")}
-                          </p>
-                          <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                            {[
-                              ["skill", t("rankingPage.skill")],
-                              ["stability", t("rankingPage.stability")],
-                              ["uncertainty", t("rankingPage.uncertainty")],
-                              ["motivation", t("rankingPage.motivation")],
-                              ["winRate", t("rankingPage.winRate")],
-                            ].map(([key, label]) => (
-                              <label
-                                key={key}
-                                className="inline-flex items-center gap-2 text-xs text-slate-700"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={
-                                    rankingSettings.metricVisibility[
-                                      key as keyof RankingSettings["metricVisibility"]
-                                    ]
-                                  }
-                                  onChange={(e) =>
-                                    setRankingSettings((prev) => ({
-                                      ...prev,
-                                      metricVisibility: {
-                                        ...prev.metricVisibility,
-                                        [key]: e.target.checked,
-                                      },
-                                    }))
-                                  }
-                                />
-                                {label}
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    ) : null}
                   </div>
                 )}
 
@@ -928,12 +869,11 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
       {selectedPlayer && (
         <PlayerStatsModal
           stats={selectedPlayer}
-          penaltyCoefficient={rankingSettings.penaltyCoefficient}
-          metricVisibility={rankingSettings.metricVisibility}
+          penaltyCoefficient={DEFAULT_RANKING_CONFIG.penaltyCoefficient}
+          metricVisibility={DEFAULT_RANKING_CONFIG.metricVisibility}
           onClose={() => setSelectedPlayer(null)}
         />
       )}
     </div>
   );
 }
-

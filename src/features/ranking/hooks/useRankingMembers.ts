@@ -1,12 +1,9 @@
 import { useState, useCallback, useEffect } from "react";
 import {
+  getRankingMembers,
   saveRankingMembers,
-  isFirebaseReady,
+  isSupabaseReady,
 } from "../../../lib/api";
-import {
-  loadMembersFromStorage,
-  saveMembersToStorage,
-} from "../../../lib/rankingStorage";
 import type { Member } from "../../../components/ranking/types";
 import type { RankingLevel } from "../../../types";
 
@@ -21,7 +18,9 @@ export interface UseRankingMembersReturn {
 }
 
 function normalizeName(name: string): string {
-  return String(name || "").trim().toLowerCase();
+  return String(name || "")
+    .trim()
+    .toLowerCase();
 }
 
 /**
@@ -45,10 +44,9 @@ function normalizeName(name: string): string {
  * }
  */
 export function useRankingMembers(): UseRankingMembersReturn {
-  const [members, setMembers] = useState<Member[]>(() =>
-    loadMembersFromStorage(),
-  );
+  const [members, setMembers] = useState<Member[]>([]);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   const isDuplicate = useCallback(
     (name: string, excludeId?: number): boolean => {
@@ -67,7 +65,8 @@ export function useRankingMembers(): UseRankingMembersReturn {
       if (!name.trim() || !level.trim()) return;
 
       const newMember: Member = {
-        id: Date.now(),
+        id:
+          members.reduce((maxId, member) => Math.max(maxId, member.id), 0) + 1,
         name: name.trim(),
         level,
       };
@@ -75,56 +74,73 @@ export function useRankingMembers(): UseRankingMembersReturn {
       setMembers((prev) => [...prev, newMember]);
       setSelectedMember(newMember);
     },
-    [],
+    [members],
   );
 
-  const editMember = useCallback((id: number, name: string, level: RankingLevel) => {
-    if (!name.trim() || !level.trim()) return;
+  const editMember = useCallback(
+    (id: number, name: string, level: RankingLevel) => {
+      if (!name.trim() || !level.trim()) return;
 
-    setMembers((prev) =>
-      prev.map((m) =>
-        m.id === id
-          ? { ...m, name: name.trim(), level }
-          : m,
-      ),
-    );
+      setMembers((prev) =>
+        prev.map((m) => (m.id === id ? { ...m, name: name.trim(), level } : m)),
+      );
 
-    setSelectedMember((prev) =>
-      prev && prev.id === id
-        ? { ...prev, name: name.trim(), level }
-        : prev,
-    );
-  }, []);
+      setSelectedMember((prev) =>
+        prev && prev.id === id ? { ...prev, name: name.trim(), level } : prev,
+      );
+    },
+    [],
+  );
 
   const deleteMember = useCallback((id: number) => {
     setMembers((prev) => prev.filter((m) => m.id !== id));
     setSelectedMember((prev) => (prev?.id === id ? null : prev));
   }, []);
 
-  const selectMember = useCallback((id: number | null) => {
-    if (id === null) {
-      setSelectedMember(null);
-      return;
-    }
+  const selectMember = useCallback(
+    (id: number | null) => {
+      if (id === null) {
+        setSelectedMember(null);
+        return;
+      }
 
-    setSelectedMember((prev) => {
-      if (prev?.id === id) return prev;
-      return (
-        members.find((m) => m.id === id) ?? null
-      );
-    });
-  }, [members]);
+      setSelectedMember((prev) => {
+        if (prev?.id === id) return prev;
+        return members.find((m) => m.id === id) ?? null;
+      });
+    },
+    [members],
+  );
 
-  // Persist to localStorage and Firestore
   useEffect(() => {
-    saveMembersToStorage(members);
+    if (!isSupabaseReady()) return;
 
-    if (!isFirebaseReady()) return;
+    let mounted = true;
+
+    void getRankingMembers()
+      .then((remoteMembers) => {
+        if (!mounted) return;
+        setMembers(remoteMembers);
+        setIsHydrated(true);
+      })
+      .catch((error) => {
+        console.error("Failed to load ranking members from Supabase", error);
+        if (mounted) setIsHydrated(true);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Persist to Supabase
+  useEffect(() => {
+    if (!isSupabaseReady() || !isHydrated) return;
 
     void saveRankingMembers(members).catch((error) => {
-      console.error("Failed to save ranking members to Firestore", error);
+      console.error("Failed to save ranking members to Supabase", error);
     });
-  }, [members]);
+  }, [members, isHydrated]);
 
   return {
     members,

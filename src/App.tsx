@@ -42,7 +42,7 @@ import {
 import {
   getUserByUsername,
   getRecentSessions,
-  isFirebaseReady,
+  isSupabaseReady,
   removeSession,
   updateUserPassword,
 } from "./lib/api";
@@ -184,7 +184,7 @@ export default function App() {
     setSessionsError("");
 
     try {
-      if (!isFirebaseReady()) {
+      if (!isSupabaseReady()) {
         setSessionsError(t("app.loadSessionsFirebaseError"));
         return;
       }
@@ -210,7 +210,7 @@ export default function App() {
       return;
     }
 
-    if (!isFirebaseReady()) {
+    if (!isSupabaseReady()) {
       showToast(t("app.toastFirebaseNotReadyDelete"));
       return;
     }

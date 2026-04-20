@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import {
   getRecentSessions,
-  isFirebaseReady,
+  isSupabaseReady,
   removeSession,
 } from "../../../lib/api";
 import { copyText } from "../../../lib/platform";
@@ -32,8 +32,8 @@ export function useSessionManagement(): UseSessionManagementReturn {
     setError("");
 
     try {
-      if (!isFirebaseReady()) {
-        setError("Firebase is not ready");
+      if (!isSupabaseReady()) {
+        setError("Supabase is not ready");
         return;
       }
 
@@ -54,8 +54,8 @@ export function useSessionManagement(): UseSessionManagementReturn {
         return;
       }
 
-      if (!isFirebaseReady()) {
-        setError("Firebase is not ready");
+      if (!isSupabaseReady()) {
+        setError("Supabase is not ready");
         return;
       }
 

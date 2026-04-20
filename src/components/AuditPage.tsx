@@ -15,8 +15,10 @@ import {
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { subscribeAuditEvents } from "../lib/api";
+import { useAuditEvents } from "../hooks/queries";
 import type { AuditEventRecord } from "../types";
+import DashboardSectionHeader from "./dashboard/DashboardSectionHeader";
+import DashboardSummaryCards from "./dashboard/DashboardSummaryCards";
 import RankingSidebar from "./ranking/RankingSidebar";
 import type { RankingView } from "./ranking/types";
 
@@ -84,13 +86,12 @@ export default function AuditPage() {
   const { t } = useTranslation();
   const { currentUser } = useAuth();
 
+  const { events, isLoading, error } = useAuditEvents(300);
+
   const auditFilterScopeKey = currentUser?.userId || "guest";
-  const [events, setEvents] = useState<AuditEventRecord[]>([]);
   const [selectedUser, setSelectedUser] = useState("all");
   const [selectedType, setSelectedType] = useState<AuditFilterType>("all");
   const [filtersHydrated, setFiltersHydrated] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const mainContentRef = useRef<HTMLElement | null>(null);
 
@@ -250,7 +251,10 @@ export default function AuditPage() {
       sorter: (a, b) =>
         String(a.userProperties?.username || "guest")
           .trim()
-          .localeCompare(String(b.userProperties?.username || "guest").trim(), "vi"),
+          .localeCompare(
+            String(b.userProperties?.username || "guest").trim(),
+            "vi",
+          ),
       render: (_, record) => String(record.userProperties?.username || "guest"),
     },
     {
@@ -264,7 +268,10 @@ export default function AuditPage() {
       sorter: (a, b) =>
         String(a.userProperties?.role || "guest")
           .trim()
-          .localeCompare(String(b.userProperties?.role || "guest").trim(), "vi"),
+          .localeCompare(
+            String(b.userProperties?.role || "guest").trim(),
+            "vi",
+          ),
       render: (_, record) => String(record.userProperties?.role || "guest"),
     },
     {
@@ -303,44 +310,6 @@ export default function AuditPage() {
       } satisfies StoredAuditFilters),
     );
   }, [auditFilterScopeKey, filtersHydrated, selectedType, selectedUser]);
-
-  useEffect(() => {
-    setLoading(true);
-    setError("");
-
-    let unsubscribe: (() => void) | null = null;
-
-    try {
-      unsubscribe = subscribeAuditEvents(
-        (nextEvents) => {
-          setEvents(nextEvents);
-          setLoading(false);
-        },
-        (loadError) => {
-          setError(
-            loadError instanceof Error
-              ? loadError.message
-              : t("auditPage.loadAuditFailed"),
-          );
-          setLoading(false);
-        },
-        300,
-      );
-    } catch (loadError) {
-      setError(
-        loadError instanceof Error
-          ? loadError.message
-          : t("auditPage.loadAuditFailed"),
-      );
-      setLoading(false);
-    }
-
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
-  }, []);
 
   useEffect(() => {
     const container = mainContentRef.current;
@@ -450,46 +419,37 @@ export default function AuditPage() {
           }}
         >
           <div className="mx-auto max-w-7xl space-y-5 md:space-y-6">
-            <header className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm md:px-6 md:py-5">
-              <h1 className="text-xl md:text-3xl font-bold text-slate-900 inline-flex items-center gap-3">
-                <Activity className="h-6 w-6 md:h-8 md:w-8 text-sky-600" />
-                {t("auditPage.title")}
-              </h1>
-              <p className="mt-1.5 text-xs md:text-sm text-slate-500">
-                {t("auditPage.subtitle")}
-              </p>
-            </header>
+            <DashboardSectionHeader
+              icon={<Activity className="h-6 w-6 text-sky-600 md:h-8 md:w-8" />}
+              title={t("auditPage.title")}
+              subtitle={t("auditPage.subtitle")}
+            />
 
-            <section className="grid grid-cols-3 gap-2 mb-4 md:mb-6 md:max-w-2xl">
-              <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
-                <p className="text-[11px] text-slate-500">
-                  {t("auditPage.totalEvents")}
-                </p>
-                <p className="text-lg font-bold text-slate-900">{events.length}</p>
-              </div>
-              <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
-                <p className="text-[11px] text-slate-500">
-                  {t("auditPage.uniqueEvents")}
-                </p>
-                <p className="text-lg font-bold text-slate-900">
-                  {uniqueEventsCount}
-                </p>
-              </div>
-              <div className="rounded-xl bg-white border border-slate-200 px-3 py-2.5">
-                <p className="text-[11px] text-slate-500">
-                  {t("auditPage.uniqueUsers")}
-                </p>
-                <p className="text-lg font-bold text-slate-900">
-                  {uniqueUsersCount}
-                </p>
-              </div>
-            </section>
+            <DashboardSummaryCards
+              items={[
+                {
+                  key: "total-events",
+                  label: t("auditPage.totalEvents"),
+                  value: events.length,
+                },
+                {
+                  key: "unique-events",
+                  label: t("auditPage.uniqueEvents"),
+                  value: uniqueEventsCount,
+                },
+                {
+                  key: "unique-users",
+                  label: t("auditPage.uniqueUsers"),
+                  value: uniqueUsersCount,
+                },
+              ]}
+            />
 
             <Card>
-              {error ? (
+              {error?.message ? (
                 <Alert
                   type="error"
-                  message={error}
+                  message={error.message}
                   showIcon
                   style={{ marginBottom: 16 }}
                 />
@@ -526,7 +486,7 @@ export default function AuditPage() {
                 />
               </div>
 
-              {loading ? (
+              {isLoading ? (
                 <div className="py-8 text-center">
                   <Spin tip={t("auditPage.loadingAudit")} />
                 </div>

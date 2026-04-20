@@ -1,0 +1,8 @@
+# Supabase Configuration for BadGuys Ranking App
+# Minimal configuration - most settings are configured in Supabase dashboard
+
+[api]
+enabled = true
+
+[db]
+major_version = 15

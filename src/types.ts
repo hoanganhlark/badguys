@@ -150,8 +150,8 @@ export type EnvConfig = {
   telegramBotToken: string;
   telegramGroupChatId: string;
   enableTelegramNotification: boolean;
-  firebaseApiKey: string;
-  firebaseProjectId: string;
+  supabaseUrl: string;
+  supabaseAnonKey: string;
   appVersion: string;
   mode: string;
   isDevelopment: boolean;

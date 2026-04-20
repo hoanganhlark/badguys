@@ -71,14 +71,15 @@ function MembersPanel({
     {},
   );
 
-  const categoryOptions =
-    sortedCategories.map((category) => ({
-      value: category.name,
-      label: category.displayName,
-    }));
+  const categoryOptions = sortedCategories.map((category) => ({
+    value: category.name,
+    label: category.displayName,
+  }));
   const hasCategoryOptions = categoryOptions.length > 0;
 
-  const knownCategoryValues = new Set(categoryOptions.map((option) => option.value));
+  const knownCategoryValues = new Set(
+    categoryOptions.map((option) => option.value),
+  );
   if (newMember.level && !knownCategoryValues.has(newMember.level)) {
     categoryOptions.push({
       value: newMember.level,
@@ -96,14 +97,18 @@ function MembersPanel({
   const sortedMembers = [...members].sort((a, b) => {
     const levelA = String(a.level || "").trim();
     const levelB = String(b.level || "").trim();
-    const orderA =
-      Object.prototype.hasOwnProperty.call(categoryOrderByName, levelA)
-        ? categoryOrderByName[levelA]
-        : Number.MAX_SAFE_INTEGER;
-    const orderB =
-      Object.prototype.hasOwnProperty.call(categoryOrderByName, levelB)
-        ? categoryOrderByName[levelB]
-        : Number.MAX_SAFE_INTEGER;
+    const orderA = Object.prototype.hasOwnProperty.call(
+      categoryOrderByName,
+      levelA,
+    )
+      ? categoryOrderByName[levelA]
+      : Number.MAX_SAFE_INTEGER;
+    const orderB = Object.prototype.hasOwnProperty.call(
+      categoryOrderByName,
+      levelB,
+    )
+      ? categoryOrderByName[levelB]
+      : Number.MAX_SAFE_INTEGER;
 
     if (orderA !== orderB) return orderA - orderB;
 
@@ -132,21 +137,26 @@ function MembersPanel({
       key: "level",
       dataIndex: "level",
       filters: filterValues.map((level) => ({
-        text: categoryByName[level]?.displayName || getRankingLevelDisplay(level),
+        text:
+          categoryByName[level]?.displayName || getRankingLevelDisplay(level),
         value: level,
       })),
       onFilter: (value, record) => record.level === value,
       sorter: (a, b) => {
         const levelA = String(a.level || "").trim();
         const levelB = String(b.level || "").trim();
-        const orderA =
-          Object.prototype.hasOwnProperty.call(categoryOrderByName, levelA)
-            ? categoryOrderByName[levelA]
-            : Number.MAX_SAFE_INTEGER;
-        const orderB =
-          Object.prototype.hasOwnProperty.call(categoryOrderByName, levelB)
-            ? categoryOrderByName[levelB]
-            : Number.MAX_SAFE_INTEGER;
+        const orderA = Object.prototype.hasOwnProperty.call(
+          categoryOrderByName,
+          levelA,
+        )
+          ? categoryOrderByName[levelA]
+          : Number.MAX_SAFE_INTEGER;
+        const orderB = Object.prototype.hasOwnProperty.call(
+          categoryOrderByName,
+          levelB,
+        )
+          ? categoryOrderByName[levelB]
+          : Number.MAX_SAFE_INTEGER;
 
         if (orderA !== orderB) return orderA - orderB;
 
@@ -240,7 +250,9 @@ function MembersPanel({
                 <Select
                   options={categoryOptions}
                   placeholder={
-                    hasCategoryOptions ? undefined : t("categoryPage.noCategories")
+                    hasCategoryOptions
+                      ? undefined
+                      : t("categoryPage.noCategories")
                   }
                   disabled={!hasCategoryOptions}
                   value={newMember.level}

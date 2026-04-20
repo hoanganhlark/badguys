@@ -15,7 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
-**BadGuys** is a single-page React + TypeScript app for splitting badminton session costs. Includes a ranking tracker modal for tournament results and player rankings (client-side, localStorage-backed). Features user authentication, role-based access control (admin/user), Firebase Firestore for session history and user management, audit event logging, and Telegram Bot API for notifications.
+**BadGuys** is a single-page React + TypeScript app for splitting badminton session costs. Includes a ranking tracker modal for tournament results and player rankings (client-side, localStorage-backed). Features user authentication, role-based access control (admin/user), Supabase (PostgreSQL) for session history and user management, audit event logging, and Telegram Bot API for notifications.
 
 ### Key files
 
@@ -27,9 +27,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `src/lib/core.ts` — Core business logic: `parsePlayersBulk()`, `calculateResult()`, `buildSummaryText()`, `buildSessionPayload()`
 - `src/types.ts` — Shared types: `Player`, `AppConfig`, `CalcResult`, `SessionRecord`, `RankingSettings`, `RankingMetricVisibility`
 - `src/env.ts` — Parses `VITE_*` env vars with fallback defaults
-- `src/lib/firebase.ts` — Firestore init, session CRUD, user management (auth, password), and subscriptions
+- `src/lib/api.ts` — Database abstraction layer; re-exports Supabase functions for all CRUD operations (users, sessions, ranking, matches, audit)
+- `src/lib/supabase.ts` — Supabase PostgreSQL init, session CRUD, user management (auth, password), ranking members/matches, audit event logging, and subscriptions
 - `src/lib/telegram.ts` — Async Telegram notification (silent failure on error)
-- `src/lib/analytics.ts` — Audit event logging to Firestore; provides `initAnalytics()`, `trackPageView()`, `trackEvent()`, `trackRouteChange()`, and `setUserProperties()`
+- `src/lib/analytics.ts` — Audit event logging to Supabase; provides `initAnalytics()`, `trackPageView()`, `trackEvent()`, `trackRouteChange()`, and `setUserProperties()`
 - `src/lib/platform.ts` — localStorage (with user-scoped storage support), clipboard, URL params, device detection
 - `src/lib/rankingStats.ts` — Glicko2-based rating calculations for tournament rankings; computes skill rating, rating deviation, volatility, and activity metrics
 - `src/components/RankingPage.tsx` — Ranking system: manages member CRUD, match recording (singles/doubles), and ranking display; supports public guest view and authenticated user access
@@ -76,11 +77,15 @@ User authentication via `AuthContext` (login with username/password, MD5-hashed 
 
 Player ratings use the **Glicko2** algorithm (a Bayesian rating system accounting for rating deviation and volatility). Matches are processed periodically to update ratings. Match records include `playedAt` (timestamp) and `durationMinutes` (optional match length) for more accurate rating updates. Configurable via `RankingSettings`: tau parameter (player rating volatility) and penaltyCoefficient (activity-based penalties).
 
-**Firestore collections** are automatically prefixed with "dev-" in development mode (when `MODE=development`). Collection names: `ranking-members`, `ranking-matches`, `users`, `matches`, `audit-events`. In production, collections use plain names without prefix.
+**Supabase schemas:** Tables are organized into "dev" schema in development and "prod" schema in production (determined by `MODE` env var). Tables include: `users`, `sessions`, `ranking_members`, `ranking_matches`, `ranking_categories`, `ranking_snapshots`, `matches`, and `audit_events`. Schema and migrations are in `supabase/migrations/`.
 
 ### State management
 
-Pure React hooks (`useState`, `useEffect`, `useMemo`) with i18next for internationalization. `localStorage` persists config, input drafts, members, matches, and language preference—scoped per authenticated user (fallback to "guest" for unauthenticated access). Authentication state managed via `AuthContext`. App language is fixed to Vietnamese; language switching is not supported.
+**Local state:** Pure React hooks (`useState`, `useEffect`, `useMemo`) with i18next for internationalization.
+
+**Server state:** React Query (`@tanstack/react-query`) manages remote data fetching, caching, and synchronization. Custom hooks are organized in `src/hooks/queries/` by domain (ranking members, matches, categories, users, audit events, sessions). Use `useRankingMembersQuery()`, `useUsers()`, etc. for fetching; mutation hooks handle CREATE/UPDATE/DELETE operations.
+
+**Persistence:** `localStorage` persists config, input drafts, members, matches, and language preference—scoped per authenticated user (fallback to "guest" for unauthenticated access). Authentication state managed via `AuthContext`. App language is fixed to Vietnamese; language switching is not supported.
 
 ### Testing
 
@@ -91,9 +96,9 @@ Tests run via Vitest with jsdom environment (allows DOM testing in Node). Test s
 
 Copy `.env.example` to `.env.local` for local development.
 
-**Required for Firestore access:**
-- `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID` — Firestore authentication and database
-- `VITE_FIREBASE_COLLECTION_SESSIONS` — Sessions collection name (default: "sessions"; auto-prefixed with "dev-" in development mode)
+**Required for Supabase access:**
+- `VITE_SUPABASE_URL` — Supabase project URL (e.g., `https://your-project.supabase.co`)
+- `VITE_SUPABASE_ANON_KEY` — Supabase anonymous key for client-side access
 
 **Required for Telegram notifications:**
 - `VITE_TELEGRAM_BOT_TOKEN`, `VITE_TELEGRAM_GROUP_CHAT_ID` — Bot token and target group

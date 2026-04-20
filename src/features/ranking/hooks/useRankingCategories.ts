@@ -1,7 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import {
-  subscribeRankingCategories,
-} from "../../../lib/api";
+import { getRankingCategories } from "../../../lib/api";
 import type { RankingCategory } from "../../../types";
 
 export interface UseRankingCategoriesReturn {
@@ -13,7 +11,7 @@ export interface UseRankingCategoriesReturn {
 }
 
 /**
- * Hook for subscribing to ranking categories from Firestore.
+ * Hook for loading ranking categories.
  * Loads and sorts player level categories (e.g., 'Yo', 'Lo', 'Nè').
  * Provides default member level based on first category in order.
  *
@@ -21,7 +19,7 @@ export interface UseRankingCategoriesReturn {
  *   - categories: Unsorted list of ranking categories
  *   - sortedCategories: Categories sorted by order and display name
  *   - defaultMemberLevel: First category name (default for new members)
- *   - isLoading: Loading flag for Firestore subscription
+ *   - isLoading: Loading flag for data loading
  *   - error: Error message if loading failed, null if successful
  *
  * @example
@@ -36,22 +34,20 @@ export function useRankingCategories(): UseRankingCategoriesReturn {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = subscribeRankingCategories(
-      (nextCategories) => {
-        setCategories(nextCategories);
-        setIsLoading(false);
+    const loadCategories = async () => {
+      try {
+        const loadedCategories = await getRankingCategories();
+        setCategories(loadedCategories);
         setError(null);
-      },
-      (err) => {
-        console.error("Failed to subscribe ranking categories", err);
+      } catch (err) {
+        console.error("Failed to load ranking categories", err);
         setError("Failed to load categories");
+      } finally {
         setIsLoading(false);
-      },
-    );
-
-    return () => {
-      unsubscribe();
+      }
     };
+
+    void loadCategories();
   }, []);
 
   const sortedCategories = useMemo(

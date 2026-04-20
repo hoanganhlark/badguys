@@ -62,7 +62,8 @@ function MatchFormPanel({
       [...categories]
         .sort(
           (a, b) =>
-            a.order - b.order || a.displayName.localeCompare(b.displayName, "vi"),
+            a.order - b.order ||
+            a.displayName.localeCompare(b.displayName, "vi"),
         )
         .reduce<Record<string, number>>((acc, category, index) => {
           acc[category.name] = index;
@@ -102,10 +103,8 @@ function MatchFormPanel({
     return members
       .filter((member) => !selectedInOtherSlots.has(member.name))
       .sort((a, b) => {
-        const orderA =
-          categoryOrderByName[a.level] ?? Number.MAX_SAFE_INTEGER;
-        const orderB =
-          categoryOrderByName[b.level] ?? Number.MAX_SAFE_INTEGER;
+        const orderA = categoryOrderByName[a.level] ?? Number.MAX_SAFE_INTEGER;
+        const orderB = categoryOrderByName[b.level] ?? Number.MAX_SAFE_INTEGER;
         if (orderA !== orderB) return orderA - orderB;
 
         return a.name.localeCompare(b.name, "vi", { sensitivity: "base" });
@@ -224,6 +223,7 @@ function MatchFormPanel({
                     style={{ marginBottom: 0 }}
                   >
                     <Select
+                      getPopupContainer={(trigger) => trigger.parentElement!}
                       placeholder={t("matchForm.choosePlayer")}
                       value={matchData.team1[i] || undefined}
                       allowClear
@@ -252,6 +252,7 @@ function MatchFormPanel({
                     style={{ marginBottom: 0 }}
                   >
                     <Select
+                      getPopupContainer={(trigger) => trigger.parentElement!}
                       placeholder={t("matchForm.choosePlayer")}
                       value={matchData.team2[i] || undefined}
                       allowClear

@@ -6,8 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { getUserByUsername, updateUserLastLogin } from "../lib/api";
-import { hashMd5 } from "../lib/hash";
+import { getUserByUsername, updateUserLastLogin, verifyPassword } from "../lib/api";
 import { AnalyticsUserPropertyKey, setUserProperties } from "../lib/analytics";
 import type { AuthUser } from "../types";
 
@@ -70,8 +69,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error("Tài khoản đã bị khóa.");
     }
 
-    const hashedInput = hashMd5(plainPassword);
-    if (hashedInput !== user.password) {
+    const passwordValid = await verifyPassword(plainPassword, user.password);
+    if (!passwordValid) {
       throw new Error("Sai username hoặc password.");
     }
 

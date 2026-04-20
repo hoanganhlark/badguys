@@ -1,32 +1,31 @@
 import {
-  createUser as fbCreateUser,
-  deleteUser as fbDeleteUser,
-  setUserDisabled as fbSetUserDisabled,
-  subscribeUsers as fbSubscribeUsers,
-  updateUserRole as fbUpdateUserRole,
-  getRankingMembers as fbGetRankingMembers,
-  saveRankingMembers as fbSaveRankingMembers,
-  isFirebaseReady as fbIsFirebaseReady,
-  getRankingMatches as fbGetRankingMatches,
-  saveRankingMatches as fbSaveRankingMatches,
-  createMatch as fbCreateMatch,
-  deleteMatch as fbDeleteMatch,
-  getMatches as fbGetMatches,
-  subscribeMatches as fbSubscribeMatches,
-  createRankingCategory as fbCreateRankingCategory,
-  deleteRankingCategory as fbDeleteRankingCategory,
-  subscribeRankingCategories as fbSubscribeRankingCategories,
-  updateRankingCategory as fbUpdateRankingCategory,
-  getLatestRankingSnapshot as fbGetLatestRankingSnapshot,
-  saveRankingSnapshot as fbSaveRankingSnapshot,
-  subscribeAuditEvents as fbSubscribeAuditEvents,
-  saveDailySummary as fbSaveDailySummary,
-  getRecentSessions as fbGetRecentSessions,
-  removeSession as fbRemoveSession,
-  getUserByUsername as fbGetUserByUsername,
-  updateUserLastLogin as fbUpdateUserLastLogin,
-  updateUserPassword as fbUpdateUserPassword,
-} from "./firebase";
+  createUser as supabaseCreateUser,
+  deleteUser as supabaseDeleteUser,
+  setUserDisabled as supabaseSetUserDisabled,
+  updateUserRole as supabaseUpdateUserRole,
+  getRankingMembers as supabaseGetRankingMembers,
+  saveRankingMembers as supabaseSaveRankingMembers,
+  isSupabaseReady as supabaseIsSupabaseReady,
+  getRankingMatches as supabaseGetRankingMatches,
+  saveRankingMatches as supabaseSaveRankingMatches,
+  createMatch as supabaseCreateMatch,
+  deleteMatch as supabaseDeleteMatch,
+  getMatches as supabaseGetMatches,
+  getRankingCategories as supabaseGetRankingCategories,
+  createRankingCategory as supabaseCreateRankingCategory,
+  deleteRankingCategory as supabaseDeleteRankingCategory,
+  updateRankingCategory as supabaseUpdateRankingCategory,
+  getLatestRankingSnapshot as supabaseGetLatestRankingSnapshot,
+  saveRankingSnapshot as supabaseSaveRankingSnapshot,
+  saveDailySummary as supabaseSaveDailySummary,
+  getRecentSessions as supabaseGetRecentSessions,
+  removeSession as supabaseRemoveSession,
+  getUserByUsername as supabaseGetUserByUsername,
+  updateUserLastLogin as supabaseUpdateUserLastLogin,
+  updateUserPassword as supabaseUpdateUserPassword,
+  verifyPassword as supabaseVerifyPassword,
+  hashPassword as supabaseHashPassword,
+} from "./supabase";
 import type {
   UserRecord,
   UserRole,
@@ -36,7 +35,6 @@ import type {
   RankingSnapshot,
   SessionPayload,
   SessionRecord,
-  AuditEventRecord,
 } from "../types";
 
 // Users API
@@ -46,83 +44,74 @@ export async function createUser(input: {
   passwordHash: string;
   role: UserRole;
 }): Promise<UserRecord> {
-  return fbCreateUser(input);
+  return supabaseCreateUser(input);
 }
 
 export async function deleteUser(userId: string): Promise<void> {
-  return fbDeleteUser(userId);
+  return supabaseDeleteUser(userId);
 }
 
 export async function updateUserRole(
   userId: string,
   role: UserRole,
 ): Promise<void> {
-  return fbUpdateUserRole(userId, role);
+  return supabaseUpdateUserRole(userId, role);
 }
 
 export async function setUserDisabled(
   userId: string,
   disabled: boolean,
 ): Promise<void> {
-  return fbSetUserDisabled(userId, disabled);
-}
-
-export function subscribeUsers(
-  onData: (users: UserRecord[]) => void,
-  onError?: (error: Error) => void,
-): () => void {
-  return fbSubscribeUsers(onData, onError);
+  return supabaseSetUserDisabled(userId, disabled);
 }
 
 // Ranking Members API
 
 export async function getRankingMembers(): Promise<RankingMember[]> {
-  return fbGetRankingMembers();
+  return supabaseGetRankingMembers();
 }
 
 export async function saveRankingMembers(
   members: RankingMember[],
 ): Promise<void> {
-  return fbSaveRankingMembers(members);
+  return supabaseSaveRankingMembers(members);
 }
 
 // Ranking Matches API
 
 export async function getRankingMatches() {
-  return fbGetRankingMatches();
+  return supabaseGetRankingMatches();
 }
 
 export async function saveRankingMatches(matches: any[]): Promise<void> {
-  return fbSaveRankingMatches(matches);
+  return supabaseSaveRankingMatches(matches);
 }
 
 export async function createMatch(input: {
   playerA: string;
   playerB: string;
   score: string;
+  matchType?: "singles" | "doubles";
   playedAt?: string;
   durationMinutes?: number;
   createdBy: string;
   createdByUsername?: string;
 }): Promise<MatchRecord> {
-  return fbCreateMatch(input);
+  return supabaseCreateMatch(input);
 }
 
 export async function deleteMatch(matchId: string): Promise<void> {
-  return fbDeleteMatch(matchId);
+  return supabaseDeleteMatch(matchId);
 }
 
 export async function getMatches(): Promise<MatchRecord[]> {
-  return fbGetMatches();
+  return supabaseGetMatches();
 }
 
 // Ranking Categories API
 
-export function subscribeRankingCategories(
-  onData: (categories: RankingCategory[]) => void,
-  onError?: (error: Error) => void,
-): () => void {
-  return fbSubscribeRankingCategories(onData, onError);
+export async function getRankingCategories(): Promise<RankingCategory[]> {
+  return supabaseGetRankingCategories();
 }
 
 export async function createRankingCategory(input: {
@@ -130,40 +119,30 @@ export async function createRankingCategory(input: {
   displayName: string;
   order: number;
 }): Promise<RankingCategory> {
-  return fbCreateRankingCategory(input);
+  return supabaseCreateRankingCategory(input);
 }
 
 export async function updateRankingCategory(
   id: string,
   patch: Partial<{ displayName: string; order: number }>,
 ): Promise<void> {
-  return fbUpdateRankingCategory(id, patch);
+  return supabaseUpdateRankingCategory(id, patch);
 }
 
 export async function deleteRankingCategory(id: string): Promise<void> {
-  return fbDeleteRankingCategory(id);
+  return supabaseDeleteRankingCategory(id);
 }
 
 // Ranking Snapshots API
 
 export async function getLatestRankingSnapshot(): Promise<RankingSnapshot | null> {
-  return fbGetLatestRankingSnapshot();
+  return supabaseGetLatestRankingSnapshot();
 }
 
 export async function saveRankingSnapshot(
   ranks: any[],
 ): Promise<void> {
-  return fbSaveRankingSnapshot(ranks);
-}
-
-// Audit Events API
-
-export function subscribeAuditEvents(
-  onData: (events: AuditEventRecord[]) => void,
-  onError?: (error: Error) => void,
-  maxItems?: number,
-): () => void {
-  return fbSubscribeAuditEvents(onData, onError, maxItems);
+  return supabaseSaveRankingSnapshot(ranks);
 }
 
 // Sessions API
@@ -171,28 +150,17 @@ export function subscribeAuditEvents(
 export async function saveDailySummary(
   payload: SessionPayload,
 ): Promise<{ dateKey: string }> {
-  return fbSaveDailySummary(payload);
+  return supabaseSaveDailySummary(payload);
 }
-
-// Matches API (subscriptions)
-
-export function subscribeMatches(
-  onData: (matches: MatchRecord[]) => void,
-  onError?: (error: Error) => void,
-): () => void {
-  return fbSubscribeMatches(onData, onError);
-}
-
-// Sessions API
 
 export async function getRecentSessions(
   maxItems?: number,
 ): Promise<SessionRecord[]> {
-  return fbGetRecentSessions(maxItems);
+  return supabaseGetRecentSessions(maxItems);
 }
 
 export async function removeSession(sessionId: string): Promise<{ id: string }> {
-  return fbRemoveSession(sessionId);
+  return supabaseRemoveSession(sessionId);
 }
 
 // User Auth API
@@ -200,22 +168,30 @@ export async function removeSession(sessionId: string): Promise<{ id: string }> 
 export async function getUserByUsername(
   username: string,
 ): Promise<UserRecord | null> {
-  return fbGetUserByUsername(username);
+  return supabaseGetUserByUsername(username);
 }
 
 export async function updateUserLastLogin(userId: string): Promise<void> {
-  return fbUpdateUserLastLogin(userId);
+  return supabaseUpdateUserLastLogin(userId);
 }
 
 export async function updateUserPassword(
   userId: string,
   passwordHash: string,
 ): Promise<void> {
-  return fbUpdateUserPassword(userId, passwordHash);
+  return supabaseUpdateUserPassword(userId, passwordHash);
+}
+
+export async function verifyPassword(plaintext: string, hash: string): Promise<boolean> {
+  return supabaseVerifyPassword(plaintext, hash);
+}
+
+export async function hashPassword(plaintext: string): Promise<string> {
+  return supabaseHashPassword(plaintext);
 }
 
 // Utilities
 
-export function isFirebaseReady(): boolean {
-  return fbIsFirebaseReady();
+export function isSupabaseReady(): boolean {
+  return supabaseIsSupabaseReady();
 }

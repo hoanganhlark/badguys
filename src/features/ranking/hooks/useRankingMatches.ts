@@ -1,14 +1,10 @@
 import { useState, useCallback, useEffect } from "react";
 import {
   createMatch,
-  deleteMatch as firebaseDeleteMatch,
+  deleteMatch as deleteMatchFromDb,
   getMatches,
-  isFirebaseReady,
+  isSupabaseReady,
 } from "../../../lib/api";
-import {
-  loadMatchesFromStorage,
-  saveMatchesToStorage,
-} from "../../../lib/rankingStorage";
 import type { Match, MatchSetInput } from "../../../components/ranking/types";
 import type { MatchRecord } from "../../../types";
 
@@ -27,7 +23,11 @@ export interface UseRankingMatchesReturn {
     userId: string,
     username: string,
   ) => Promise<void>;
-  deleteMatch: (matchId: number | string, userId: string, isAdmin: boolean) => Promise<void>;
+  deleteMatch: (
+    matchId: number | string,
+    userId: string,
+    isAdmin: boolean,
+  ) => Promise<void>;
   loadMatchHistory: () => Promise<void>;
   setHistoryPage: (page: number) => void;
   setHistoryPageSize: (size: number) => void;
@@ -84,7 +84,7 @@ function parseToIsoDate(input: string): string {
 /**
  * Hook for managing ranking matches with history pagination.
  * Handles match creation, deletion, and historical match browsing.
- * Persists matches to both localStorage and Firestore.
+ * Persists matches to both localStorage and Supabase.
  *
  * @returns {UseRankingMatchesReturn} Object containing:
  *   - matches: Current list of all matches
@@ -94,7 +94,7 @@ function parseToIsoDate(input: string): string {
  *   - historyPageSize: Number of matches per page
  *   - addMatch: Create new match (type, teams, sets, timestamp, userId, username)
  *   - deleteMatch: Delete a match (requires userId verification unless admin)
- *   - loadMatchHistory: Fetch history from Firestore
+ *   - loadMatchHistory: Fetch history from Supabase
  *   - setHistoryPage: Update current page
  *   - setHistoryPageSize: Update page size
  *   - resetHistoryPagination: Reset to page 1
@@ -105,9 +105,7 @@ function parseToIsoDate(input: string): string {
  * await addMatch('singles', ['John'], ['Jane'], ['21-19'], '2026-04-20T10:30', userId, username);
  */
 export function useRankingMatches(): UseRankingMatchesReturn {
-  const [matches, setMatches] = useState<Match[]>(() =>
-    loadMatchesFromStorage(),
-  );
+  const [matches, setMatches] = useState<Match[]>([]);
   const [historyMatches, setHistoryMatches] = useState<Match[]>([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [historyPage, setHistoryPage] = useState(1);
@@ -168,6 +166,7 @@ export function useRankingMatches(): UseRankingMatchesReturn {
         playerA: selectedTeam1.join(" / "),
         playerB: selectedTeam2.join(" / "),
         score: parsedSets.join(","),
+        matchType,
         playedAt: playedAtIso,
         durationMinutes: totalMinutes > 0 ? totalMinutes : undefined,
         createdBy: userId,
@@ -182,11 +181,7 @@ export function useRankingMatches(): UseRankingMatchesReturn {
   );
 
   const deleteMatch = useCallback(
-    async (
-      matchId: number | string,
-      userId: string,
-      isAdmin: boolean,
-    ) => {
+    async (matchId: number | string, userId: string, isAdmin: boolean) => {
       const target = matches.find(
         (match) => String(match.id) === String(matchId),
       );
@@ -199,7 +194,7 @@ export function useRankingMatches(): UseRankingMatchesReturn {
         throw new Error("Cannot delete match created by another user");
       }
 
-      await firebaseDeleteMatch(String(matchId));
+      await deleteMatchFromDb(String(matchId));
       setMatches((prev) =>
         prev.filter((match) => String(match.id) !== String(matchId)),
       );
@@ -215,7 +210,7 @@ export function useRankingMatches(): UseRankingMatchesReturn {
 
     setIsHistoryLoading(true);
     try {
-      if (!isFirebaseReady()) {
+      if (!isSupabaseReady()) {
         setHistoryMatches(matches);
       } else {
         const records = await getMatches();
@@ -240,7 +235,9 @@ export function useRankingMatches(): UseRankingMatchesReturn {
       }
 
       try {
-        await Promise.all(matches.map((match) => firebaseDeleteMatch(String(match.id))));
+        await Promise.all(
+          matches.map((match) => deleteMatchFromDb(String(match.id))),
+        );
         setMatches([]);
         setHistoryMatches([]);
         resetHistoryPagination();
@@ -252,10 +249,25 @@ export function useRankingMatches(): UseRankingMatchesReturn {
     [matches, resetHistoryPagination],
   );
 
-  // Persist matches to localStorage
   useEffect(() => {
-    saveMatchesToStorage(matches);
-  }, [matches]);
+    if (!isSupabaseReady()) return;
+
+    let mounted = true;
+
+    void getMatches()
+      .then((records) => {
+        if (!mounted) return;
+        const remoteMatches = records.map(mapMatchRecordToRankingMatch);
+        setMatches(remoteMatches);
+      })
+      .catch((error) => {
+        console.error("Failed to load matches from Supabase", error);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return {
     matches,

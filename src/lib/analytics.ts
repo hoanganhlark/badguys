@@ -1,4 +1,4 @@
-import { createAuditEvent } from "./firebase";
+import { createAuditEvent } from "./supabase";
 
 export enum AnalyticsEventName {
   CalculateSession = "calculate_session",

@@ -17,12 +17,7 @@ import {
 } from "antd";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import {
-  createRankingCategory,
-  deleteRankingCategory,
-  subscribeRankingCategories,
-  updateRankingCategory,
-} from "../lib/api";
+import { useRankingCategories } from "../hooks/queries";
 import type { RankingCategory } from "../types";
 import { useAuth } from "../context/AuthContext";
 import RankingSidebar from "./ranking/RankingSidebar";
@@ -57,44 +52,27 @@ export default function CategoryManagementPage() {
   const { t } = useTranslation();
   const { currentUser } = useAuth();
 
-  const [categories, setCategories] = useState<RankingCategory[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
+  const {
+    categories,
+    isLoading,
+    error,
+    createCategoryAsync,
+    updateCategoryAsync,
+    deleteCategoryAsync,
+    isCreating,
+    isUpdating,
+  } = useRankingCategories();
+
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [newDisplayName, setNewDisplayName] = useState("");
   const [newOrder, setNewOrder] = useState<number>(1);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingDisplayName, setEditingDisplayName] = useState("");
   const [editingOrder, setEditingOrder] = useState<number>(1);
-  const [updating, setUpdating] = useState(false);
+  const [localError, setLocalError] = useState("");
   const mainContentRef = useRef<HTMLElement | null>(null);
 
   const isAdmin = currentUser?.role === "admin";
-
-  useEffect(() => {
-    setLoading(true);
-    setError("");
-
-    const unsubscribe = subscribeRankingCategories(
-      (nextCategories) => {
-        setCategories(nextCategories);
-        setLoading(false);
-      },
-      (loadError) => {
-        setError(
-          loadError instanceof Error
-            ? loadError.message
-            : t("categoryPage.loadFailed"),
-        );
-        setLoading(false);
-      },
-    );
-
-    return () => {
-      unsubscribe();
-    };
-  }, [t]);
 
   useEffect(() => {
     const container = mainContentRef.current;
@@ -134,11 +112,10 @@ export default function CategoryManagementPage() {
     const displayName = newDisplayName.trim();
     if (!isAdmin || !displayName) return;
 
-    setSaving(true);
-    setError("");
+    setLocalError("");
 
     try {
-      await createRankingCategory({
+      await createCategoryAsync({
         name: buildCategoryName(displayName),
         displayName,
         order: Number.isFinite(newOrder) ? Number(newOrder) : 0,
@@ -146,13 +123,11 @@ export default function CategoryManagementPage() {
       setNewDisplayName("");
       setNewOrder(1);
     } catch (createError) {
-      setError(
+      setLocalError(
         createError instanceof Error
           ? createError.message
           : t("categoryPage.createFailed"),
       );
-    } finally {
-      setSaving(false);
     }
   }
 
@@ -175,38 +150,38 @@ export default function CategoryManagementPage() {
     const displayName = editingDisplayName.trim();
     if (!displayName) return;
 
-    setUpdating(true);
-    setError("");
+    setLocalError("");
 
     try {
-      await updateRankingCategory(editingId, {
-        displayName,
-        order: Number.isFinite(editingOrder) ? Number(editingOrder) : 0,
+      await updateCategoryAsync({
+        id: editingId,
+        patch: {
+          displayName,
+          order: Number.isFinite(editingOrder) ? Number(editingOrder) : 0,
+        },
       });
       cancelEdit();
     } catch (updateError) {
-      setError(
+      setLocalError(
         updateError instanceof Error
           ? updateError.message
           : t("categoryPage.createFailed"),
       );
-    } finally {
-      setUpdating(false);
     }
   }
 
   async function handleDeleteCategory(id: string) {
     if (!isAdmin) return;
 
-    setError("");
+    setLocalError("");
 
     try {
-      await deleteRankingCategory(id);
+      await deleteCategoryAsync(id);
       if (editingId === id) {
         cancelEdit();
       }
     } catch (deleteError) {
-      setError(
+      setLocalError(
         deleteError instanceof Error
           ? deleteError.message
           : t("categoryPage.deleteFailed"),
@@ -268,7 +243,7 @@ export default function CategoryManagementPage() {
               type="primary"
               size="small"
               onClick={handleSaveEdit}
-              loading={updating}
+              loading={isUpdating}
             >
               {t("common.save")}
             </Button>
@@ -383,11 +358,11 @@ export default function CategoryManagementPage() {
                     <Button
                       type="primary"
                       htmlType="submit"
-                      loading={saving}
+                      loading={isCreating}
                       disabled={!isAdmin || !newDisplayName.trim()}
                       block
                     >
-                      {saving
+                      {isCreating
                         ? t("categoryPage.creating")
                         : t("categoryPage.createButton")}
                     </Button>
@@ -397,16 +372,16 @@ export default function CategoryManagementPage() {
             </Card>
 
             <Card title={t("categoryPage.title")}>
-              {error ? (
+              {error || localError ? (
                 <Alert
                   className="mb-3"
-                  message={error || t("categoryPage.loadFailed")}
+                  message={error?.message || localError || t("categoryPage.loadFailed")}
                   type="error"
                   showIcon
                 />
               ) : null}
 
-              {loading ? (
+              {isLoading ? (
                 <div className="py-8 text-center">
                   <Spin />
                 </div>
