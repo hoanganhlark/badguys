@@ -64,7 +64,17 @@ export interface UseRankingDataReturn {
 
 /**
  * Hook for managing ranking data loading from Firestore and localStorage.
- * Handles subscription to matches and fallback member derivation.
+ * Loads ranking members and matches from Firestore with localStorage fallback.
+ * Automatically derives members from matches if no explicit member list exists.
+ *
+ * @returns {UseRankingDataReturn} Object containing:
+ *   - members: List of ranking members (from Firestore or localStorage)
+ *   - matches: List of ranking matches (from Firestore or localStorage)
+ *   - isRemoteHydrated: Flag indicating if Firestore data has been loaded
+ *   - error: Error message if loading failed, null if successful
+ *
+ * @example
+ * const { members, matches, isRemoteHydrated, error } = useRankingData();
  */
 export function useRankingData(): UseRankingDataReturn {
   const [members, setMembers] = useState<Member[]>(() =>

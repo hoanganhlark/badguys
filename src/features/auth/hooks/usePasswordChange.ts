@@ -20,9 +20,23 @@ export interface UsePasswordChangeReturn {
 }
 
 /**
- * Hook for managing password change validation and submission.
+ * Hook for managing password change validation and submission to Firestore.
+ * Validates current password, password requirements, and confirmation.
+ * Updates user password in Firestore after validation.
  *
- * @returns Object with submission state, error, and submit function
+ * @returns {UsePasswordChangeReturn} Object containing:
+ *   - isSubmitting: Loading flag during password update
+ *   - error: Error message from validation or submission
+ *   - clearError: Reset error state
+ *   - submitPasswordChange: Async function to change password (currentUser, payload) -> boolean
+ *
+ * @example
+ * const { isSubmitting, error, submitPasswordChange } = usePasswordChange();
+ * const success = await submitPasswordChange(user, {
+ *   currentPassword: 'old',
+ *   newPassword: 'new',
+ *   confirmPassword: 'new'
+ * });
  */
 export function usePasswordChange(): UsePasswordChangeReturn {
   const [isSubmitting, setIsSubmitting] = useState(false);

@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { App as AntApp } from "antd";
 import { useCostCalculatorState } from "../../features/calculator/hooks/useCostCalculatorState";
@@ -78,26 +78,26 @@ export default function Calculator({
     messageApi.info(message);
   }
 
-  function handleBulkInputChange(value: string) {
+  const handleBulkInputChange = useCallback((value: string) => {
     setBulkInput(value);
-  }
+  }, [setBulkInput]);
 
-  function handleTogglePlayer(index: number) {
+  const handleTogglePlayer = useCallback((index: number) => {
     const next = players.map((player, i) =>
       i === index ? cyclePlayerMode(player) : player,
     );
     setBulkInput(playersToBulk(next));
-  }
+  }, [players, setBulkInput]);
 
-  function handleRemovePlayer(index: number) {
+  const handleRemovePlayer = useCallback((index: number) => {
     const confirmed = window.confirm(t("common.confirmDelete"));
     if (!confirmed) return;
 
     const next = players.filter((_, i) => i !== index);
     setBulkInput(playersToBulk(next));
-  }
+  }, [players, setBulkInput, t]);
 
-  async function handleCopySummary() {
+  const handleCopySummary = useCallback(async () => {
     trackEvent(AnalyticsEventName.CalculateSession, {
       [AnalyticsParamKey.PlayersCount]: players.length,
       [AnalyticsParamKey.MaleCount]: calc.malesCount,
@@ -152,9 +152,9 @@ export default function Calculator({
     }
 
     onCopySummary?.();
-  }
+  }, [players, calc, appConfig, inputs, isAdmin, t]);
 
-  function handleReset() {
+  const handleReset = useCallback(() => {
     if (resetArmed) {
       if (resetTimerRef.current != null) {
         window.clearTimeout(resetTimerRef.current);
@@ -171,7 +171,7 @@ export default function Calculator({
       setResetArmed(false);
       resetTimerRef.current = null;
     }, RESET_CONFIRM_TIMEOUT_MS);
-  }
+  }, [resetArmed, resetInputs, t]);
 
   return (
     <div className="max-w-md mx-auto">

@@ -12,6 +12,24 @@ export interface UseRankingCategoriesReturn {
   error: string | null;
 }
 
+/**
+ * Hook for subscribing to ranking categories from Firestore.
+ * Loads and sorts player level categories (e.g., 'Yo', 'Lo', 'Nè').
+ * Provides default member level based on first category in order.
+ *
+ * @returns {UseRankingCategoriesReturn} Object containing:
+ *   - categories: Unsorted list of ranking categories
+ *   - sortedCategories: Categories sorted by order and display name
+ *   - defaultMemberLevel: First category name (default for new members)
+ *   - isLoading: Loading flag for Firestore subscription
+ *   - error: Error message if loading failed, null if successful
+ *
+ * @example
+ * const { sortedCategories, defaultMemberLevel, isLoading } = useRankingCategories();
+ * if (!isLoading) {
+ *   console.log('Available levels:', sortedCategories.map(c => c.displayName));
+ * }
+ */
 export function useRankingCategories(): UseRankingCategoriesReturn {
   const [categories, setCategories] = useState<RankingCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);

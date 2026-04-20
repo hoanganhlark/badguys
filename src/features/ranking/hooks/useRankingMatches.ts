@@ -81,6 +81,29 @@ function parseToIsoDate(input: string): string {
   return parsed.toISOString();
 }
 
+/**
+ * Hook for managing ranking matches with history pagination.
+ * Handles match creation, deletion, and historical match browsing.
+ * Persists matches to both localStorage and Firestore.
+ *
+ * @returns {UseRankingMatchesReturn} Object containing:
+ *   - matches: Current list of all matches
+ *   - historyMatches: Paginated historical matches
+ *   - isHistoryLoading: Loading flag for history
+ *   - historyPage: Current page number (1-indexed)
+ *   - historyPageSize: Number of matches per page
+ *   - addMatch: Create new match (type, teams, sets, timestamp, userId, username)
+ *   - deleteMatch: Delete a match (requires userId verification unless admin)
+ *   - loadMatchHistory: Fetch history from Firestore
+ *   - setHistoryPage: Update current page
+ *   - setHistoryPageSize: Update page size
+ *   - resetHistoryPagination: Reset to page 1
+ *   - clearAllMatches: Clear all matches (admin only)
+ *
+ * @example
+ * const { matches, addMatch, deleteMatch } = useRankingMatches();
+ * await addMatch('singles', ['John'], ['Jane'], ['21-19'], '2026-04-20T10:30', userId, username);
+ */
 export function useRankingMatches(): UseRankingMatchesReturn {
   const [matches, setMatches] = useState<Match[]>(() =>
     loadMatchesFromStorage(),

@@ -34,6 +34,25 @@ const INITIAL_SETS: MatchSetInput[] = [
   { team1Score: "", team2Score: "", minutes: "" },
 ];
 
+/**
+ * Hook for managing match form state (singles/doubles, teams, sets, timestamp).
+ * Provides setters and updaters for match data with form validation.
+ *
+ * @returns {UseMatchFormReturn} Object containing:
+ *   - matchType: 'singles' or 'doubles'
+ *   - team1/team2: Array of player names
+ *   - sets: Array of set score inputs {team1Score, team2Score, minutes}
+ *   - playedAt: ISO date string (YYYY-MM-DDTHH:mm)
+ *   - Setters: setMatchType, setTeam1, setTeam2, setSets, setPlayedAt
+ *   - Updaters: updateTeam1, updateTeam2, updateSet (with field), addSet, removeSet
+ *   - resetForm: Reset all fields to initial state
+ *   - getValidationError: Get validation error message (null if valid)
+ *
+ * @example
+ * const { matchType, team1, team2, sets, setMatchType, updateTeam1 } = useMatchForm();
+ * setMatchType('singles');
+ * updateTeam1(0, 'John');
+ */
 export function useMatchForm(): UseMatchFormReturn {
   const [matchType, setMatchType] = useState<"singles" | "doubles">("doubles");
   const [team1, setTeam1] = useState<string[]>([]);

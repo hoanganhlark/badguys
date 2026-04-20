@@ -52,23 +52,22 @@ export function loadMatchesFromStorage(): Match[] {
     const stored = localStorage.getItem(STORAGE_MATCHES_KEY);
     if (!stored) return [];
 
-    const parsed = JSON.parse(stored);
+    const parsed: unknown = JSON.parse(stored);
+    if (!Array.isArray(parsed)) return [];
 
     // Migrate old format (score1/score2) to new format (sets).
-    return parsed.map((match: any) => {
-      if (match.sets && Array.isArray(match.sets)) {
-        return match as Match;
+    return parsed.map((match: unknown) => {
+      const m = match as Record<string, unknown>;
+      if (m.sets && Array.isArray(m.sets)) {
+        return m as Match;
       }
-      if (
-        typeof match.score1 === "number" &&
-        typeof match.score2 === "number"
-      ) {
+      if (typeof m.score1 === "number" && typeof m.score2 === "number") {
         return {
-          ...match,
-          sets: [`${match.score1}-${match.score2}`],
+          ...m,
+          sets: [`${m.score1}-${m.score2}`],
         } as Match;
       }
-      return match as Match;
+      return m as Match;
     });
   } catch {
     return [];

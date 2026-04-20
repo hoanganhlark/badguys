@@ -1,6 +1,26 @@
 import { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
+/**
+ * Hook for managing navigation between config, sessions, and ranking modals.
+ * Tracks which modal should be open based on current route pathname.
+ * Provides navigation handlers for opening/closing each modal section.
+ *
+ * @returns Object containing:
+ *   - configOpen: Boolean indicating if config modal is visible
+ *   - sessionsOpen: Boolean indicating if sessions modal is visible
+ *   - rankingOpen: Boolean indicating if ranking modal is visible
+ *   - openConfig: Navigate to /config
+ *   - closeConfig: Close config (returns to root or sessions)
+ *   - openSessions: Navigate to /config/sessions
+ *   - closeSessions: Close sessions (returns to /config)
+ *   - openRanking: Navigate to /ranking
+ *   - closeRanking: Close ranking (returns to root /)
+ *
+ * @example
+ * const { configOpen, openConfig, closeConfig } = useHistoryModal();
+ * if (configOpen) return <ConfigModal onClose={closeConfig} />;
+ */
 export function useHistoryModal() {
   const location = useLocation();
   const navigate = useNavigate();

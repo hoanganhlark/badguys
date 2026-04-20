@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, lazy, Suspense } from "react";
 import {
   App as AntApp,
   Button,
@@ -20,12 +20,12 @@ import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import Calculator from "./components/calculator/Calculator";
 import ConfigSidebar from "./components/ConfigSidebar";
 import ChangePasswordModal from "./components/ChangePasswordModal";
-import AuditPage from "./components/AuditPage";
-import CategoryManagementPage from "./components/CategoryManagementPage";
 import LoginModal from "./components/LoginModal";
 import RankingPage from "./components/RankingPage";
 import SessionsModal from "./components/SessionsModal";
-import UserManagementPage from "./components/UserManagementPage";
+const AuditPage = lazy(() => import("./components/AuditPage"));
+const CategoryManagementPage = lazy(() => import("./components/CategoryManagementPage"));
+const UserManagementPage = lazy(() => import("./components/UserManagementPage"));
 import AdminRoute from "./components/auth/AdminRoute";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
@@ -416,7 +416,9 @@ export default function App() {
   if (location.pathname === "/dashboard/users") {
     return (
       <AdminRoute>
-        <UserManagementPage />
+        <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
+          <UserManagementPage />
+        </Suspense>
       </AdminRoute>
     );
   }
@@ -424,7 +426,9 @@ export default function App() {
   if (location.pathname === "/dashboard/audit") {
     return (
       <AdminRoute>
-        <AuditPage />
+        <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
+          <AuditPage />
+        </Suspense>
       </AdminRoute>
     );
   }
@@ -432,7 +436,9 @@ export default function App() {
   if (location.pathname === "/dashboard/categories") {
     return (
       <AdminRoute>
-        <CategoryManagementPage />
+        <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
+          <CategoryManagementPage />
+        </Suspense>
       </AdminRoute>
     );
   }

@@ -46,6 +46,7 @@ import type {
 import type {
   RankingSettings,
   RankingSnapshot,
+  RankingLevel,
 } from "../types";
 import { Award, BarChart2, Settings } from "react-feather";
 
@@ -330,7 +331,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   // Local state for member form editing
   const [isEditing, setIsEditing] = useState<number | null>(null);
   const [memberFormName, setMemberFormName] = useState("");
-  const [memberFormLevel, setMemberFormLevel] = useState("");
+  const [memberFormLevel, setMemberFormLevel] = useState<RankingLevel>("");
 
   const handleAddOrEditMember = useCallback(() => {
     if (!isAdmin) return;
@@ -357,7 +358,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     if (!isAdmin) return;
     setIsEditing(member.id);
     setMemberFormName(member.name);
-    setMemberFormLevel(member.level as any);
+    setMemberFormLevel(member.level);
   }, [isAdmin]);
 
   // Calculate rankings before handlers that might use it
@@ -762,7 +763,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                   <div className="space-y-4">
                     <MembersPanel
                       isEditing={isEditing}
-                      newMember={{ name: memberFormName, level: memberFormLevel as any }}
+                      newMember={{ name: memberFormName, level: memberFormLevel }}
                       members={displayMembers}
                       categories={sortedCategories}
                       onSetNewMember={(newMember) => {

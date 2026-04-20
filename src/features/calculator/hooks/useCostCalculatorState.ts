@@ -30,14 +30,26 @@ export interface CostCalculatorState {
 }
 
 /**
- * Manages all cost calculator state (inputs, config, players) with auto-persistence to localStorage.
+ * Hook for managing cost calculator state with auto-persistence to localStorage.
+ * Handles calculator inputs (court fee, shuttle count, court count, player bulk input).
+ * Automatically parses bulk player input and persists all changes.
  *
- * @param userId - User ID for scoped storage (e.g., currentUser.userId or "guest")
- * @returns Object with inputs, config, players, setters, and reset function
+ * @param {string} userId - User ID for scoped storage (e.g., currentUser.userId or "guest")
+ * @returns {CostCalculatorState} Object containing:
+ *   - inputs: CalculatorInputs {courtFeeInput, shuttleCountInput, courtCountInput, bulkInput}
+ *   - config: Current app config
+ *   - players: Parsed array of Player objects from bulk input
+ *   - setCourtFeeInput: Update court fee (persisted)
+ *   - setShuttleCountInput: Update shuttle count (persisted)
+ *   - setCourtCountInput: Update court count (persisted)
+ *   - setBulkInput: Update player bulk input (persisted)
+ *   - setConfig: Update calculator config (persisted)
+ *   - reset: Clear all inputs and localStorage
  *
  * @example
- * const { inputs, setCourtFeeInput, reset, players } = useCostCalculatorState(userId);
+ * const { inputs, players, setCourtFeeInput, reset } = useCostCalculatorState(userId);
  * setCourtFeeInput("500"); // Auto-persists to localStorage
+ * console.log(players); // Automatically parsed from bulkInput
  * reset(); // Clears all inputs and localStorage
  */
 export function useCostCalculatorState(userId: string): CostCalculatorState {

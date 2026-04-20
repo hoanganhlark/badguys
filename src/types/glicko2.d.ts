@@ -15,6 +15,7 @@ declare module "glicko2" {
   export class Glicko2 {
     constructor(config?: Glicko2Config);
     makePlayer(rating?: number, rd?: number, vol?: number): Glicko2Player;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updateRatings(matches: any): void;
   }
 }

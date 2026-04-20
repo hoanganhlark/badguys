@@ -8,11 +8,12 @@ import {
   saveMembersToStorage,
 } from "../../../lib/rankingStorage";
 import type { Member } from "../../../components/ranking/types";
+import type { RankingLevel } from "../../../types";
 
 export interface UseRankingMembersReturn {
   members: Member[];
-  addMember: (name: string, level: string) => void;
-  editMember: (id: number, name: string, level: string) => void;
+  addMember: (name: string, level: RankingLevel) => void;
+  editMember: (id: number, name: string, level: RankingLevel) => void;
   deleteMember: (id: number) => void;
   selectMember: (id: number | null) => void;
   selectedMember: Member | null;
@@ -23,6 +24,26 @@ function normalizeName(name: string): string {
   return String(name || "").trim().toLowerCase();
 }
 
+/**
+ * Hook for managing ranking members (CRUD operations).
+ * Persists member changes to both localStorage and Firestore.
+ * Handles member creation, editing, deletion, and selection.
+ *
+ * @returns {UseRankingMembersReturn} Object containing:
+ *   - members: Array of all members
+ *   - addMember: Function to add a new member (name, level)
+ *   - editMember: Function to edit an existing member (id, name, level)
+ *   - deleteMember: Function to delete a member by id
+ *   - selectMember: Function to select/deselect a member (pass null to deselect)
+ *   - selectedMember: Currently selected member or null
+ *   - isDuplicate: Function to check if a name is already used (optional excludeId)
+ *
+ * @example
+ * const { members, addMember, editMember, deleteMember, isDuplicate } = useRankingMembers();
+ * if (!isDuplicate('John')) {
+ *   addMember('John', 'Yo');
+ * }
+ */
 export function useRankingMembers(): UseRankingMembersReturn {
   const [members, setMembers] = useState<Member[]>(() =>
     loadMembersFromStorage(),
@@ -42,13 +63,13 @@ export function useRankingMembers(): UseRankingMembersReturn {
   );
 
   const addMember = useCallback(
-    (name: string, level: string) => {
+    (name: string, level: RankingLevel) => {
       if (!name.trim() || !level.trim()) return;
 
       const newMember: Member = {
         id: Date.now(),
         name: name.trim(),
-        level: level as any,
+        level,
       };
 
       setMembers((prev) => [...prev, newMember]);
@@ -57,20 +78,20 @@ export function useRankingMembers(): UseRankingMembersReturn {
     [],
   );
 
-  const editMember = useCallback((id: number, name: string, level: string) => {
+  const editMember = useCallback((id: number, name: string, level: RankingLevel) => {
     if (!name.trim() || !level.trim()) return;
 
     setMembers((prev) =>
       prev.map((m) =>
         m.id === id
-          ? { ...m, name: name.trim(), level: level as any }
+          ? { ...m, name: name.trim(), level }
           : m,
       ),
     );
 
     setSelectedMember((prev) =>
       prev && prev.id === id
-        ? { ...prev, name: name.trim(), level: level as any }
+        ? { ...prev, name: name.trim(), level }
         : prev,
     );
   }, []);
