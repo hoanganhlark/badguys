@@ -140,6 +140,22 @@ export const resources = {
         updateRoleFailed: "Cập nhật role thất bại.",
         updateLockFailed: "Cập nhật trạng thái khóa thất bại.",
       },
+      categoryPage: {
+        title: "Quản lý hạng",
+        subtitle: "Quản lý các hạng đấu trong hệ thống xếp hạng.",
+        createTitle: "Thêm hạng mới",
+        name: "Tên hạng (key)",
+        displayName: "Tên hiển thị",
+        order: "Thứ tự",
+        createButton: "Thêm hạng",
+        creating: "Đang thêm...",
+        delete: "Xóa",
+        menu: "Mở menu bảng điều khiển",
+        loadFailed: "Không tải được danh sách hạng.",
+        createFailed: "Thêm hạng thất bại.",
+        deleteFailed: "Xóa hạng thất bại.",
+        noCategories: "Chưa có hạng nào.",
+      },
       adminRoute: {
         noPermissionTitle: "Bạn không có quyền truy cập trang này.",
         noPermissionDescription:
@@ -154,6 +170,7 @@ export const resources = {
         dashboard: "Bảng điều khiển",
         userManagement: "Quản lý người dùng",
         auditLogs: "Nhật ký audit",
+        categories: "Quản lý hạng",
         home: "Trang chủ",
       },
       auditPage: {
@@ -208,7 +225,9 @@ export const resources = {
       },
       rankingPanel: {
         rank: "Hạng",
+        rankTrend: "Xu hướng",
         athlete: "Vận động viên",
+        allCategories: "Tất cả",
         rankScore: "Điểm xếp hạng",
         winRate: "Tỉ lệ thắng",
         winsOutOfMatches: "{{wins}}/{{matches}} trận thắng",
@@ -217,6 +236,7 @@ export const resources = {
         unknownDateGroup: "Không rõ ngày",
         noMatches: "Chưa có trận đấu",
         noRanking: "Chưa có bảng xếp hạng",
+        noRankings: "Chưa có dữ liệu xếp hạng.",
         noHistory: "Chưa có lịch sử nào được ghi nhận",
         singles: "Đơn",
         doubles: "Đôi",
