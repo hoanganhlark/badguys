@@ -16,6 +16,7 @@ import {
   isFirebaseReady,
   saveRankingSnapshot,
   saveRankingMembers,
+  subscribeRankingCategories,
   subscribeMatches,
   subscribeUsers,
 } from "../lib/firebase";
@@ -51,6 +52,7 @@ import type {
 import type {
   MatchRecord,
   RankingLevel,
+  RankingCategory,
   RankingSettings,
   RankingSnapshot,
 } from "../types";
@@ -111,6 +113,10 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [latestSnapshot, setLatestSnapshot] =
     useState<RankingSnapshot | null>(null);
+  const [categories, setCategories] = useState<RankingCategory[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
+    null,
+  );
 
   // Member Form State
   const [isEditing, setIsEditing] = useState<number | null>(null);
@@ -285,6 +291,27 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
       unsubscribe();
     };
   }, [isOpen]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeRankingCategories(
+      (nextCategories) => {
+        setCategories(nextCategories);
+        setSelectedCategoryId((current) =>
+          current &&
+          !nextCategories.some((category) => category.id === current)
+            ? null
+            : current,
+        );
+      },
+      (error) => {
+        console.error("Failed to subscribe ranking categories", error);
+      },
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     setMobileSidebarOpen(false);
@@ -582,6 +609,15 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
       return acc;
     }, {});
   }, [latestSnapshot, rankings]);
+
+  const memberLevelById = useMemo<Record<number, string>>(
+    () =>
+      members.reduce<Record<number, string>>((acc, member) => {
+        acc[member.id] = member.level;
+        return acc;
+      }, {}),
+    [members],
+  );
 
   const currentUserInitial = useMemo(() => {
     if (!currentUser?.username) return "U";
@@ -921,6 +957,10 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                     rankings={rankings}
                     matches={matchesForDisplay}
                     rankTrends={rankTrends}
+                    categories={categories}
+                    selectedCategoryId={selectedCategoryId}
+                    onSelectCategory={setSelectedCategoryId}
+                    memberLevelById={memberLevelById}
                     onSelectPlayer={setSelectedPlayer}
                     onClearHistory={handleClearHistory}
                     onDeleteMatch={handleDeleteMatch}

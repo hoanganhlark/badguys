@@ -2,12 +2,17 @@ import { Clock, Trash2, User, Users } from "react-feather";
 import { useMemo } from "react";
 import { Progress, Table, Typography, type TableColumnsType } from "antd";
 import { useTranslation } from "react-i18next";
+import type { RankingCategory } from "../../types";
 import type { AdvancedStats, Match } from "./types";
 
 interface RankingPanelProps {
   rankings: AdvancedStats[];
   matches: Match[];
   rankTrends: Record<number, number | "NEW">;
+  categories: RankingCategory[];
+  selectedCategoryId: string | null;
+  onSelectCategory: (categoryId: string | null) => void;
+  memberLevelById: Record<number, string>;
   onSelectPlayer: (player: AdvancedStats) => void;
   onClearHistory: () => void | Promise<void>;
   onDeleteMatch: (matchId: number | string) => void | Promise<void>;
@@ -90,10 +95,54 @@ function formatSet(setText: string): string {
   return `${score} (${normalizedMinutes}p)`;
 }
 
+const AVATAR_COLORS = [
+  "#ef5350",
+  "#ec407a",
+  "#ab47bc",
+  "#7e57c2",
+  "#42a5f5",
+  "#26a69a",
+  "#66bb6a",
+  "#ffa726",
+  "#ff7043",
+];
+
+function getAvatarColor(name: string): string {
+  let hash = 0;
+  for (const ch of name) {
+    hash = (hash * 31 + ch.charCodeAt(0)) & 0xffffffff;
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function formatDisplayName(name: string): { firstName: string; lastName: string } {
+  const tokens = String(name || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (tokens.length === 0) {
+    return { firstName: "-", lastName: "" };
+  }
+
+  if (tokens.length === 1) {
+    return { firstName: tokens[0], lastName: "" };
+  }
+
+  return {
+    firstName: tokens.slice(0, -1).join(" "),
+    lastName: tokens[tokens.length - 1].toUpperCase(),
+  };
+}
+
 export default function RankingPanel({
   rankings,
   matches,
   rankTrends,
+  categories,
+  selectedCategoryId,
+  onSelectCategory,
+  memberLevelById,
   onSelectPlayer,
   onClearHistory,
   onDeleteMatch,
@@ -142,20 +191,41 @@ export default function RankingPanel({
   const hasRankings = rankings.length > 0;
   const hasHistory = matches.length > 0;
 
-  const rankingRows = rankings.map((player, index) => ({
+  const sortedCategories = useMemo(
+    () =>
+      [...categories].sort(
+        (a, b) =>
+          a.order - b.order || a.displayName.localeCompare(b.displayName, "vi"),
+      ),
+    [categories],
+  );
+
+  const selectedCategory = useMemo(
+    () => sortedCategories.find((category) => category.id === selectedCategoryId),
+    [selectedCategoryId, sortedCategories],
+  );
+
+  const filteredRankings = useMemo(() => {
+    if (!selectedCategory) return rankings;
+    return rankings.filter(
+      (player) => memberLevelById[player.id] === selectedCategory.name,
+    );
+  }, [memberLevelById, rankings, selectedCategory]);
+
+  const rankingRows = filteredRankings.map((player) => ({
     key: player.name,
-    rank: index + 1,
+    rank: rankings.findIndex((entry) => entry.id === player.id) + 1,
     player,
     winRate: getWinRate(player.totalMatches, player.wins),
   }));
 
   const athleteFilters = useMemo(
     () =>
-      rankings
+      filteredRankings
         .map((player) => player.name)
         .sort((a, b) => a.localeCompare(b, "vi"))
         .map((name) => ({ text: name, value: name })),
-    [rankings],
+    [filteredRankings],
   );
 
   const rankingColumns: TableColumnsType<(typeof rankingRows)[number]> = [
@@ -192,6 +262,25 @@ export default function RankingPanel({
       },
     },
     {
+      title: "",
+      key: "avatar",
+      width: 70,
+      render: (_, row) => {
+        const displayName = formatDisplayName(row.player.name);
+        const avatarText = displayName.firstName.charAt(0).toUpperCase();
+        const avatarColor = getAvatarColor(row.player.name);
+
+        return (
+          <div
+            className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white"
+            style={{ backgroundColor: avatarColor }}
+          >
+            {avatarText || "?"}
+          </div>
+        );
+      },
+    },
+    {
       title: t("rankingPanel.athlete"),
       dataIndex: ["player", "name"],
       key: "name",
@@ -199,9 +288,16 @@ export default function RankingPanel({
       filterSearch: true,
       onFilter: (value, record) => record.player.name === value,
       sorter: (a, b) => a.player.name.localeCompare(b.player.name, "vi"),
-      render: (name: string) => (
-        <Typography.Text strong>{name}</Typography.Text>
-      ),
+      render: (name: string) => {
+        const displayName = formatDisplayName(name);
+
+        return (
+          <Typography.Text>
+            {displayName.firstName}{" "}
+            {displayName.lastName ? <strong>{displayName.lastName}</strong> : null}
+          </Typography.Text>
+        );
+      },
     },
     {
       title: t("rankingPanel.winRate"),
@@ -240,10 +336,10 @@ export default function RankingPanel({
       key: "rankScore",
       width: 130,
       align: "right",
-      sorter: (a, b) => a.player.rankScore - b.player.rankScore,
+      sorter: (a, b) => a.player.rating - b.player.rating,
       render: (_, row) => (
         <Typography.Text strong style={{ color: "#0369a1" }}>
-          {row.player.rankScore.toFixed(3)}
+          {Math.round(row.player.rating).toLocaleString()}
         </Typography.Text>
       ),
     },
@@ -252,13 +348,41 @@ export default function RankingPanel({
   return (
     <div className="max-w-5xl space-y-4 md:space-y-6">
       <div>
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onSelectCategory(null)}
+            className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+              selectedCategoryId === null
+                ? "bg-sky-600 text-white"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+          >
+            {t("rankingPanel.allCategories")}
+          </button>
+          {sortedCategories.map((category) => (
+            <button
+              key={category.id}
+              type="button"
+              onClick={() => onSelectCategory(category.id)}
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                selectedCategoryId === category.id
+                  ? "bg-sky-600 text-white"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+            >
+              {category.displayName}
+            </button>
+          ))}
+        </div>
+
         {!hasRankings ? (
           <div className="rounded-xl border border-slate-200 bg-white p-4 text-center text-sm text-slate-500">
-            {t("rankingPanel.noRanking")}
+            {t("rankingPanel.noRankings")}
           </div>
         ) : null}
 
-        {hasRankings ? (
+        {hasRankings && rankingRows.length > 0 ? (
           <Table
             columns={rankingColumns}
             dataSource={rankingRows}
@@ -277,6 +401,12 @@ export default function RankingPanel({
               style: { cursor: "pointer" },
             })}
           />
+        ) : null}
+
+        {hasRankings && rankingRows.length === 0 ? (
+          <div className="rounded-xl border border-slate-200 bg-white p-4 text-center text-sm text-slate-500">
+            {t("rankingPanel.noRankings")}
+          </div>
         ) : null}
       </div>
 
