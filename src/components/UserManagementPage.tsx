@@ -23,7 +23,7 @@ import {
   setUserDisabled,
   subscribeUsers,
   updateUserRole,
-} from "../lib/firebase";
+} from "../lib/api";
 import { hashMd5 } from "../lib/hash";
 import type { UserRecord, UserRole } from "../types";
 import RankingSidebar from "./ranking/RankingSidebar";
