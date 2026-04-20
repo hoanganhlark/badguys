@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { App as AntApp, Button, Dropdown, Layout, type MenuProps } from "antd";
 import {
@@ -9,18 +9,18 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 import {
-  createMatch,
-  deleteMatch,
-  getMatches,
   getLatestRankingSnapshot,
-  getRankingMembers,
   isFirebaseReady,
   saveRankingSnapshot,
-  saveRankingMembers,
-  subscribeRankingCategories,
-  subscribeMatches,
   subscribeUsers,
 } from "../lib/firebase";
+import {
+  useRankingData,
+  useRankingMembers,
+  useRankingMatches,
+  useRankingCategories,
+  useMatchForm,
+} from "../features/ranking/hooks";
 import { matchPath, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { calculateRankingStats } from "../lib/rankingStats";
@@ -30,12 +30,7 @@ import {
   trackEvent,
 } from "../lib/analytics";
 import {
-  buildMembersFromMatches,
-  loadMatchesFromStorage,
-  loadMembersFromStorage,
   loadRankingSettingsFromStorage,
-  saveMatchesToStorage,
-  saveMembersToStorage,
   saveRankingSettingsToStorage,
 } from "../lib/rankingStorage";
 import MatchFormPanel from "./ranking/MatchFormPanel";
@@ -45,15 +40,10 @@ import RankingPanel from "./ranking/RankingPanel";
 import RankingSidebar from "./ranking/RankingSidebar";
 import type {
   AdvancedStats,
-  Match,
-  MatchSetInput,
   Member,
   RankingView,
 } from "./ranking/types";
 import type {
-  MatchRecord,
-  RankingLevel,
-  RankingCategory,
   RankingSettings,
   RankingSnapshot,
 } from "../types";
@@ -101,16 +91,52 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     isPublicRankingRoute && parsedView === "match-form"
       ? "ranking"
       : parsedView;
-  const [members, setMembers] = useState<Member[]>(() =>
-    loadMembersFromStorage(),
-  );
-  const [matches, setMatches] = useState<Match[]>(() =>
-    loadMatchesFromStorage(),
-  );
+  // Hooks for ranking data management
+  const { members } = useRankingData();
+  const {
+    members: hookMembers,
+    addMember,
+    editMember,
+    deleteMember,
+  } = useRankingMembers();
+  const {
+    matches,
+    historyMatches,
+    isHistoryLoading,
+    historyPage,
+    historyPageSize,
+    addMatch,
+    deleteMatch: deleteMatchFn,
+    loadMatchHistory,
+    setHistoryPage,
+    setHistoryPageSize,
+    resetHistoryPagination,
+    clearAllMatches,
+  } = useRankingMatches();
+  const {
+    categories,
+    sortedCategories,
+    defaultMemberLevel,
+  } = useRankingCategories();
+  const {
+    matchType,
+    team1,
+    team2,
+    sets,
+    playedAt,
+    setMatchType,
+    setTeam1,
+    setTeam2,
+    setSets,
+    setPlayedAt,
+    resetForm,
+    getValidationError,
+  } = useMatchForm();
+
+  // Local state for component-specific UI
   const [selectedPlayer, setSelectedPlayer] = useState<AdvancedStats | null>(
     null,
   );
-  const [isRemoteHydrated, setIsRemoteHydrated] = useState(false);
   const [usernamesById, setUsernamesById] = useState<Record<string, string>>(
     {},
   );
@@ -118,42 +144,15 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [latestSnapshot, setLatestSnapshot] =
     useState<RankingSnapshot | null>(null);
-  const [categories, setCategories] = useState<RankingCategory[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
-  const sortedCategories = useMemo(
-    () =>
-      [...categories].sort(
-        (a, b) =>
-          a.order - b.order || a.displayName.localeCompare(b.displayName, "vi"),
-      ),
-    [categories],
-  );
-  const defaultMemberLevel = sortedCategories[0]?.name || "";
-
-  // Member Form State
-  const [isEditing, setIsEditing] = useState<number | null>(null);
-  const [newMember, setNewMember] = useState<{
-    name: string;
-    level: RankingLevel;
-  }>({ name: "", level: "" });
-
-  // Match Form State
-  const [matchType, setMatchType] = useState<"singles" | "doubles">("doubles");
-  const [matchData, setMatchData] = useState({
-    team1: [] as string[],
-    team2: [] as string[],
-    sets: [{ team1Score: "", team2Score: "", minutes: "" }] as MatchSetInput[],
-    playedAt: toDateTimeLocal(new Date()),
-  });
   const [rankingSettings, setRankingSettings] = useState<RankingSettings>(() =>
     loadRankingSettingsFromStorage(currentUser?.userId || "guest"),
   );
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
-  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
-  const [historyMatches, setHistoryMatches] = useState<Match[]>([]);
-  const [historyPage, setHistoryPage] = useState(1);
-  const [historyPageSize, setHistoryPageSize] = useState(5);
   const rankingSettingsStorageScope = currentUser?.userId || "guest";
+
+  // Use members from hook (with fallback to useRankingData for remote hydration)
+  const displayMembers = hookMembers.length > 0 ? hookMembers : members;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -196,76 +195,6 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     navigate(`${routeBase}/ranking`, { replace: true });
   }, [isOpen, isPublicRankingRoute, navigate, routeBase, tab]);
 
-  useEffect(() => {
-    let mounted = true;
-    let unsubscribeMatches: (() => void) | null = null;
-
-    const hydrateRankingData = async () => {
-      if (!isFirebaseReady()) {
-        if (mounted) setIsRemoteHydrated(true);
-        return;
-      }
-
-      try {
-        const remoteMembers = await getRankingMembers();
-
-        if (!mounted) return;
-
-        const hasRemoteMembers = remoteMembers.length > 0;
-        let shouldDeriveMembersFromMatches = !hasRemoteMembers;
-
-        if (hasRemoteMembers) {
-          setMembers(remoteMembers);
-        }
-
-        unsubscribeMatches = subscribeMatches(
-          (remoteMatchRecords) => {
-            if (!mounted) return;
-
-            const remoteMatches = remoteMatchRecords.map(
-              mapMatchRecordToRankingMatch,
-            );
-
-            setMatches(remoteMatches);
-
-            if (shouldDeriveMembersFromMatches) {
-              const fallbackMembers = buildMembersFromMatches(remoteMatches);
-
-              if (fallbackMembers.length > 0) {
-                setMembers(fallbackMembers);
-                shouldDeriveMembersFromMatches = false;
-
-                void saveRankingMembers(fallbackMembers).catch((error) => {
-                  console.error(
-                    "Failed to backfill ranking members from match history",
-                    error,
-                  );
-                });
-              }
-            }
-
-            setIsRemoteHydrated(true);
-          },
-          (error) => {
-            console.error("Failed to subscribe ranking matches", error);
-            setIsRemoteHydrated(true);
-          },
-        );
-      } catch (error) {
-        console.error("Failed to load ranking data from Firestore", error);
-        if (mounted) setIsRemoteHydrated(true);
-      }
-    };
-
-    void hydrateRankingData();
-
-    return () => {
-      mounted = false;
-      if (unsubscribeMatches) {
-        unsubscribeMatches();
-      }
-    };
-  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -309,58 +238,20 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     };
   }, [isOpen]);
 
+  // Update selectedCategoryId when categories change
   useEffect(() => {
-    const unsubscribe = subscribeRankingCategories(
-      (nextCategories) => {
-        setCategories(nextCategories);
-        setSelectedCategoryId((current) =>
-          nextCategories.some((category) => category.id === current)
-            ? current
-            : (nextCategories[0]?.id ?? ""),
-        );
-      },
-      (error) => {
-        console.error("Failed to subscribe ranking categories", error);
-      },
-    );
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (isEditing !== null) return;
-
-    setNewMember((current) => {
-      if (!sortedCategories.length) {
-        return current;
-      }
-
-      const hasCurrentLevel = sortedCategories.some(
-        (category) => category.name === current.level,
-      );
-      if (hasCurrentLevel) return current;
-
-      return {
-        ...current,
-        level: defaultMemberLevel,
-      };
-    });
-  }, [defaultMemberLevel, isEditing, sortedCategories]);
-
-  useEffect(() => {
-    if (!sortedCategories.length) {
+    if (!categories.length) {
       setSelectedCategoryId("");
       return;
     }
 
     setSelectedCategoryId((current) =>
-      sortedCategories.some((category) => category.id === current)
+      categories.some((category) => category.id === current)
         ? current
-        : sortedCategories[0].id,
+        : (categories[0]?.id ?? ""),
     );
-  }, [sortedCategories]);
+  }, [categories]);
+
 
   useEffect(() => {
     setMobileSidebarOpen(false);
@@ -425,21 +316,6 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     };
   }, []);
 
-  // Persist members
-  useEffect(() => {
-    saveMembersToStorage(members);
-
-    if (!isRemoteHydrated || !isFirebaseReady()) return;
-
-    void saveRankingMembers(members).catch((error) => {
-      console.error("Failed to save ranking members to Firestore", error);
-    });
-  }, [members, isRemoteHydrated]);
-
-  // Persist matches
-  useEffect(() => {
-    saveMatchesToStorage(matches);
-  }, [matches, isRemoteHydrated]);
 
   useEffect(() => {
     saveRankingSettingsToStorage(rankingSettings, rankingSettingsStorageScope);
@@ -451,37 +327,53 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     );
   }, [rankingSettingsStorageScope]);
 
-  // Logic: Thành viên
-  const handleAddMember = () => {
+  // Local state for member form editing
+  const [isEditing, setIsEditing] = useState<number | null>(null);
+  const [memberFormName, setMemberFormName] = useState("");
+  const [memberFormLevel, setMemberFormLevel] = useState("");
+
+  const handleAddOrEditMember = useCallback(() => {
     if (!isAdmin) return;
     if (!sortedCategories.length) return;
-    if (!newMember.name.trim()) return;
-    if (!newMember.level.trim()) return;
+    if (!memberFormName.trim()) return;
+    if (!memberFormLevel.trim()) return;
+
     if (isEditing) {
-      setMembers(
-        members.map((m) =>
-          m.id === isEditing ? { ...newMember, id: isEditing } : m,
-        ),
-      );
+      editMember(isEditing, memberFormName, memberFormLevel);
       setIsEditing(null);
     } else {
-      setMembers([...members, { ...newMember, id: Date.now() }]);
+      addMember(memberFormName, memberFormLevel);
     }
-    setNewMember({ name: "", level: defaultMemberLevel });
-  };
+    setMemberFormName("");
+    setMemberFormLevel(defaultMemberLevel);
+  }, [isAdmin, sortedCategories, isEditing, memberFormName, memberFormLevel, defaultMemberLevel, editMember, addMember]);
 
-  const deleteMember = (id: number) => {
+  const handleDeleteMember = useCallback((id: number) => {
     if (!isAdmin) return;
-    setMembers(members.filter((m) => m.id !== id));
-  };
+    deleteMember(id);
+  }, [isAdmin, deleteMember]);
 
-  const startEdit = (member: Member) => {
+  const handleStartEditMember = useCallback((member: Member) => {
     if (!isAdmin) return;
     setIsEditing(member.id);
-    setNewMember({ name: member.name, level: member.level });
-  };
+    setMemberFormName(member.name);
+    setMemberFormLevel(member.level as any);
+  }, [isAdmin]);
 
-  const handleClearHistory = async () => {
+  // Calculate rankings before handlers that might use it
+  const rankings = useMemo(() => {
+    return calculateRankingStats(displayMembers, matches, {
+      tau: rankingSettings.tau,
+      penaltyCoefficient: rankingSettings.penaltyCoefficient,
+    });
+  }, [
+    displayMembers,
+    matches,
+    rankingSettings.penaltyCoefficient,
+    rankingSettings.tau,
+  ]);
+
+  const handleClearHistory = useCallback(async () => {
     if (!isAdmin) return;
     if (matches.length === 0) return;
 
@@ -504,10 +396,8 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
         }
       }
 
-      await Promise.all(matches.map((match) => deleteMatch(String(match.id))));
-      setMatches([]);
-      setHistoryMatches([]);
-      setHistoryPage(1);
+      await clearAllMatches(isAdmin);
+      resetHistoryPagination();
 
       try {
         const snapshot = await getLatestRankingSnapshot();
@@ -518,156 +408,84 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     } catch (error) {
       console.error("Failed to clear matches", error);
     }
-  };
+  }, [isAdmin, matches.length, rankings, t, clearAllMatches, resetHistoryPagination, currentUser?.userId]);
 
-  const handleDeleteMatch = async (matchId: number | string) => {
-    const target = matches.find(
-      (match) => String(match.id) === String(matchId),
-    );
-    if (!target || !currentUser) return;
+  const handleDeleteMatch = useCallback(
+    async (matchId: number | string) => {
+      if (!currentUser) return;
 
-    if (!isAdmin && target.createdBy !== currentUser.userId) {
-      window.alert(t("rankingPage.onlyDeleteOwnMatch"));
-      return;
-    }
+      const confirmed = window.confirm(t("common.confirmDelete"));
+      if (!confirmed) return;
 
-    const confirmed = window.confirm(t("common.confirmDelete"));
-    if (!confirmed) return;
-
-    try {
-      await deleteMatch(String(matchId));
-      setMatches((prev) =>
-        prev.filter((match) => String(match.id) !== String(matchId)),
-      );
-      setHistoryMatches((prev) =>
-        prev.filter((match) => String(match.id) !== String(matchId)),
-      );
-    } catch (error) {
-      console.error("Failed to delete match", error);
-    }
-  };
-
-  const loadHistoryMatches = async () => {
-    if (isHistoryLoading) return;
-
-    setIsHistoryLoading(true);
-    try {
-      if (!isFirebaseReady()) {
-        setHistoryMatches(matches);
-      } else {
-        const records = await getMatches();
-        setHistoryMatches(records.map(mapMatchRecordToRankingMatch));
+      try {
+        await deleteMatchFn(matchId, currentUser.userId, isAdmin);
+      } catch (error) {
+        if (error instanceof Error && error.message.includes("Cannot delete")) {
+          window.alert(t("rankingPage.onlyDeleteOwnMatch"));
+        } else {
+          console.error("Failed to delete match", error);
+        }
       }
-    } catch (error) {
-      console.error("Failed to load history matches", error);
-      setHistoryMatches(matches);
-    } finally {
-      setIsHistoryLoading(false);
-    }
-  };
+    },
+    [currentUser, isAdmin, deleteMatchFn, t],
+  );
 
-  const handleToggleHistory = async (nextExpanded: boolean) => {
-    setIsHistoryExpanded(nextExpanded);
-    if (!nextExpanded) return;
+  const handleToggleHistory = useCallback(
+    async (nextExpanded: boolean) => {
+      setIsHistoryExpanded(nextExpanded);
+      if (!nextExpanded) return;
 
-    setHistoryPage(1);
-    await loadHistoryMatches();
-  };
+      resetHistoryPagination();
+      await loadMatchHistory();
+    },
+    [resetHistoryPagination, loadMatchHistory],
+  );
 
-  const handleHistoryPaginationChange = (page: number, pageSize: number) => {
-    setHistoryPage(page);
-    setHistoryPageSize(pageSize);
-  };
+  const handleHistoryPaginationChange = useCallback(
+    (page: number, pageSize: number) => {
+      setHistoryPage(page);
+      setHistoryPageSize(pageSize);
+    },
+    [setHistoryPage, setHistoryPageSize],
+  );
 
-  // Logic: Trận đấu
-  const handleSaveMatch = async () => {
+  const handleSaveMatch = useCallback(async () => {
     if (!currentUser) return;
 
-    const { team1, team2, sets } = matchData;
-
-    const slotCount = matchType === "singles" ? 1 : 2;
-    const selectedTeam1 = team1
-      .slice(0, slotCount)
-      .filter((name) => name?.trim());
-    const selectedTeam2 = team2
-      .slice(0, slotCount)
-      .filter((name) => name?.trim());
-
-    if (
-      selectedTeam1.length !== slotCount ||
-      selectedTeam2.length !== slotCount
-    ) {
+    const error = getValidationError();
+    if (error) {
+      messageApi.error(error);
       return;
     }
 
-    const parsedSets = sets
-      .map((set) => {
+    try {
+      await addMatch(matchType, team1, team2, sets, playedAt, currentUser.userId, currentUser.username);
+
+      const validSetCount = sets.filter((set) => {
         const scoreA = Number.parseInt(set.team1Score, 10);
         const scoreB = Number.parseInt(set.team2Score, 10);
+        return !Number.isNaN(scoreA) && !Number.isNaN(scoreB);
+      }).length;
+
+      const totalMinutes = sets.reduce((sum, set) => {
         const minutes = Number.parseInt(String(set.minutes || ""), 10);
+        if (!Number.isFinite(minutes) || minutes <= 0) return sum;
+        return sum + minutes;
+      }, 0);
 
-        if (Number.isNaN(scoreA) || Number.isNaN(scoreB)) return null;
-        if (scoreA < 0 || scoreB < 0) return null;
-        if (!Number.isNaN(minutes) && minutes < 0) return null;
-
-        return `${scoreA}-${scoreB}${Number.isFinite(minutes) && minutes > 0 ? `@${minutes}` : ""}`;
-      })
-      .filter((score): score is string => score !== null);
-
-    if (parsedSets.length === 0) return;
-
-    const totalMinutes = sets.reduce((sum, set) => {
-      const minutes = Number.parseInt(String(set.minutes || ""), 10);
-      if (!Number.isFinite(minutes) || minutes <= 0) return sum;
-      return sum + minutes;
-    }, 0);
-    const playedAtIso = parseToIsoDate(matchData.playedAt);
-
-    try {
-      const created = await createMatch({
-        playerA: selectedTeam1.join(" / "),
-        playerB: selectedTeam2.join(" / "),
-        score: parsedSets.join(","),
-        playedAt: playedAtIso,
-        durationMinutes: totalMinutes > 0 ? totalMinutes : undefined,
-        createdBy: currentUser.userId,
-        createdByUsername: currentUser.username,
-      });
-
-      const newMatch = mapMatchRecordToRankingMatch(created);
-      setMatches((prev) => [newMatch, ...prev]);
-      setHistoryMatches((prev) => [newMatch, ...prev]);
-      setMatchData({
-        team1: [],
-        team2: [],
-        sets: [{ team1Score: "", team2Score: "", minutes: "" }],
-        playedAt: toDateTimeLocal(new Date()),
-      });
       trackEvent(AnalyticsEventName.RecordMatch, {
         [AnalyticsParamKey.MatchType]: matchType,
-        [AnalyticsParamKey.SetCount]: parsedSets.length,
-        [AnalyticsParamKey.DurationMinutes]:
-          totalMinutes > 0 ? totalMinutes : 0,
+        [AnalyticsParamKey.SetCount]: validSetCount,
+        [AnalyticsParamKey.DurationMinutes]: totalMinutes > 0 ? totalMinutes : 0,
       });
       messageApi.success(t("rankingPage.toastMatchSaved"));
+      resetForm();
     } catch (error) {
       console.error("Failed to save match", error);
-      window.alert(t("rankingPage.cannotSaveMatch"));
+      messageApi.error(t("rankingPage.cannotSaveMatch"));
     }
-  };
+  }, [currentUser, getValidationError, addMatch, matchType, team1, team2, sets, playedAt, trackEvent, messageApi, t, resetForm]);
 
-  // Advanced Rankings with Stats
-  const rankings = useMemo(() => {
-    return calculateRankingStats(members, matches, {
-      tau: rankingSettings.tau,
-      penaltyCoefficient: rankingSettings.penaltyCoefficient,
-    });
-  }, [
-    members,
-    matches,
-    rankingSettings.penaltyCoefficient,
-    rankingSettings.tau,
-  ]);
 
 
   const historyMatchesForDisplay = useMemo(
@@ -944,13 +762,16 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                   <div className="space-y-4">
                     <MembersPanel
                       isEditing={isEditing}
-                      newMember={newMember}
-                      members={members}
+                      newMember={{ name: memberFormName, level: memberFormLevel as any }}
+                      members={displayMembers}
                       categories={sortedCategories}
-                      onSetNewMember={setNewMember}
-                      onAddOrUpdateMember={handleAddMember}
-                      onStartEdit={startEdit}
-                      onDeleteMember={deleteMember}
+                      onSetNewMember={(newMember) => {
+                        setMemberFormName(newMember.name);
+                        setMemberFormLevel(newMember.level);
+                      }}
+                      onAddOrUpdateMember={handleAddOrEditMember}
+                      onStartEdit={handleStartEditMember}
+                      onDeleteMember={handleDeleteMember}
                       canManage={isAdmin}
                     />
                     {isAdmin ? (
@@ -1047,12 +868,22 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                 {/* View: Match Form */}
                 {view === "match-form" && (
                   <MatchFormPanel
-                    members={members}
+                    members={displayMembers}
                     categories={sortedCategories}
                     matchType={matchType}
-                    matchData={matchData}
+                    matchData={{
+                      team1,
+                      team2,
+                      sets,
+                      playedAt,
+                    }}
                     onSetMatchType={setMatchType}
-                    onSetMatchData={setMatchData}
+                    onSetMatchData={(nextData) => {
+                      setTeam1(nextData.team1);
+                      setTeam2(nextData.team2);
+                      setSets(nextData.sets);
+                      setPlayedAt(nextData.playedAt);
+                    }}
                     onSaveMatch={handleSaveMatch}
                   />
                 )}
@@ -1105,63 +936,3 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   );
 }
 
-function mapMatchRecordToRankingMatch(record: MatchRecord): Match {
-  const team1 = String(record.playerA || "")
-    .split("/")
-    .map((name) => name.trim())
-    .filter(Boolean);
-  const team2 = String(record.playerB || "")
-    .split("/")
-    .map((name) => name.trim())
-    .filter(Boolean);
-  const sets = String(record.score || "")
-    .split(",")
-    .map((value) => value.trim())
-    .filter(Boolean);
-  const hasDoubleTeams = team1.length > 1 || team2.length > 1;
-
-  return {
-    id: record.id,
-    type: hasDoubleTeams ? "doubles" : "singles",
-    team1,
-    team2,
-    sets,
-    date: formatDateTime(record.playedAt || record.createdAt),
-    playedAt: record.playedAt,
-    durationMinutes: record.durationMinutes,
-    createdBy: record.createdBy,
-    createdByUsername: record.createdByUsername,
-  };
-}
-
-function formatDateTime(value?: string): string {
-  if (!value) return "--/--/---- --:--";
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-
-  const dd = String(date.getDate()).padStart(2, "0");
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const yyyy = date.getFullYear();
-  const hh = String(date.getHours()).padStart(2, "0");
-  const min = String(date.getMinutes()).padStart(2, "0");
-
-  return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
-}
-
-function parseToIsoDate(input: string): string {
-  const trimmed = String(input || "").trim();
-  if (!trimmed) return new Date().toISOString();
-  const date = new Date(trimmed);
-  if (Number.isNaN(date.getTime())) return new Date().toISOString();
-  return date.toISOString();
-}
-
-function toDateTimeLocal(date: Date): string {
-  const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const dd = String(date.getDate()).padStart(2, "0");
-  const hh = String(date.getHours()).padStart(2, "0");
-  const min = String(date.getMinutes()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
-}
