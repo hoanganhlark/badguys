@@ -1,13 +1,22 @@
-import { Clock, Trash2, User, Users } from "react-feather";
+import { ChevronDown, ChevronRight, Clock, Trash2, User, Users } from "react-feather";
 import { useMemo } from "react";
-import { Table, Typography, type TableColumnsType } from "antd";
+import { Button, Table, Typography, type TableColumnsType } from "antd";
 import { useTranslation } from "react-i18next";
 import type { RankingCategory } from "../../types";
 import type { AdvancedStats, Match } from "./types";
 
 interface RankingPanelProps {
   rankings: AdvancedStats[];
-  matches: Match[];
+  historyMatches: Match[];
+  isHistoryExpanded: boolean;
+  isHistoryLoading: boolean;
+  onToggleHistory: (nextExpanded: boolean) => void | Promise<void>;
+  historyPagination: {
+    current: number;
+    pageSize: number;
+    total: number;
+  };
+  onHistoryPaginationChange: (page: number, pageSize: number) => void;
   rankTrends: Record<number, number | "NEW">;
   showRankTrend: boolean;
   categories: RankingCategory[];
@@ -24,55 +33,6 @@ interface RankingPanelProps {
 function formatMatchDateTime(dateText: string): string {
   if (!dateText) return "--/--/---- --:--";
   return dateText;
-}
-
-function parseMatchDate(match: Match): Date | null {
-  if (match.playedAt) {
-    const parsed = new Date(match.playedAt);
-    if (!Number.isNaN(parsed.getTime())) {
-      return parsed;
-    }
-  }
-
-  const normalized = String(match.date || "").trim();
-  if (!normalized) return null;
-
-  const [datePart] = normalized.split(" ");
-  const segments = datePart.split("/");
-  if (segments.length !== 3) return null;
-
-  const [dd, mm, yyyy] = segments.map((part) => Number.parseInt(part, 10));
-  if (!Number.isFinite(dd) || !Number.isFinite(mm) || !Number.isFinite(yyyy)) {
-    return null;
-  }
-
-  const fallbackDate = new Date(yyyy, mm - 1, dd);
-  if (Number.isNaN(fallbackDate.getTime())) return null;
-  return fallbackDate;
-}
-
-function getDateGroupKey(date: Date): string {
-  const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const dd = String(date.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-function formatVietnameseDateGroup(date: Date): string {
-  const weekdays = [
-    "Chủ nhật",
-    "Thứ hai",
-    "Thứ ba",
-    "Thứ tư",
-    "Thứ năm",
-    "Thứ sáu",
-    "Thứ bảy",
-  ];
-  const weekday = weekdays[date.getDay()] || "Không rõ";
-  const dd = String(date.getDate()).padStart(2, "0");
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const yyyy = date.getFullYear();
-  return `${weekday}, ${dd}/${mm}/${yyyy}`;
 }
 
 function formatSet(setText: string): string {
@@ -106,7 +66,12 @@ function formatDisplayName(name: string): { firstName: string; lastName: string 
 
 export default function RankingPanel({
   rankings,
-  matches,
+  historyMatches,
+  isHistoryExpanded,
+  isHistoryLoading,
+  onToggleHistory,
+  historyPagination,
+  onHistoryPaginationChange,
   rankTrends,
   showRankTrend,
   categories,
@@ -121,45 +86,8 @@ export default function RankingPanel({
 }: RankingPanelProps) {
   const { t } = useTranslation();
 
-  const recentMatchGroups = useMemo(() => {
-    const grouped = new Map<
-      string,
-      { label: string; order: number; items: Match[] }
-    >();
-
-    matches.slice(0, 10).forEach((match, index) => {
-      const parsedDate = parseMatchDate(match);
-      if (!parsedDate) {
-        const unknownKey = "unknown-date";
-        const currentUnknown = grouped.get(unknownKey) ?? {
-          label: t("rankingPanel.unknownDateGroup"),
-          order: -1,
-          items: [],
-        };
-        currentUnknown.items.push(match);
-        grouped.set(unknownKey, currentUnknown);
-        return;
-      }
-
-      const key = getDateGroupKey(parsedDate);
-      const existing = grouped.get(key);
-
-      if (existing) {
-        existing.items.push(match);
-      } else {
-        grouped.set(key, {
-          label: formatVietnameseDateGroup(parsedDate),
-          order: parsedDate.getTime() - index,
-          items: [match],
-        });
-      }
-    });
-
-    return Array.from(grouped.values()).sort((a, b) => b.order - a.order);
-  }, [matches, t]);
-
   const hasRankings = rankings.length > 0;
-  const hasHistory = matches.length > 0;
+  const hasHistory = historyPagination.total > 0;
 
   const sortedCategories = useMemo(
     () =>
@@ -263,6 +191,87 @@ export default function RankingPanel({
     },
   ];
 
+  const historyColumns: TableColumnsType<Match> = [
+    {
+      title: t("rankingPanel.historyType"),
+      key: "type",
+      width: 96,
+      render: (_, row) => (
+        <div className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600">
+          {row.type === "singles" ? (
+            <User className="h-3.5 w-3.5" />
+          ) : (
+            <Users className="h-3.5 w-3.5" />
+          )}
+          {row.type === "singles"
+            ? t("rankingPanel.singles")
+            : t("rankingPanel.doubles")}
+        </div>
+      ),
+    },
+    {
+      title: t("rankingPanel.historyTime"),
+      dataIndex: "date",
+      key: "date",
+      width: 148,
+      render: (value: string) => (
+        <Typography.Text className="text-xs text-slate-500">
+          {formatMatchDateTime(value)}
+        </Typography.Text>
+      ),
+    },
+    {
+      title: t("rankingPanel.historyTeams"),
+      key: "teams",
+      width: 260,
+      ellipsis: true,
+      render: (_, row) => (
+        <Typography.Text ellipsis={{ tooltip: `${row.team1.join(" & ")} vs ${row.team2.join(" & ")}` }}>
+          {row.team1.join(" & ")} <span className="mx-1 text-slate-400">vs</span> {row.team2.join(" & ")}
+        </Typography.Text>
+      ),
+    },
+    {
+      title: t("rankingPanel.historyResult"),
+      key: "sets",
+      width: 170,
+      render: (_, row) => (
+        <Typography.Text className="text-xs text-slate-700">
+          {row.sets.map(formatSet).join(", ")}
+        </Typography.Text>
+      ),
+    },
+    {
+      title: t("rankingPanel.historyCreator"),
+      key: "creator",
+      width: 130,
+      ellipsis: true,
+      render: (_, row) => (
+        <Typography.Text ellipsis className="text-xs text-slate-500">
+          {row.createdByUsername || row.createdBy || "-"}
+        </Typography.Text>
+      ),
+    },
+    {
+      title: t("rankingPanel.historyActions"),
+      key: "actions",
+      width: 74,
+      align: "center",
+      render: (_, row) =>
+        isAdmin || row.createdBy === currentUserId ? (
+          <button
+            type="button"
+            onClick={() => onDeleteMatch(row.id)}
+            className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-red-600 hover:bg-red-50"
+            aria-label={t("rankingPanel.deleteThisMatch")}
+            title={t("rankingPanel.deleteThisMatch")}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        ) : null,
+    },
+  ];
+
   return (
     <div className="max-w-5xl space-y-4 md:space-y-6">
       <div className="rounded-xl border border-slate-200 bg-white p-3 md:p-4">
@@ -329,89 +338,63 @@ export default function RankingPanel({
             <Clock className="h-5 w-5 text-slate-700" />{" "}
             {t("rankingPanel.recentHistory")}
           </h3>
-          {isAdmin ? (
-            <button
-              type="button"
-              onClick={onClearHistory}
-              disabled={!hasHistory}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 text-xs font-semibold hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          <div className="flex items-center gap-2">
+            {isAdmin ? (
+              <button
+                type="button"
+                onClick={onClearHistory}
+                disabled={!hasHistory}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 text-xs font-semibold hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Trash2 className="h-3.5 w-3.5" />{" "}
+                {t("rankingPanel.clearHistory")}
+              </button>
+            ) : null}
+            <Button
+              type="default"
+              size="small"
+              onClick={() => void onToggleHistory(!isHistoryExpanded)}
+              icon={
+                isHistoryExpanded ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )
+              }
             >
-              <Trash2 className="h-3.5 w-3.5" />{" "}
-              {t("rankingPanel.clearHistory")}
-            </button>
-          ) : null}
+              {isHistoryExpanded
+                ? t("rankingPanel.collapseHistory")
+                : t("rankingPanel.expandHistory")}
+            </Button>
+          </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-2.5 space-y-2">
-          {!hasHistory ? (
-            <div className="p-4 rounded-lg border border-slate-100 bg-slate-50 text-center">
-              <p className="text-slate-500 text-sm">
-                {t("rankingPanel.noHistory")}
-              </p>
-            </div>
-          ) : null}
-
-          {recentMatchGroups.map((group) => (
-            <section key={group.label} className="space-y-2">
-              <p className="px-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                {group.label}
-              </p>
-
-              {group.items.map((match) => (
-                <div
-                  key={match.id}
-                  className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-600">
-                      {match.type === "singles" ? (
-                        <User className="h-3.5 w-3.5" />
-                      ) : (
-                        <Users className="h-3.5 w-3.5" />
-                      )}
-                      {match.type === "singles"
-                        ? t("rankingPanel.singles")
-                        : t("rankingPanel.doubles")}
-                    </div>
-                    <div className="text-[11px] text-slate-500">
-                      {formatMatchDateTime(match.date)}
-                    </div>
-                  </div>
-
-                  <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-[12px]">
-                    <div className="font-medium text-slate-900 truncate">
-                      {match.team1.join(" & ")}
-                    </div>
-                    <div className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700">
-                      {match.sets.map(formatSet).join(", ")}
-                    </div>
-                    <div className="font-medium text-slate-900 truncate text-right">
-                      {match.team2.join(" & ")}
-                    </div>
-                  </div>
-
-                  <div className="mt-2 flex items-center justify-between gap-2">
-                    <div className="text-[11px] text-slate-500 truncate">
-                      {t("rankingPanel.createdBy")}:{" "}
-                      {match.createdByUsername || match.createdBy || "-"}
-                    </div>
-                    {isAdmin || match.createdBy === currentUserId ? (
-                      <button
-                        type="button"
-                        onClick={() => onDeleteMatch(match.id)}
-                        className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-red-600 hover:bg-red-50"
-                        aria-label={t("rankingPanel.deleteThisMatch")}
-                        title={t("rankingPanel.deleteThisMatch")}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-              ))}
-            </section>
-          ))}
-        </div>
+        {isHistoryExpanded ? (
+          <div className="rounded-xl border border-slate-200 bg-white p-2.5">
+            <Table
+              rowKey={(row) => String(row.id)}
+              columns={historyColumns}
+              dataSource={historyMatches}
+              size="small"
+              loading={isHistoryLoading}
+              pagination={{
+                current: historyPagination.current,
+                pageSize: historyPagination.pageSize,
+                total: historyPagination.total,
+                showSizeChanger: true,
+                pageSizeOptions: [5, 10, 20],
+                onChange: onHistoryPaginationChange,
+              }}
+              locale={{
+                emptyText: isHistoryLoading
+                  ? t("rankingPanel.loadingHistory")
+                  : t("rankingPanel.noHistory"),
+              }}
+              scroll={{ x: 860 }}
+              className="ranking-ui-table"
+            />
+          </div>
+        ) : null}
       </div>
     </div>
   );

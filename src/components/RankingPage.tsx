@@ -11,6 +11,7 @@ import {
 import {
   createMatch,
   deleteMatch,
+  getMatches,
   getLatestRankingSnapshot,
   getRankingMembers,
   isFirebaseReady,
@@ -149,6 +150,11 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   const [rankingSettings, setRankingSettings] = useState<RankingSettings>(() =>
     loadRankingSettingsFromStorage(currentUser?.userId || "guest"),
   );
+  const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [historyMatches, setHistoryMatches] = useState<Match[]>([]);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyPageSize, setHistoryPageSize] = useState(5);
   const rankingSettingsStorageScope = currentUser?.userId || "guest";
 
   useEffect(() => {
@@ -490,6 +496,8 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
 
       await Promise.all(matches.map((match) => deleteMatch(String(match.id))));
       setMatches([]);
+      setHistoryMatches([]);
+      setHistoryPage(1);
 
       try {
         const snapshot = await getLatestRankingSnapshot();
@@ -521,9 +529,44 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
       setMatches((prev) =>
         prev.filter((match) => String(match.id) !== String(matchId)),
       );
+      setHistoryMatches((prev) =>
+        prev.filter((match) => String(match.id) !== String(matchId)),
+      );
     } catch (error) {
       console.error("Failed to delete match", error);
     }
+  };
+
+  const loadHistoryMatches = async () => {
+    if (isHistoryLoading) return;
+
+    setIsHistoryLoading(true);
+    try {
+      if (!isFirebaseReady()) {
+        setHistoryMatches(matches);
+      } else {
+        const records = await getMatches();
+        setHistoryMatches(records.map(mapMatchRecordToRankingMatch));
+      }
+    } catch (error) {
+      console.error("Failed to load history matches", error);
+      setHistoryMatches(matches);
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  };
+
+  const handleToggleHistory = async (nextExpanded: boolean) => {
+    setIsHistoryExpanded(nextExpanded);
+    if (!nextExpanded) return;
+
+    setHistoryPage(1);
+    await loadHistoryMatches();
+  };
+
+  const handleHistoryPaginationChange = (page: number, pageSize: number) => {
+    setHistoryPage(page);
+    setHistoryPageSize(pageSize);
   };
 
   // Logic: Trận đấu
@@ -583,6 +626,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
 
       const newMatch = mapMatchRecordToRankingMatch(created);
       setMatches((prev) => [newMatch, ...prev]);
+      setHistoryMatches((prev) => [newMatch, ...prev]);
       setMatchData({
         team1: [],
         team2: [],
@@ -615,15 +659,21 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     rankingSettings.tau,
   ]);
 
-  const matchesForDisplay = useMemo(
+
+  const historyMatchesForDisplay = useMemo(
     () =>
-      matches.map((match) => ({
+      historyMatches.map((match) => ({
         ...match,
         createdByUsername:
           match.createdByUsername || usernamesById[match.createdBy || ""] || "",
       })),
-    [matches, usernamesById],
+    [historyMatches, usernamesById],
   );
+
+  const pagedHistoryMatches = useMemo(() => {
+    const start = (historyPage - 1) * historyPageSize;
+    return historyMatchesForDisplay.slice(start, start + historyPageSize);
+  }, [historyMatchesForDisplay, historyPage, historyPageSize]);
 
   const rankTrends = useMemo<Record<number, number | "NEW">>(() => {
     if (!latestSnapshot) return {};
@@ -1001,7 +1051,18 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                 {view === "ranking" && (
                   <RankingPanel
                     rankings={rankings}
-                    matches={matchesForDisplay}
+                    historyMatches={pagedHistoryMatches}
+                    isHistoryExpanded={isHistoryExpanded}
+                    isHistoryLoading={isHistoryLoading}
+                    onToggleHistory={handleToggleHistory}
+                    historyPagination={{
+                      current: historyPage,
+                      pageSize: historyPageSize,
+                      total: isHistoryExpanded
+                        ? historyMatchesForDisplay.length
+                        : matches.length,
+                    }}
+                    onHistoryPaginationChange={handleHistoryPaginationChange}
                     rankTrends={rankTrends}
                     showRankTrend={showRankTrend}
                     categories={categories}
