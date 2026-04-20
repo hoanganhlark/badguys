@@ -4,7 +4,7 @@ import {
   deleteMatch as firebaseDeleteMatch,
   getMatches,
   isFirebaseReady,
-} from "../../../lib/firebase";
+} from "../../../lib/api";
 import {
   loadMatchesFromStorage,
   saveMatchesToStorage,

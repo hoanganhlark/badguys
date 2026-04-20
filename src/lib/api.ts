@@ -7,8 +7,18 @@ import {
   getRankingMembers as fbGetRankingMembers,
   saveRankingMembers as fbSaveRankingMembers,
   isFirebaseReady as fbIsFirebaseReady,
+  getRankingMatches as fbGetRankingMatches,
+  saveRankingMatches as fbSaveRankingMatches,
+  createMatch as fbCreateMatch,
+  deleteMatch as fbDeleteMatch,
+  getMatches as fbGetMatches,
 } from "./firebase";
-import type { UserRecord, UserRole, RankingMember } from "../types";
+import type {
+  UserRecord,
+  UserRole,
+  RankingMember,
+  MatchRecord,
+} from "../types";
 
 // Users API
 
@@ -55,6 +65,36 @@ export async function saveRankingMembers(
   members: RankingMember[],
 ): Promise<void> {
   return fbSaveRankingMembers(members);
+}
+
+// Ranking Matches API
+
+export async function getRankingMatches() {
+  return fbGetRankingMatches();
+}
+
+export async function saveRankingMatches(matches: any[]): Promise<void> {
+  return fbSaveRankingMatches(matches);
+}
+
+export async function createMatch(input: {
+  playerA: string;
+  playerB: string;
+  score: string;
+  playedAt?: string;
+  durationMinutes?: number;
+  createdBy: string;
+  createdByUsername?: string;
+}): Promise<MatchRecord> {
+  return fbCreateMatch(input);
+}
+
+export async function deleteMatch(matchId: string): Promise<void> {
+  return fbDeleteMatch(matchId);
+}
+
+export async function getMatches(): Promise<MatchRecord[]> {
+  return fbGetMatches();
 }
 
 // Utilities
