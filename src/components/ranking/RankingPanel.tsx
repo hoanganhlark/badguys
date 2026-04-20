@@ -135,6 +135,12 @@ function formatDisplayName(name: string): { firstName: string; lastName: string 
   };
 }
 
+function getNationText(playerId: number, memberLevelById: Record<number, string>): string {
+  const level = String(memberLevelById[playerId] || "").trim();
+  if (!level) return "--";
+  return level.toUpperCase();
+}
+
 export default function RankingPanel({
   rankings,
   matches,
@@ -216,25 +222,19 @@ export default function RankingPanel({
     key: player.name,
     rank: rankings.findIndex((entry) => entry.id === player.id) + 1,
     player,
-    winRate: getWinRate(player.totalMatches, player.wins),
+    nation: getNationText(player.id, memberLevelById),
   }));
-
-  const athleteFilters = useMemo(
-    () =>
-      filteredRankings
-        .map((player) => player.name)
-        .sort((a, b) => a.localeCompare(b, "vi"))
-        .map((name) => ({ text: name, value: name })),
-    [filteredRankings],
-  );
 
   const rankingColumns: TableColumnsType<(typeof rankingRows)[number]> = [
     {
-      title: t("rankingPanel.rank"),
+      title: (
+        <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+          {t("rankingPanel.rank")}
+        </span>
+      ),
       dataIndex: "rank",
       key: "rank",
       width: 90,
-      sorter: (a, b) => a.rank - b.rank,
       render: (rank: number, row) => {
         const trend = rankTrends[row.player.id];
         let trendText = "-";
@@ -281,13 +281,13 @@ export default function RankingPanel({
       },
     },
     {
-      title: t("rankingPanel.athlete"),
+      title: (
+        <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+          {t("rankingPanel.athlete")}
+        </span>
+      ),
       dataIndex: ["player", "name"],
       key: "name",
-      filters: athleteFilters,
-      filterSearch: true,
-      onFilter: (value, record) => record.player.name === value,
-      sorter: (a, b) => a.player.name.localeCompare(b.player.name, "vi"),
       render: (name: string) => {
         const displayName = formatDisplayName(name);
 
@@ -300,62 +300,83 @@ export default function RankingPanel({
       },
     },
     {
-      title: t("rankingPanel.winRate"),
-      key: "winRate",
-      width: 240,
-      filters: [
-        { text: ">= 70%", value: "high" },
-        { text: "50% - 69%", value: "mid" },
-        { text: "< 50%", value: "low" },
-      ],
-      onFilter: (value, record) => {
-        if (value === "high") return record.winRate >= 70;
-        if (value === "mid") return record.winRate >= 50 && record.winRate < 70;
-        return record.winRate < 50;
-      },
-      sorter: (a, b) => a.winRate - b.winRate,
+      title: (
+        <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+          {t("rankingPanel.nation")}
+        </span>
+      ),
+      key: "nation",
+      width: 100,
+      align: "center",
       render: (_, row) => (
-        <div>
-          <div className="flex items-center justify-between text-[11px] font-medium text-slate-600">
-            <span>{Math.round(row.winRate)}%</span>
-            <span>
-              {row.player.wins}/{row.player.totalMatches}
-            </span>
-          </div>
-          <Progress
-            percent={Math.round(row.winRate)}
-            showInfo={false}
-            strokeColor={getWinRateTone(row.winRate)}
-            size="small"
-          />
+        <div className="inline-flex items-center gap-2">
+          <span
+            className="inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[10px] font-semibold text-white"
+            style={{ backgroundColor: getAvatarColor(row.nation) }}
+          >
+            {row.nation.slice(0, 2)}
+          </span>
+          <span className="text-[11px] text-slate-500">{row.nation}</span>
         </div>
       ),
     },
     {
-      title: t("rankingPanel.rankScore"),
+      title: (
+        <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+          {t("rankingPanel.points")}
+        </span>
+      ),
       key: "rankScore",
       width: 130,
       align: "right",
-      sorter: (a, b) => a.player.rating - b.player.rating,
       render: (_, row) => (
-        <Typography.Text strong style={{ color: "#0369a1" }}>
+        <Typography.Text strong className="text-slate-700">
           {Math.round(row.player.rating).toLocaleString()}
         </Typography.Text>
       ),
+    },
+    {
+      title: (
+        <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+          {t("rankingPanel.form")}
+        </span>
+      ),
+      key: "form",
+      width: 120,
+      align: "right",
+      render: (_, row) => {
+        const winRate = getWinRate(row.player.totalMatches, row.player.wins);
+        return (
+          <div className="w-[90px]">
+            <div className="flex items-center justify-between text-[10px] text-slate-500">
+              <span>{Math.round(winRate)}%</span>
+              <span>
+                {row.player.wins}/{row.player.totalMatches}
+              </span>
+            </div>
+            <Progress
+              percent={Math.round(winRate)}
+              showInfo={false}
+              strokeColor={getWinRateTone(winRate)}
+              size="small"
+            />
+          </div>
+        );
+      },
     },
   ];
 
   return (
     <div className="max-w-5xl space-y-4 md:space-y-6">
-      <div>
-        <div className="mb-3 flex flex-wrap items-center gap-2">
+      <div className="rounded-xl border border-slate-200 bg-white p-3 md:p-4">
+        <div className="mb-3 flex flex-wrap items-center gap-1.5">
           <button
             type="button"
             onClick={() => onSelectCategory(null)}
-            className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+            className={`rounded-sm border px-5 py-2 text-xs font-semibold transition-colors ${
               selectedCategoryId === null
-                ? "bg-sky-600 text-white"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                ? "border-red-500 bg-red-500 text-white"
+                : "border-transparent bg-transparent text-slate-700 hover:bg-slate-100"
             }`}
           >
             {t("rankingPanel.allCategories")}
@@ -365,10 +386,10 @@ export default function RankingPanel({
               key={category.id}
               type="button"
               onClick={() => onSelectCategory(category.id)}
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+              className={`rounded-sm border px-5 py-2 text-xs font-semibold transition-colors ${
                 selectedCategoryId === category.id
-                  ? "bg-sky-600 text-white"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  ? "border-red-500 bg-red-500 text-white"
+                  : "border-transparent bg-transparent text-slate-700 hover:bg-slate-100"
               }`}
             >
               {category.displayName}
@@ -386,8 +407,10 @@ export default function RankingPanel({
           <Table
             columns={rankingColumns}
             dataSource={rankingRows}
+            size="small"
+            showSorterTooltip={false}
             pagination={{
-              defaultPageSize: 5,
+              defaultPageSize: 10,
               pageSizeOptions: ["5", "10", "20", "50"],
               showSizeChanger: true,
               showQuickJumper: true,
@@ -395,7 +418,8 @@ export default function RankingPanel({
               position: ["bottomCenter"],
               showTotal: (total, range) => `${range[0]}-${range[1]} / ${total}`,
             }}
-            scroll={{ x: 600 }}
+            scroll={{ x: 720 }}
+            className="ranking-ui-table"
             onRow={(row) => ({
               onClick: () => onSelectPlayer(row.player),
               style: { cursor: "pointer" },
