@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   App as AntApp,
   Button,
@@ -17,15 +17,13 @@ import {
 } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import Calculator from "./components/calculator/Calculator";
 import ConfigSidebar from "./components/ConfigSidebar";
 import ChangePasswordModal from "./components/ChangePasswordModal";
-import ExpensesSection from "./components/ExpensesSection";
 import AuditPage from "./components/AuditPage";
 import CategoryManagementPage from "./components/CategoryManagementPage";
 import LoginModal from "./components/LoginModal";
-import PlayersSection from "./components/PlayersSection";
 import RankingPage from "./components/RankingPage";
-import ResultCard from "./components/ResultCard";
 import SessionsModal from "./components/SessionsModal";
 import UserManagementPage from "./components/UserManagementPage";
 import AdminRoute from "./components/auth/AdminRoute";
@@ -33,18 +31,12 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
 import { envConfig } from "./env";
 import { useHistoryModal } from "./hooks/useHistoryModal";
+import { loadStoredConfig, saveConfig } from "./lib/platform";
+import type { AppConfig } from "./types";
 import {
-  buildSessionPayload,
-  buildSummaryText,
-  calculateResult,
-  cyclePlayerMode,
-  formatK,
   normalizeKLabels,
-  parsePlayersBulk,
-  playersToBulk,
 } from "./lib/core";
 import {
-  RESET_CONFIRM_TIMEOUT_MS,
   SESSIONS_FETCH_LIMIT,
 } from "./lib/constants";
 import {
@@ -52,26 +44,19 @@ import {
   getRecentSessions,
   isFirebaseReady,
   removeSession,
-  saveDailySummary,
   updateUserPassword,
 } from "./lib/firebase";
 import { hashMd5 } from "./lib/hash";
 import {
-  clearInputDraft,
   copyText,
   formatVisitTimestampUTC7,
-  loadStoredConfig,
-  loadStoredInputDraft,
   markVisitNotifiedToday,
-  saveConfig,
-  saveInputDraft,
   shouldSendVisitNotificationToday,
 } from "./lib/platform";
 import {
   AnalyticsEventName,
   AnalyticsNotificationType,
   AnalyticsParamKey,
-  AnalyticsStatus,
   AnalyticsUserPropertyKey,
   initAnalytics,
   setUserProperties,
@@ -79,8 +64,8 @@ import {
   trackPageView,
   trackRouteChange,
 } from "./lib/analytics";
-import { notifyCopyClicked, notifyGuestVisited } from "./lib/telegram";
-import type { AppConfig, Player, SessionRecord } from "./types";
+import { notifyGuestVisited } from "./lib/telegram";
+import type { SessionRecord } from "./types";
 
 interface LocationState {
   from?: string;
@@ -95,28 +80,13 @@ export default function App() {
 
   const storageScopeKey = currentUser?.userId || "guest";
 
-  const [courtFeeInput, setCourtFeeInput] = useState(
-    () => loadStoredInputDraft(storageScopeKey).courtFeeInput,
-  );
-  const [shuttleCountInput, setShuttleCountInput] = useState(
-    () => loadStoredInputDraft(storageScopeKey).shuttleCountInput,
-  );
-  const [courtCountInput, setCourtCountInput] = useState(
-    () => loadStoredInputDraft(storageScopeKey).courtCountInput,
-  );
-  const [bulkInput, setBulkInput] = useState(
-    () => loadStoredInputDraft(storageScopeKey).bulkInput,
-  );
-  const [players, setPlayers] = useState<Player[]>(() =>
-    parsePlayersBulk(loadStoredInputDraft(storageScopeKey).bulkInput),
-  );
-  const [config, setConfig] = useState<AppConfig>(() =>
+  const [appConfig, setAppConfig] = useState<AppConfig>(() =>
     loadStoredConfig(envConfig.defaultConfig, storageScopeKey),
   );
+
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [sessionsError, setSessionsError] = useState("");
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
-  const [resetArmed, setResetArmed] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [changePasswordError, setChangePasswordError] = useState("");
   const [changePasswordSubmitting, setChangePasswordSubmitting] =
@@ -127,7 +97,6 @@ export default function App() {
     confirmPassword: string;
   }>();
 
-  const resetTimerRef = useRef<number | null>(null);
   const previousPathRef = useRef("");
 
   const {
@@ -141,17 +110,6 @@ export default function App() {
     openRanking,
     closeRanking,
   } = useHistoryModal();
-
-  const courtFee = parseFloat(courtFeeInput) || 0;
-  const shuttleCount = parseFloat(shuttleCountInput) || 0;
-  const courtCount = parseFloat(courtCountInput) || 0;
-
-  const calc = useMemo(
-    () => calculateResult(players, courtFee, shuttleCount, config),
-    [players, courtFee, shuttleCount, config],
-  );
-
-  const showResult = players.length > 0 && calc.total !== 0;
 
   useEffect(() => {
     initAnalytics();
@@ -185,38 +143,6 @@ export default function App() {
     });
   }, [isAuthenticated, currentUser?.role, currentUser?.username]);
 
-  useEffect(() => {
-    saveConfig(config, storageScopeKey);
-  }, [config, storageScopeKey]);
-
-  useEffect(() => {
-    saveInputDraft(
-      {
-        courtFeeInput,
-        shuttleCountInput,
-        courtCountInput,
-        bulkInput,
-      },
-      storageScopeKey,
-    );
-  }, [
-    courtFeeInput,
-    shuttleCountInput,
-    courtCountInput,
-    bulkInput,
-    storageScopeKey,
-  ]);
-
-  useEffect(() => {
-    const draft = loadStoredInputDraft(storageScopeKey);
-    setCourtFeeInput(draft.courtFeeInput);
-    setShuttleCountInput(draft.shuttleCountInput);
-    setCourtCountInput(draft.courtCountInput);
-    setBulkInput(draft.bulkInput);
-    setPlayers(parsePlayersBulk(draft.bulkInput));
-    setConfig(loadStoredConfig(envConfig.defaultConfig, storageScopeKey));
-    setResetArmed(false);
-  }, [storageScopeKey]);
 
   useEffect(() => {
     if (isAdmin) return;
@@ -239,95 +165,18 @@ export default function App() {
     passwordForm.resetFields();
   }, [isAuthenticated]);
 
+  useEffect(() => {
+    saveConfig(appConfig, storageScopeKey);
+  }, [appConfig, storageScopeKey]);
+
+  useEffect(() => {
+    setAppConfig(
+      loadStoredConfig(envConfig.defaultConfig, storageScopeKey),
+    );
+  }, [storageScopeKey]);
+
   function showToast(message: string) {
     messageApi.info(message);
-  }
-
-  function handleBulkInputChange(value: string) {
-    setBulkInput(value);
-    setPlayers(parsePlayersBulk(value));
-  }
-
-  function handleTogglePlayer(index: number) {
-    const next = players.map((player, i) =>
-      i === index ? cyclePlayerMode(player) : player,
-    );
-    setPlayers(next);
-    setBulkInput(playersToBulk(next));
-  }
-
-  function handleRemovePlayer(index: number) {
-    const confirmed = window.confirm(t("common.confirmDelete"));
-    if (!confirmed) return;
-
-    const next = players.filter((_, i) => i !== index);
-    setPlayers(next);
-    setBulkInput(playersToBulk(next));
-  }
-
-  function handleConfigChange(next: AppConfig) {
-    setConfig({
-      ...next,
-      femaleMax: Math.max(0, next.femaleMax || 0),
-      tubePrice: Math.max(0, next.tubePrice || 0),
-      setPrice: Math.max(0, next.setPrice || 0),
-      enableCourtCount: !!next.enableCourtCount,
-    });
-  }
-
-  async function handleCopySummary() {
-    trackEvent(AnalyticsEventName.CalculateSession, {
-      [AnalyticsParamKey.PlayersCount]: players.length,
-      [AnalyticsParamKey.MaleCount]: calc.malesCount,
-      [AnalyticsParamKey.FemaleCount]: calc.femalesCount,
-      [AnalyticsParamKey.TotalFeeK]: calc.total,
-    });
-
-    const summaryText = buildSummaryText(
-      players,
-      config,
-      calc,
-      courtFee,
-      courtCount,
-      shuttleCount,
-    );
-    const payload = buildSessionPayload(
-      summaryText,
-      players,
-      courtFee,
-      courtCount,
-      shuttleCount,
-      config,
-      calc,
-    );
-
-    try {
-      await copyText(summaryText);
-      showToast(t("app.toastCopiedSummary"));
-    } catch {
-      showToast(t("common.copyFailed"));
-      return;
-    }
-
-    if (!isAdmin) {
-      trackEvent(AnalyticsEventName.SendTelegramNotification, {
-        [AnalyticsParamKey.NotificationType]:
-          AnalyticsNotificationType.CopyClicked,
-      });
-      void notifyCopyClicked(summaryText);
-      void saveDailySummary(payload)
-        .then(() => {
-          trackEvent(AnalyticsEventName.SaveSession, {
-            [AnalyticsParamKey.Status]: AnalyticsStatus.Success,
-          });
-        })
-        .catch((error) => {
-          console.warn("Save daily session failed", error);
-          trackEvent(AnalyticsEventName.SaveSession, {
-            [AnalyticsParamKey.Status]: AnalyticsStatus.Failed,
-          });
-        });
-    }
   }
 
   async function loadLastSessions() {
@@ -389,28 +238,14 @@ export default function App() {
     }
   }
 
-  function handleReset() {
-    if (resetArmed) {
-      if (resetTimerRef.current != null) {
-        window.clearTimeout(resetTimerRef.current);
-      }
-      resetTimerRef.current = null;
-      setResetArmed(false);
-      setCourtFeeInput("");
-      setShuttleCountInput("");
-      setCourtCountInput("");
-      setBulkInput("");
-      setPlayers([]);
-      clearInputDraft(storageScopeKey);
-      showToast(t("app.toastClearedData"));
-      return;
-    }
-
-    setResetArmed(true);
-    resetTimerRef.current = window.setTimeout(() => {
-      setResetArmed(false);
-      resetTimerRef.current = null;
-    }, RESET_CONFIRM_TIMEOUT_MS);
+  function handleConfigChange(next: AppConfig) {
+    setAppConfig({
+      ...next,
+      femaleMax: Math.max(0, next.femaleMax || 0),
+      tubePrice: Math.max(0, next.tubePrice || 0),
+      setPrice: Math.max(0, next.setPrice || 0),
+      enableCourtCount: !!next.enableCourtCount,
+    });
   }
 
   async function handleSubmitChangePassword(values: {
@@ -696,53 +531,14 @@ export default function App() {
             ) : null}
           </header>
 
-          <ExpensesSection
-            courtFee={courtFeeInput}
-            shuttleCount={shuttleCountInput}
-            courtCount={courtCountInput}
-            showCourtCount={config.enableCourtCount}
-            onCourtFeeChange={setCourtFeeInput}
-            onShuttleCountChange={setShuttleCountInput}
-            onCourtCountChange={setCourtCountInput}
-          />
-
-          <PlayersSection
-            bulkInput={bulkInput}
-            players={players}
-            onBulkInputChange={handleBulkInputChange}
-            onTogglePlayer={handleTogglePlayer}
-            onRemovePlayer={handleRemovePlayer}
-          />
-
-          <ResultCard
-            visible={showResult}
-            totalLabel={formatK(calc.total)}
-            maleFeeLabel={formatK(calc.mFee)}
-            femaleFeeLabel={formatK(config.femaleMax)}
-            setPriceLabel={formatK(config.setPrice)}
-            onCopy={handleCopySummary}
-          />
-
-          <div className="flex justify-center gap-8">
-            <button
-              type="button"
-              onClick={handleReset}
-              className={`text-xs font-medium transition-colors uppercase ${
-                resetArmed
-                  ? "text-red-600"
-                  : "text-slate-400 hover:text-red-500"
-              }`}
-            >
-              {resetArmed ? t("app.resetConfirm") : t("app.resetData")}
-            </button>
-          </div>
+          <Calculator userId={storageScopeKey} isAdmin={isAdmin} appConfig={appConfig} />
         </div>
       </div>
 
       <ConfigSidebar
         open={configOpen}
         backdropInteractive={!sessionsOpen}
-        config={config}
+        config={appConfig}
         isAdmin={isAdmin}
         currentUsername={currentUser?.username || ""}
         onClose={closeConfig}
