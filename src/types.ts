@@ -82,6 +82,27 @@ export type RankingSettings = {
   metricVisibility: RankingMetricVisibility;
 };
 
+export type RankingCategory = {
+  id: string;
+  name: string;
+  displayName: string;
+  order: number;
+  createdAt?: string;
+};
+
+export type RankingSnapshotEntry = {
+  memberId: number;
+  memberName: string;
+  rank: number;
+  rankScore: number;
+};
+
+export type RankingSnapshot = {
+  id: string;
+  createdAt?: string;
+  ranks: RankingSnapshotEntry[];
+};
+
 export type UserRole = "admin" | "member";
 
 export type AuthUser = {

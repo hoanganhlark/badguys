@@ -13,6 +13,7 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  updateDoc,
   where,
 } from "firebase/firestore";
 import { envConfig } from "../env";
@@ -21,7 +22,10 @@ import type {
   AuditEventRecord,
   MatchRecord,
   RankingMatch,
+  RankingCategory,
   RankingMember,
+  RankingSnapshot,
+  RankingSnapshotEntry,
   SessionPayload,
   SessionRecord,
   UserRecord,
@@ -37,6 +41,8 @@ const RANKING_STATE_DOC_ID = "state";
 const USERS_COLLECTION = "users";
 const MATCHES_COLLECTION = "matches";
 const AUDIT_EVENTS_COLLECTION = "audit-events";
+const RANKING_CATEGORIES_COLLECTION = "ranking-categories";
+const RANKING_SNAPSHOTS_COLLECTION = "ranking-snapshots";
 
 function getSessionDateKey(now?: Date): string {
   const current = now || new Date();
@@ -302,6 +308,246 @@ export async function saveRankingMatches(
     },
     { merge: true },
   );
+}
+
+function mapRankingCategoryRecord(categoryDoc: {
+  id: string;
+  data: () => Record<string, unknown>;
+}): RankingCategory | null {
+  const data = categoryDoc.data();
+  const name = String(data.name || "").trim();
+  const displayName = String(data.displayName || "").trim();
+  const order = Number(data.order);
+
+  if (!name || !displayName) return null;
+
+  return {
+    id: categoryDoc.id,
+    name,
+    displayName,
+    order: Number.isFinite(order) ? order : 0,
+    createdAt:
+      resolveDateLikeToIso(data.clientCreatedAt) ??
+      resolveDateLikeToIso(data.createdAt),
+  };
+}
+
+export function subscribeRankingCategories(
+  onData: (categories: RankingCategory[]) => void,
+  onError?: (error: Error) => void,
+): () => void {
+  const context = ensureFirebase();
+  if (!context.db) {
+    onData([]);
+    return () => {};
+  }
+
+  const categoriesRef = collection(
+    context.db,
+    getCollectionPath(RANKING_CATEGORIES_COLLECTION),
+  );
+  const categoriesQuery = query(categoriesRef, orderBy("order", "asc"));
+
+  return onSnapshot(
+    categoriesQuery,
+    (snapshot) => {
+      const categories = snapshot.docs
+        .map((categoryDoc) => mapRankingCategoryRecord(categoryDoc))
+        .filter((category): category is RankingCategory => category !== null)
+        .sort(
+          (a, b) =>
+            a.order - b.order || a.displayName.localeCompare(b.displayName, "vi"),
+        );
+      onData(categories);
+    },
+    (error) => {
+      if (onError) {
+        onError(error);
+      }
+    },
+  );
+}
+
+export async function createRankingCategory(input: {
+  name: string;
+  displayName: string;
+  order: number;
+}): Promise<RankingCategory> {
+  const context = ensureFirebase();
+  if (!context.db) {
+    throw new Error("Firebase is not configured");
+  }
+
+  const name = String(input.name || "").trim();
+  const displayName = String(input.displayName || "").trim();
+  const order = Number(input.order);
+
+  if (!name) throw new Error("Category name is required");
+  if (!displayName) throw new Error("Category displayName is required");
+  if (!Number.isFinite(order)) throw new Error("Category order is invalid");
+
+  const categoriesRef = collection(
+    context.db,
+    getCollectionPath(RANKING_CATEGORIES_COLLECTION),
+  );
+
+  const createdRef = await addDoc(categoriesRef, {
+    name,
+    displayName,
+    order,
+    createdAt: serverTimestamp(),
+    clientCreatedAt: new Date().toISOString(),
+  });
+
+  return {
+    id: createdRef.id,
+    name,
+    displayName,
+    order,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+export async function updateRankingCategory(
+  id: string,
+  patch: Partial<{ displayName: string; order: number }>,
+): Promise<void> {
+  const context = ensureFirebase();
+  if (!context.db) {
+    throw new Error("Firebase is not configured");
+  }
+
+  const normalizedId = String(id || "").trim();
+  if (!normalizedId) throw new Error("Missing category id");
+
+  const updatePayload: Record<string, unknown> = {
+    updatedAt: serverTimestamp(),
+    clientUpdatedAt: new Date().toISOString(),
+  };
+
+  if (typeof patch.displayName === "string") {
+    const displayName = patch.displayName.trim();
+    if (!displayName) throw new Error("Category displayName is required");
+    updatePayload.displayName = displayName;
+  }
+
+  if (patch.order !== undefined) {
+    const order = Number(patch.order);
+    if (!Number.isFinite(order)) throw new Error("Category order is invalid");
+    updatePayload.order = order;
+  }
+
+  const categoryRef = doc(
+    collection(context.db, getCollectionPath(RANKING_CATEGORIES_COLLECTION)),
+    normalizedId,
+  );
+
+  await updateDoc(categoryRef, updatePayload);
+}
+
+export async function deleteRankingCategory(id: string): Promise<void> {
+  const context = ensureFirebase();
+  if (!context.db) {
+    throw new Error("Firebase is not configured");
+  }
+
+  const normalizedId = String(id || "").trim();
+  if (!normalizedId) throw new Error("Missing category id");
+
+  await deleteDoc(
+    doc(
+      collection(context.db, getCollectionPath(RANKING_CATEGORIES_COLLECTION)),
+      normalizedId,
+    ),
+  );
+}
+
+export async function saveRankingSnapshot(
+  ranks: RankingSnapshotEntry[],
+): Promise<void> {
+  const context = ensureFirebase();
+  if (!context.db) {
+    throw new Error("Firebase is not configured");
+  }
+
+  const normalizedRanks = Array.isArray(ranks)
+    ? ranks
+        .map((entry) => ({
+          memberId: Number(entry.memberId),
+          memberName: String(entry.memberName || "").trim(),
+          rank: Number(entry.rank),
+          rankScore: Number(entry.rankScore),
+        }))
+        .filter(
+          (entry) =>
+            Number.isFinite(entry.memberId) &&
+            !!entry.memberName &&
+            Number.isFinite(entry.rank) &&
+            Number.isFinite(entry.rankScore),
+        )
+    : [];
+
+  const snapshotsRef = collection(
+    context.db,
+    getCollectionPath(RANKING_SNAPSHOTS_COLLECTION),
+  );
+
+  await addDoc(snapshotsRef, {
+    ranks: normalizedRanks,
+    createdAt: serverTimestamp(),
+    clientCreatedAt: new Date().toISOString(),
+  });
+}
+
+export async function getLatestRankingSnapshot(): Promise<RankingSnapshot | null> {
+  const context = ensureFirebase();
+  if (!context.db) {
+    return null;
+  }
+
+  const snapshotsRef = collection(
+    context.db,
+    getCollectionPath(RANKING_SNAPSHOTS_COLLECTION),
+  );
+  const snapshotsQuery = query(
+    snapshotsRef,
+    orderBy("createdAt", "desc"),
+    limit(1),
+  );
+  const snapshot = await getDocs(snapshotsQuery);
+
+  if (snapshot.empty) return null;
+
+  const snapshotDoc = snapshot.docs[0];
+  const data = snapshotDoc.data();
+  const ranksRaw = Array.isArray(data.ranks) ? data.ranks : [];
+  const ranks = ranksRaw
+    .map((entry): RankingSnapshotEntry | null => {
+      const memberId = Number(entry?.memberId);
+      const memberName = String(entry?.memberName || "").trim();
+      const rank = Number(entry?.rank);
+      const rankScore = Number(entry?.rankScore);
+
+      if (
+        !Number.isFinite(memberId) ||
+        !memberName ||
+        !Number.isFinite(rank) ||
+        !Number.isFinite(rankScore)
+      ) {
+        return null;
+      }
+
+      return { memberId, memberName, rank, rankScore };
+    })
+    .filter((entry): entry is RankingSnapshotEntry => entry !== null);
+
+  return {
+    id: snapshotDoc.id,
+    createdAt:
+      resolveDateLikeToIso(data.clientCreatedAt) ??
+      resolveDateLikeToIso(data.createdAt),
+    ranks,
+  };
 }
 
 function normalizeUsernameKey(username: string): string {
