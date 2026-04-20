@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import {
   saveRankingMembers,
   isFirebaseReady,
-} from "../../../lib/firebase";
+} from "../../../lib/api";
 import {
   loadMembersFromStorage,
   saveMembersToStorage,
