@@ -140,6 +140,20 @@ export function saveRankingSettingsToStorage(
   );
 }
 
+/**
+ * Simple hash function to generate deterministic numeric ID from a string.
+ * Uses a FNV-1a like approach but returns a safe 32-bit integer.
+ */
+function hashNameToId(name: string): number {
+  let hash = 2166136261; // FNV offset basis
+  for (let i = 0; i < name.length; i++) {
+    hash ^= name.charCodeAt(i);
+    hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+    hash = hash >>> 0; // Keep as 32-bit unsigned
+  }
+  return Math.abs(hash % 900000000) + 100000000; // Ensure positive, 9-digit ID
+}
+
 export function buildMembersFromMatches(matches: Match[]): Member[] {
   const uniqueNames = new Set<string>();
 
@@ -152,8 +166,8 @@ export function buildMembersFromMatches(matches: Match[]): Member[] {
 
   return [...uniqueNames]
     .sort((a, b) => a.localeCompare(b, "vi"))
-    .map((name, index) => ({
-      id: Date.now() + index,
+    .map((name) => ({
+      id: hashNameToId(name),
       name,
       level: "Lo",
     }));
