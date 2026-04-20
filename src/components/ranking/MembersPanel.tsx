@@ -6,6 +6,7 @@ import {
   UserAddOutlined,
 } from "@ant-design/icons";
 import {
+  Alert,
   Button,
   Card,
   Form,
@@ -70,16 +71,11 @@ export default function MembersPanel({
   );
 
   const categoryOptions =
-    sortedCategories.length > 0
-      ? sortedCategories.map((category) => ({
-          value: category.name,
-          label: category.displayName,
-        }))
-      : [
-          { value: "Yo", label: "Yo" },
-          { value: "Lo", label: "Lo" },
-          { value: "Nè", label: "Nè" },
-        ];
+    sortedCategories.map((category) => ({
+      value: category.name,
+      label: category.displayName,
+    }));
+  const hasCategoryOptions = categoryOptions.length > 0;
 
   const knownCategoryValues = new Set(categoryOptions.map((option) => option.value));
   if (newMember.level && !knownCategoryValues.has(newMember.level)) {
@@ -242,6 +238,10 @@ export default function MembersPanel({
               >
                 <Select
                   options={categoryOptions}
+                  placeholder={
+                    hasCategoryOptions ? undefined : t("categoryPage.noCategories")
+                  }
+                  disabled={!hasCategoryOptions}
                   value={newMember.level}
                   onChange={(value: RankingLevel) =>
                     onSetNewMember({
@@ -256,9 +256,19 @@ export default function MembersPanel({
                 type="primary"
                 htmlType="submit"
                 icon={isEditing ? <SaveOutlined /> : <UserAddOutlined />}
+                disabled={!hasCategoryOptions}
               >
                 {isEditing ? t("membersPanel.save") : t("membersPanel.add")}
               </Button>
+
+              {!hasCategoryOptions ? (
+                <Alert
+                  type="warning"
+                  showIcon
+                  message={t("categoryPage.noCategories")}
+                  description={t("categoryPage.subtitle")}
+                />
+              ) : null}
             </Space>
           </Form>
         </Card>

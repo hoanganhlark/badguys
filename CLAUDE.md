@@ -10,6 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm test` — Run Vitest test suite in watch mode; use `npm test -- --run` for single run
 - `npm test -- path/to/file.test.ts` — Run a specific test file
 - `npm run seed:users` — Seed dev-users collection in Firestore with default test accounts (requires `.env.local`)
+- `npm run seed:ranking-categories` — Seed ranking categories into Firestore (`dev-ranking-categories` by default; pass `-- --prod` for production collection)
 - `npm run migrate:admin-bi` — Migrate all admin user references to 'bi' username in dev-users and dev-matches collections
 
 ## Architecture

@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "test": "vitest",
     "seed:users": "node scripts/seed-dev-users.mjs",
+    "seed:ranking-categories": "node scripts/seed-ranking-categories.mjs",
     "migrate:admin-bi": "node scripts/rename-admin-to-bi.mjs"
   },
   "dependencies": {

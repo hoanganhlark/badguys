@@ -125,14 +125,14 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
       ),
     [categories],
   );
-  const defaultMemberLevel = sortedCategories[0]?.name || "Lo";
+  const defaultMemberLevel = sortedCategories[0]?.name || "";
 
   // Member Form State
   const [isEditing, setIsEditing] = useState<number | null>(null);
   const [newMember, setNewMember] = useState<{
     name: string;
     level: RankingLevel;
-  }>({ name: "", level: "Lo" });
+  }>({ name: "", level: "" });
 
   // Match Form State
   const [matchType, setMatchType] = useState<"singles" | "doubles">("doubles");
@@ -327,7 +327,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
 
     setNewMember((current) => {
       if (!sortedCategories.length) {
-        return current.level ? current : { ...current, level: "Lo" };
+        return current;
       }
 
       const hasCurrentLevel = sortedCategories.some(
@@ -434,7 +434,9 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   // Logic: Thành viên
   const handleAddMember = () => {
     if (!isAdmin) return;
+    if (!sortedCategories.length) return;
     if (!newMember.name.trim()) return;
+    if (!newMember.level.trim()) return;
     if (isEditing) {
       setMembers(
         members.map((m) =>

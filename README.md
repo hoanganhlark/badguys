@@ -71,6 +71,19 @@ npm install
 npm run dev
 ```
 
+## Firestore seed helpers
+
+```bash
+# Seed default ranking categories to dev collection
+npm run seed:ranking-categories
+
+# Seed default ranking categories to production collection
+npm run seed:ranking-categories -- --prod
+
+# Seed default users to dev collection
+npm run seed:users
+```
+
 ## Deployment (GitHub Pages)
 
 The workflow in `.github/workflows/deploy-pages.yml` auto-deploys on push to `main`.
