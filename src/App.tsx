@@ -21,6 +21,7 @@ import ConfigSidebar from "./components/ConfigSidebar";
 import ChangePasswordModal from "./components/ChangePasswordModal";
 import ExpensesSection from "./components/ExpensesSection";
 import AuditPage from "./components/AuditPage";
+import CategoryManagementPage from "./components/CategoryManagementPage";
 import LoginModal from "./components/LoginModal";
 import PlayersSection from "./components/PlayersSection";
 import RankingPage from "./components/RankingPage";
@@ -589,6 +590,14 @@ export default function App() {
     return (
       <AdminRoute>
         <AuditPage />
+      </AdminRoute>
+    );
+  }
+
+  if (location.pathname === "/dashboard/categories") {
+    return (
+      <AdminRoute>
+        <CategoryManagementPage />
       </AdminRoute>
     );
   }

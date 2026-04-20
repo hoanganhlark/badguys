@@ -657,9 +657,11 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
             isAdmin={isAdmin}
             onGoUsers={() => navigate("/dashboard/users")}
             onGoAudit={() => navigate("/dashboard/audit")}
+            onGoCategories={() => navigate("/dashboard/categories")}
             showMatchForm={!isPublicRankingRoute}
             mobileOpen={mobileSidebarOpen}
             onMobileClose={() => setMobileSidebarOpen(false)}
+            categoriesActive={location.pathname === "/dashboard/categories"}
           />
 
           {/* Main Content */}

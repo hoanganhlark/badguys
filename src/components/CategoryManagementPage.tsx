@@ -330,11 +330,13 @@ export default function CategoryManagementPage() {
           isAdmin={isAdmin}
           onGoUsers={() => navigate("/dashboard/users")}
           onGoAudit={() => navigate("/dashboard/audit")}
+          onGoCategories={() => navigate("/dashboard/categories")}
           showMatchForm={true}
           mobileOpen={mobileSidebarOpen}
           onMobileClose={() => setMobileSidebarOpen(false)}
           usersActive={false}
           auditActive={false}
+          categoriesActive={true}
           activeView={null}
         />
 

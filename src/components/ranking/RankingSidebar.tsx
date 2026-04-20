@@ -1,4 +1,5 @@
 import {
+  AppstoreOutlined,
   HomeOutlined,
   PlusCircleOutlined,
   SettingOutlined,
@@ -24,11 +25,13 @@ interface RankingSidebarProps {
   isAdmin: boolean;
   onGoUsers: () => void;
   onGoAudit?: () => void;
+  onGoCategories?: () => void;
   showMatchForm?: boolean;
   mobileOpen: boolean;
   onMobileClose: () => void;
   usersActive?: boolean;
   auditActive?: boolean;
+  categoriesActive?: boolean;
   activeView?: RankingView | null;
 }
 
@@ -39,11 +42,13 @@ export default function RankingSidebar({
   isAdmin,
   onGoUsers,
   onGoAudit,
+  onGoCategories,
   showMatchForm = true,
   mobileOpen,
   onMobileClose,
   usersActive = false,
   auditActive = false,
+  categoriesActive = false,
   activeView,
 }: RankingSidebarProps) {
   const { t } = useTranslation();
@@ -53,6 +58,8 @@ export default function RankingSidebar({
     ? "users"
     : auditActive
       ? "audit"
+      : categoriesActive
+        ? "categories"
       : (highlightedView ?? "ranking");
 
   const menuItems: MenuProps["items"] = [
@@ -91,6 +98,15 @@ export default function RankingSidebar({
                 },
               ]
             : []),
+          ...(onGoCategories
+            ? [
+                {
+                  key: "categories",
+                  icon: <AppstoreOutlined />,
+                  label: t("rankingSidebar.categories"),
+                },
+              ]
+            : []),
         ]
       : []),
     {
@@ -120,6 +136,12 @@ export default function RankingSidebar({
 
     if (key === "audit") {
       onGoAudit?.();
+      onMobileClose();
+      return;
+    }
+
+    if (key === "categories") {
+      onGoCategories?.();
       onMobileClose();
       return;
     }
