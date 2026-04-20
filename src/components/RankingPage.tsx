@@ -80,6 +80,10 @@ function isRankingView(value: string | null): value is RankingView {
   return value === "member" || value === "match-form" || value === "ranking";
 }
 
+function normalizeMemberNameKey(name: string): string {
+  return String(name || "").trim().toLowerCase();
+}
+
 export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   const { currentUser, isAdmin, logout } = useAuth();
   const { t } = useTranslation();
@@ -625,13 +629,20 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     if (!latestSnapshot) return {};
 
     const previousRanksByMemberId = new Map<number, number>();
+    const previousRanksByMemberName = new Map<string, number>();
     latestSnapshot.ranks.forEach((entry) => {
       previousRanksByMemberId.set(entry.memberId, entry.rank);
+      const memberNameKey = normalizeMemberNameKey(entry.memberName);
+      if (memberNameKey && !previousRanksByMemberName.has(memberNameKey)) {
+        previousRanksByMemberName.set(memberNameKey, entry.rank);
+      }
     });
 
     return rankings.reduce<Record<number, number | "NEW">>((acc, player, idx) => {
       const currentRank = idx + 1;
-      const previousRank = previousRanksByMemberId.get(player.id);
+      const previousRank =
+        previousRanksByMemberId.get(player.id) ??
+        previousRanksByMemberName.get(normalizeMemberNameKey(player.name));
       if (previousRank === undefined) {
         acc[player.id] = "NEW";
       } else {
