@@ -1,4 +1,4 @@
-import { Award, Clock, Star, Trash2, User, Users } from "react-feather";
+import { Clock, Trash2, User, Users } from "react-feather";
 import { useMemo } from "react";
 import { Progress, Table, Typography, type TableColumnsType } from "antd";
 import { useTranslation } from "react-i18next";
@@ -7,6 +7,7 @@ import type { AdvancedStats, Match } from "./types";
 interface RankingPanelProps {
   rankings: AdvancedStats[];
   matches: Match[];
+  rankTrends: Record<number, number | "NEW">;
   onSelectPlayer: (player: AdvancedStats) => void;
   onClearHistory: () => void | Promise<void>;
   onDeleteMatch: (matchId: number | string) => void | Promise<void>;
@@ -92,6 +93,7 @@ function formatSet(setText: string): string {
 export default function RankingPanel({
   rankings,
   matches,
+  rankTrends,
   onSelectPlayer,
   onClearHistory,
   onDeleteMatch,
@@ -163,18 +165,30 @@ export default function RankingPanel({
       key: "rank",
       width: 90,
       sorter: (a, b) => a.rank - b.rank,
-      render: (rank: number) => {
-        if (rank === 1) {
-          return <Award className="h-5 w-5 text-amber-500" />;
-        }
-        if (rank === 2) {
-          return <Award className="h-5 w-5 text-slate-400" />;
-        }
-        if (rank === 3) {
-          return <Star className="h-5 w-5 text-orange-400" />;
+      render: (rank: number, row) => {
+        const trend = rankTrends[row.player.id];
+        let trendText = "-";
+        let trendClassName = "text-slate-400";
+
+        if (trend === "NEW") {
+          trendText = "NEW";
+          trendClassName = "text-blue-600";
+        } else if (typeof trend === "number" && trend > 0) {
+          trendText = `▲${trend}`;
+          trendClassName = "text-green-600";
+        } else if (typeof trend === "number" && trend < 0) {
+          trendText = `▼${Math.abs(trend)}`;
+          trendClassName = "text-red-500";
         }
 
-        return <Typography.Text type="secondary">#{rank}</Typography.Text>;
+        return (
+          <div className="leading-tight">
+            <Typography.Text strong>#{rank}</Typography.Text>
+            <div className={`text-[11px] font-semibold ${trendClassName}`}>
+              {trendText}
+            </div>
+          </div>
+        );
       },
     },
     {

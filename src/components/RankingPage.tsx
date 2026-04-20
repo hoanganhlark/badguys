@@ -11,8 +11,10 @@ import {
 import {
   createMatch,
   deleteMatch,
+  getLatestRankingSnapshot,
   getRankingMembers,
   isFirebaseReady,
+  saveRankingSnapshot,
   saveRankingMembers,
   subscribeMatches,
   subscribeUsers,
@@ -46,7 +48,12 @@ import type {
   Member,
   RankingView,
 } from "./ranking/types";
-import type { MatchRecord, RankingLevel, RankingSettings } from "../types";
+import type {
+  MatchRecord,
+  RankingLevel,
+  RankingSettings,
+  RankingSnapshot,
+} from "../types";
 import { Award, BarChart2, Settings } from "react-feather";
 
 interface RankingPageProps {
@@ -102,6 +109,8 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   );
   const mainContentRef = useRef<HTMLElement | null>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [latestSnapshot, setLatestSnapshot] =
+    useState<RankingSnapshot | null>(null);
 
   // Member Form State
   const [isEditing, setIsEditing] = useState<number | null>(null);
@@ -232,6 +241,27 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
       if (unsubscribeMatches) {
         unsubscribeMatches();
       }
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadLatestSnapshot = async () => {
+      try {
+        const snapshot = await getLatestRankingSnapshot();
+        if (mounted) {
+          setLatestSnapshot(snapshot);
+        }
+      } catch (error) {
+        console.error("Failed to load latest ranking snapshot", error);
+      }
+    };
+
+    void loadLatestSnapshot();
+
+    return () => {
+      mounted = false;
     };
   }, []);
 
@@ -381,8 +411,30 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
     if (!confirmed) return;
 
     try {
+      if (rankings.length > 0) {
+        try {
+          await saveRankingSnapshot(
+            rankings.map((player, index) => ({
+              memberId: player.id,
+              memberName: player.name,
+              rank: index + 1,
+              rankScore: player.rankScore,
+            })),
+          );
+        } catch (snapshotError) {
+          console.error("Failed to save ranking snapshot before clear", snapshotError);
+        }
+      }
+
       await Promise.all(matches.map((match) => deleteMatch(String(match.id))));
       setMatches([]);
+
+      try {
+        const snapshot = await getLatestRankingSnapshot();
+        setLatestSnapshot(snapshot);
+      } catch (snapshotError) {
+        console.error("Failed to refresh ranking snapshot", snapshotError);
+      }
     } catch (error) {
       console.error("Failed to clear matches", error);
     }
@@ -510,6 +562,26 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
       })),
     [matches, usernamesById],
   );
+
+  const rankTrends = useMemo<Record<number, number | "NEW">>(() => {
+    if (!latestSnapshot) return {};
+
+    const previousRanksByMemberId = new Map<number, number>();
+    latestSnapshot.ranks.forEach((entry) => {
+      previousRanksByMemberId.set(entry.memberId, entry.rank);
+    });
+
+    return rankings.reduce<Record<number, number | "NEW">>((acc, player, idx) => {
+      const currentRank = idx + 1;
+      const previousRank = previousRanksByMemberId.get(player.id);
+      if (previousRank === undefined) {
+        acc[player.id] = "NEW";
+      } else {
+        acc[player.id] = previousRank - currentRank;
+      }
+      return acc;
+    }, {});
+  }, [latestSnapshot, rankings]);
 
   const currentUserInitial = useMemo(() => {
     if (!currentUser?.username) return "U";
@@ -848,6 +920,7 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
                   <RankingPanel
                     rankings={rankings}
                     matches={matchesForDisplay}
+                    rankTrends={rankTrends}
                     onSelectPlayer={setSelectedPlayer}
                     onClearHistory={handleClearHistory}
                     onDeleteMatch={handleDeleteMatch}
