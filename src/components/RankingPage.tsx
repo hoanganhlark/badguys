@@ -535,11 +535,11 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
 
   const memberLevelById = useMemo<Record<number, string>>(
     () =>
-      members.reduce<Record<number, string>>((acc, member) => {
+      displayMembers.reduce<Record<number, string>>((acc, member) => {
         acc[member.id] = member.level;
         return acc;
       }, {}),
-    [members],
+    [displayMembers],
   );
 
   const currentUserInitial = useMemo(() => {
