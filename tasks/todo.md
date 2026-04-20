@@ -1,322 +1,199 @@
-# Task List: Ant Design Refactor
+# Task List: Rankings Feature
 
-## Checkpoints
+## Task 1 — Types + Firestore service layer
+**Status:** pending  
+**Files:** `src/types.ts`, `src/lib/firebase.ts`  
+**Depends on:** None  
+**Blocks:** Task 2, Task 5
 
-### Checkpoint 1: Main App Is Functional ✓
+Add `RankingCategory`, `RankingSnapshotEntry`, `RankingSnapshot` types to `src/types.ts`
+Add Firebase service functions:
+- `subscribeRankingCategories(onData, onError): () => void`
+- `createRankingCategory(input: { name, displayName, order }): Promise<RankingCategory>`
+- `updateRankingCategory(id, patch: Partial<{displayName, order}>): Promise<void>`
+- `deleteRankingCategory(id): Promise<void>`
+- `saveRankingSnapshot(ranks: RankingSnapshotEntry[]): Promise<void>`
+- `getLatestRankingSnapshot(): Promise<RankingSnapshot | null>`
 
-Main calculator page (non-dashboard routes) works end-to-end.
-
-### Checkpoint 2: Ranking Dashboard Is Functional ✓
-
-Ranking dashboard with all admin pages works end-to-end.
-
-### Checkpoint 3: Full App Refactored & Cleaned Up ✓
-
-All components migrated, custom CSS removed, no console errors.
-
----
-
-## Slice 1: Theme Setup & Foundation
-
-- [x] Set up Ant Design `ConfigProvider` with custom theme tokens in `src/main.tsx`
-- [x] Migrate custom CSS variables and color tokens to theme
-- [x] Preserve Plus Jakarta Sans font family in theme config
-- [x] Verify Ant Design components respect the theme globally
-- [ ] Remove unused Tailwind from global styles if needed
-
-**Files:** `src/main.tsx`, `src/styles.css`
+**Acceptance criteria:**
+- [ ] Functions exported and TypeScript compiles
+- [ ] Functions use `getCollectionPath()` for collection names
+- [ ] Handle missing Firebase gracefully
 
 ---
 
-## Slice 2: Authentication (Non-Dashboard)
+## Task 2 — CategoryManagementPage component
+**Status:** pending  
+**Files:** `src/components/CategoryManagementPage.tsx`  
+**Depends on:** Task 1  
+**Blocks:** Task 3
 
-- [x] Refactor `LoginModal.tsx` → Ant `Modal` + `Form` + `Input`
-- [x] Refactor `LoginPage.tsx` → Ant `Form` + `Input` on a full page
-- [x] Implement username/password form submission
-- [x] Implement error display via Form.Item validation
-- [x] Implement loading state on submit button
-- [ ] Test login flow end-to-end
-- [ ] Test password validation works
-- [ ] Test submit button loading state
+Create new admin page mirroring UserManagementPage pattern:
+- Copy `DASHBOARD_APPBAR_STYLE` from UserManagementPage
+- Import RankingSidebar with `categoriesActive` flag
+- Subscribe to categories with `subscribeRankingCategories`
+- Form: displayName + order inputs
+- Ant Design Table listing categories
+- Inline edit: click row to edit displayName/order
+- Delete with Popconfirm
+- Loading/error states with Spin/Alert
 
-**Files:** `src/components/LoginModal.tsx`, `src/components/LoginPage.tsx`
-
-**Depends on:** Slice 1
-
----
-
-## Slice 3: Main App Layout & Sidebar Config
-
-- [x] Refactor `App.tsx` topbar → Ant `Layout.Header` + `Dropdown` menus
-- [x] Replace hand-built ranking dropdown menu with Ant `Dropdown`
-- [x] Replace hand-built user dropdown menu with Ant `Dropdown`
-- [x] Refactor `ConfigSidebar.tsx` → Ant `Drawer` + `Switch` + `InputNumber`
-- [x] Extract Change Password modal to separate component using Ant `Modal` + `Form`
-- [x] Replace `<Toast>` component calls with `message` API
-- [x] Update all toast calls in App.tsx to use `message.success()` / `message.info()`
-- [ ] Test sidebar open/close
-- [ ] Test config values persist to localStorage
-- [ ] Test password modal works
-- [ ] Test toast notifications appear
-
-**Files:** `src/App.tsx`, `src/components/ConfigSidebar.tsx`, `src/components/Toast.tsx`
-
-**Depends on:** Slice 1, Slice 2
+**Acceptance criteria:**
+- [ ] Page loads categories from Firestore
+- [ ] Admin can create new category
+- [ ] Admin can edit displayName and order
+- [ ] Admin can delete category
+- [ ] Page has loading + error states
 
 ---
 
-## Slice 4: Calculator Input & Output (Main Page)
+## Task 3 — Wire into routing + sidebar
+**Status:** pending  
+**Files:** `src/App.tsx`, `src/components/ranking/RankingSidebar.tsx`, `src/components/RankingPage.tsx`  
+**Depends on:** Task 2  
+**Blocks:** None
 
-- [x] Refactor `ExpensesSection.tsx` → Ant `InputNumber` fields
-- [x] Refactor `PlayersSection.tsx` → Ant `Input.TextArea` + `Tag` components
-- [x] Keep click-to-toggle player mode logic on Tag click
-- [x] Keep remove button on Tag (onClose prop)
-- [x] Keep duplicate detection warning as Alert
-- [x] Refactor `ResultCard.tsx` → Ant `Card` + `Statistic` + `Divider`
-- [ ] Test input fields accept values and trigger state changes
-- [ ] Test player tags toggle mode and remove
-- [ ] Test fees calculate correctly
-- [ ] Test copy button sends to clipboard
+In App.tsx:
+- [ ] Add route: `/dashboard/categories` → `<AdminRoute><CategoryManagementPage /></AdminRoute>`
 
-**Files:** `src/components/ExpensesSection.tsx`, `src/components/PlayersSection.tsx`, `src/components/ResultCard.tsx`
+In RankingSidebar.tsx:
+- [ ] Add prop: `onGoCategories?: () => void`
+- [ ] Add prop: `categoriesActive?: boolean`
+- [ ] Add menu item (admin-only): key="categories", icon=<AppstoreOutlined />, label=t("rankingSidebar.categories")
+- [ ] Handle "categories" in handleMenuSelect
 
-**Depends on:** Slice 1, Slice 3
+In RankingPage.tsx:
+- [ ] Pass `onGoCategories={() => navigate("/dashboard/categories")}`
+- [ ] Pass `categoriesActive={location.pathname === "/dashboard/categories"}`
 
----
-
-## Slice 5: Session History Modal
-
-- [x] Refactor `SessionsModal.tsx` → Ant `Modal` + `List` (or Card per session)
-- [x] Implement loading state with Spin
-- [x] Implement empty state with Empty component
-- [x] Implement error state with Alert
-- [x] Keep copy summary text with normalization logic intact
-- [x] Implement delete session with Popconfirm
-- [ ] Test modal open/close
-- [ ] Test sessions list loads
-- [ ] Test delete action works with confirmation
-- [ ] Test copy preserves `kLabels` normalization
-
-**Files:** `src/components/SessionsModal.tsx`
-
-**Depends on:** Slice 1, Slice 4
+**Acceptance criteria:**
+- [ ] Sidebar menu item appears only for admins
+- [ ] Clicking "Categories" navigates to `/dashboard/categories`
+- [ ] Non-admins cannot access `/dashboard/categories` (redirected by AdminRoute)
 
 ---
 
-## Checkpoint 1: Main App Is Functional
+## Task 4 — Enhanced RankingPanel: category tabs + avatars
+**Status:** pending  
+**Files:** `src/components/ranking/RankingPanel.tsx`, `src/components/RankingPage.tsx`  
+**Depends on:** Task 5 (for trend indicators)  
+**Blocks:** None
 
-Test the main calculator page:
+In RankingPage.tsx:
+- [ ] Subscribe to categories with `subscribeRankingCategories`
+- [ ] Store in state: `categories`, `selectedCategoryId`
+- [ ] Pass to RankingPanel: `categories`, `selectedCategoryId`, `onSelectCategory`
 
-```bash
-npm run dev
-# Visit http://localhost:5173
-# Test: Enter players, change config, copy summary, open sidebar, save session
+In RankingPanel.tsx:
+- [ ] Add category tab bar above table
+  - [ ] "All" tab as first (unfiltered)
+  - [ ] One tab per category, sorted by order
+  - [ ] Active: primary color, white text, rounded
+  - [ ] Inactive: gray text
+- [ ] Filter rankings by `member.level === selectedCategory.name`
+- [ ] Add Avatar column (before Name)
+  - [ ] Show first letter of first name
+  - [ ] Auto-color from name hash (9-color palette)
+  - [ ] Consistent color per name
+- [ ] Update Name column: first name normal, LAST NAME bold uppercase
+- [ ] Update Points column: format with `toLocaleString()` commas, right-aligned
+- [ ] Rank column: add trend indicator below rank number (from Task 5)
+
+**Avatar color hash function:**
+```ts
+const AVATAR_COLORS = [
+  "#ef5350","#ec407a","#ab47bc","#7e57c2",
+  "#42a5f5","#26a69a","#66bb6a","#ffa726","#ff7043",
+];
+function getAvatarColor(name: string): string {
+  let hash = 0;
+  for (const ch of name) hash = (hash * 31 + ch.charCodeAt(0)) & 0xffffffff;
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
 ```
 
----
-
-## Slice 6: Dashboard Navigation & Layout
-
-- [x] Refactor `RankingSidebar.tsx` → Ant `Drawer` (mobile) + `Layout.Sider` + `Menu` (desktop)
-- [x] Refactor `RankingPage.tsx` layout → Ant `Layout` + `Layout.Header` + `Layout.Sider` + `Layout.Content`
-- [x] Replace topbar dropdowns with Ant `Dropdown`
-- [x] Keep mobile hamburger button to toggle drawer
-- [x] Keep responsive behavior (drawer on mobile, static sidebar on desktop)
-- [ ] Test sidebar toggle on mobile
-- [ ] Test navigation buttons work
-- [ ] Test responsive layout behavior
-
-**Files:** `src/components/RankingPage.tsx`, `src/components/ranking/RankingSidebar.tsx`
-
-**Depends on:** Slice 1, Slice 3
+**Acceptance criteria:**
+- [ ] Category tabs appear and filter rankings correctly
+- [ ] Avatar shows correct first letter + consistent color
+- [ ] Name displays first/last name formatting
+- [ ] Points are comma-formatted and right-aligned
 
 ---
 
-## Slice 7: Ranking Members Panel
+## Task 5 — Ranking snapshots + trend indicators
+**Status:** pending  
+**Files:** `src/components/RankingPage.tsx`, `src/components/ranking/RankingPanel.tsx`  
+**Depends on:** Task 1  
+**Blocks:** Task 4 (for the UI)
 
-- [x] Refactor `MembersPanel.tsx` → Ant `Form` (add/edit form)
-- [x] Replace table rendering → Ant `Table` with 3 columns (Name, Level/Rank, Actions)
-- [x] Replace rank badges → Ant `Tag` with color prop
-- [x] Implement edit action (inline edit or modal form)
-- [x] Implement delete action with Popconfirm
-- [x] Keep CRUD logic intact
-- [ ] Test add member form submission
-- [ ] Test edit member level
-- [ ] Test delete member with confirmation dialog
-- [ ] Test rank badge colors display
+In RankingPage.tsx:
+- [ ] Load latest snapshot on mount: `getLatestRankingSnapshot()` → store in state
+- [ ] When clearing history:
+  - [ ] Before clearing, call `saveRankingSnapshot(currentRankings.map((r, i) => ...))`
+  - [ ] Then clear matches as before
+  - [ ] Reload snapshot after clear
+- [ ] Compute `rankTrends: Record<number, number | "NEW">`
+  - [ ] For each member: if not in snapshot → "NEW"
+  - [ ] If in snapshot: previousRank - currentRank
+- [ ] Pass `rankTrends` to RankingPanel
 
-**Files:** `src/components/ranking/MembersPanel.tsx`
+In RankingPanel.tsx:
+- [ ] In rank column, render trend indicator below rank number
+  - [ ] `change > 0`: `▲{change}` in green (`text-green-600`)
+  - [ ] `change < 0`: `▼{Math.abs(change)}` in red (`text-red-500`)
+  - [ ] `change === 0`: `-` in gray (`text-slate-400`)
+  - [ ] `"NEW"`: blue badge `NEW` (`text-blue-600`)
 
-**Depends on:** Slice 1, Slice 6
-
----
-
-## Slice 8: Ranking Matches Panel
-
-- [x] Refactor `MatchFormPanel.tsx` → Ant `Form` + form components
-- [x] Replace match type toggle → Ant `Radio.Group` with `Radio.Button`
-- [x] Replace player selects → Ant `Select` components
-- [x] Replace datetime input → Ant `DatePicker` with `showTime`
-- [x] Replace score number inputs → Ant `InputNumber`
-- [x] Keep "Add Set" button logic intact
-- [ ] Test match type toggle works
-- [ ] Test player selection works
-- [ ] Test datetime and score inputs work
-- [ ] Test form submission updates Firebase
-
-**Files:** `src/components/ranking/MatchFormPanel.tsx`
-
-**Depends on:** Slice 1, Slice 6, Slice 7
+**Acceptance criteria:**
+- [ ] After clearing history, snapshot is saved to Firestore
+- [ ] Re-entering ranking page shows trend indicators
+- [ ] Members not in previous snapshot show "NEW"
+- [ ] Rank changes (▲/▼/-) display correctly
 
 ---
 
-## Slice 9: Ranking Display Panel
+## Task 6 — i18n strings
+**Status:** pending  
+**Files:** `src/i18n/resources.ts`  
+**Depends on:** None (can do anytime)  
+**Blocks:** None
 
-- [x] Refactor `RankingPanel.tsx` → unified Ant `Table` (replaces dual mobile/desktop rendering)
-- [x] Replace custom progress bars → Ant `Progress` component
-- [x] Implement table columns: Rank, Name, Win Rate, Score
-- [x] Implement horizontal scroll for mobile: `<Table scroll={{ x: 600 }}>`
-- [x] Keep click-for-stats behavior (navigate to player detail modal)
-- [x] Keep match history display logic
-- [ ] Test table renders all columns
-- [ ] Test progress bars show correct values
-- [ ] Test responsive scrolling on narrow screens
-- [ ] Test match history displays with dates
+Add Vietnamese translations:
+- [ ] `categoryPage.title`: "Quản lý hạng"
+- [ ] `categoryPage.subtitle`: "Quản lý các hạng đấu trong hệ thống xếp hạng."
+- [ ] `categoryPage.createTitle`: "Thêm hạng mới"
+- [ ] `categoryPage.name`: "Tên hạng (key)"
+- [ ] `categoryPage.displayName`: "Tên hiển thị"
+- [ ] `categoryPage.order`: "Thứ tự"
+- [ ] `categoryPage.createButton`: "Thêm hạng"
+- [ ] `categoryPage.creating`: "Đang thêm..."
+- [ ] `categoryPage.delete`: "Xóa"
+- [ ] `categoryPage.menu`: "Mở menu bảng điều khiển"
+- [ ] `categoryPage.loadFailed`: "Không tải được danh sách hạng."
+- [ ] `categoryPage.createFailed`: "Thêm hạng thất bại."
+- [ ] `categoryPage.deleteFailed`: "Xóa hạng thất bại."
+- [ ] `categoryPage.noCategories`: "Chưa có hạng nào."
+- [ ] `rankingSidebar.categories`: "Quản lý hạng"
+- [ ] `rankingPanel.allCategories`: "Tất cả"
+- [ ] `rankingPanel.rankTrend`: "Xu hướng"
+- [ ] `rankingPanel.noRankings`: "Chưa có dữ liệu xếp hạng."
 
-**Files:** `src/components/ranking/RankingPanel.tsx`
-
-**Depends on:** Slice 1, Slice 6, Slice 7, Slice 8
-
----
-
-## Slice 10: Player Stats Modal
-
-- [x] Refactor `PlayerStatsModal.tsx` → Ant `Modal` + `Progress` + `Collapse`
-- [x] Replace custom expandable sections → Ant `Collapse` panels
-- [x] Replace custom progress bars → Ant `Progress`
-- [x] Keep metric calculations intact
-- [ ] Test modal open/close
-- [ ] Test metric rows display with progress bars
-- [ ] Test accordion expand/collapse works
-- [ ] Test formula/explanation sections render
-
-**Files:** `src/components/ranking/PlayerStatsModal.tsx`
-
-**Depends on:** Slice 1, Slice 6, Slice 9
+**Acceptance criteria:**
+- [ ] All strings added to i18n resources
+- [ ] App compiles with no missing translation warnings
 
 ---
 
-## Checkpoint 2: Ranking Dashboard Is Functional
+## Summary
 
-Test the ranking dashboard workflow:
+| Task | Status | Depends | Blocks |
+|------|--------|---------|--------|
+| 1. Types + Firebase | pending | — | 2, 5 |
+| 2. CategoryManagementPage | pending | 1 | 3 |
+| 3. Routing + Sidebar | pending | 2 | — |
+| 4. RankingPanel Tabs + Avatars | pending | 5 | — |
+| 5. Snapshots + Trends | pending | 1 | 4 |
+| 6. i18n Strings | pending | — | — |
 
-```bash
-npm run dev
-# Navigate to /dashboard/ranking
-# Test: Add member, record match, view rankings, click player for stats, mobile sidebar toggle
-```
-
----
-
-## Slice 11: Audit Log Page
-
-- [x] Refactor `AuditPage.tsx` → Ant `Layout` + `Select` (filters) + `Table`
-- [x] Implement filter by user: Ant `Select` dropdown
-- [x] Implement filter by event type: Ant `Select` dropdown
-- [x] Replace table rendering → Ant `Table` with 7 columns (Time, Type, Event, User, Role, Path, Params)
-- [x] Keep sorting and pagination logic intact
-- [ ] Test filter dropdowns work
-- [ ] Test table updates based on filters
-- [ ] Test pagination works if logs are long
-
-**Files:** `src/components/AuditPage.tsx`
-
-**Depends on:** Slice 1, Slice 6
-
----
-
-## Slice 12: User Management Page
-
-- [x] Refactor `UserManagementPage.tsx` → Ant `Form` (create user) + `Table` (users list)
-- [x] Implement create user form: Ant `Form` + `Input` + `Input.Password` + `Select` (role) + `Button`
-- [x] Replace users table rendering → Ant `Table` with 5 columns (Username, Role, Created At, Last Login, Actions)
-- [x] Implement inline role change: table cell renders Ant `Select`
-- [x] Implement lock/unlock action: table cell renders `Button` with Popconfirm
-- [x] Implement delete action: table cell renders `Button` with Popconfirm
-- [x] Keep CRUD logic intact
-- [ ] Test create user form submission
-- [ ] Test inline role change updates table
-- [ ] Test lock/delete with confirmation dialogs
-- [ ] Test own account is protected from delete/lock
-
-**Files:** `src/components/UserManagementPage.tsx`
-
-**Depends on:** Slice 1, Slice 6
-
----
-
-## Slice 13: Error Boundary
-
-- [x] Refactor `ErrorBoundary.tsx` → Ant `Result` + `Button`
-- [x] Implement error state display with `Result` component (status="error")
-- [x] Implement reload button with `Button` component
-- [x] Keep error catching logic intact
-- [ ] Test error boundary catches errors
-- [ ] Test reload button resets the app
-
-**Files:** `src/components/ErrorBoundary.tsx`
-
-**Depends on:** Slice 1
-
----
-
-## Slice 14: Cleanup & Custom CSS Migration
-
-- [x] Review `src/styles.css` and identify obsolete custom CSS classes
-- [x] Remove `.app-topbar`, `.sidebar-panel`, `.panel-backdrop` (replaced by Ant Layout/Drawer)
-- [x] Remove `.dashboard-*`, `.card`, `.input-minimal` (replaced by Ant components)
-- [ ] Keep `.animate-fade` keyframe if needed, or replace with Ant motion tokens
-- [ ] Keep font `@import` and global body styles (bg, font-family)
-- [x] Verify no broken className references in components
-- [ ] Search codebase for any remaining Tailwind utility classes that should stay
-- [ ] Test no console errors after CSS cleanup
-- [ ] Verify no visual regressions across all pages
-
-**Files:** `src/styles.css`, all components
-
-**Depends on:** Slices 1–13
-
----
-
-## Checkpoint 3: Full App Refactored & Cleaned Up
-
-Test all routes and verify completeness:
-
-```bash
-npm run dev
-# Test:
-# - / (calculator page)
-# - /login (login page)
-# - /dashboard/ranking (dashboard)
-# - /dashboard/audit (audit log, admin only)
-# - /dashboard/users (user management, admin only)
-# - /ranking (public ranking view)
-# - Mobile and desktop viewports
-# - Telegram notifications (if configured)
-```
-
-Run production build:
-
-```bash
-npm run build
-npm run preview
-```
-
-Verify:
-
-- ✅ No console errors
-- ✅ All pages render correctly
-- ✅ All interactions work
-- ✅ Mobile responsive design intact
-- ✅ Production build succeeds
-- ✅ Custom CSS minimal (only global styles remain)
+**Critical path:** 1 → 2 → 3 (and 1 → 5 → 4)  
+**Parallel work:** 6 can be done alongside any task
