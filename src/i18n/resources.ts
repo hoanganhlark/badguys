@@ -209,7 +209,7 @@ export const resources = {
         topRank: "Hạng cao nhất",
         loading: "Đang tải dữ liệu xếp hạng...",
         rankingConfig: "Cấu hình bảng xếp hạng",
-        penaltyCoefficient: "Hệ số phạt",
+        penaltyCoefficient: "Hệ số điều chỉnh",
         showMetricsInModal: "Hiển thị chỉ số trong modal",
         skill: "Kỹ năng",
         stability: "Độ ổn định",
@@ -281,6 +281,7 @@ export const resources = {
         action: "Thao tác",
       },
       playerStats: {
+        ratingScore: "Điểm kĩ năng",
         veryStable: "Rất ổn định",
         normal: "Bình thường",
         volatile: "Thất thường",
@@ -304,10 +305,10 @@ export const resources = {
         progressShown: "Progress hiển thị: {{value}}%",
         formulaTitle: "Công thức điểm xếp hạng:",
         formulaText:
-          "Điểm xếp hạng = Kỹ năng - (Độ bất định x Phong độ ổn định x {{penalty}} x Động lực)",
+          "Điểm xếp hạng = Kỹ năng - (Độ bất định x Phong độ ổn định x Hệ số điều chỉnh ({{penalty}}) x Động lực)",
         simpleExplanation: "Hiểu đơn giản",
         simpleText:
-          "Điểm tăng khi kỹ năng cao, giảm khi dữ liệu chưa ổn định (RD/Vol cao). Động lực thấp sẽ giảm mức phạt.",
+          "Điểm tăng khi kỹ năng cao, giảm khi dữ liệu chưa ổn định (RD/Vol cao). Tần suất thi đấu gần đây cũng ảnh hưởng đến kết quả đánh giá.",
         descriptionSkill:
           "Điểm kỹ năng theo Glicko-2. Thắng đối thủ mạnh giúp tăng điểm nhanh hơn.",
         descriptionStability:

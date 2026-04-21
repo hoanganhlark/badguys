@@ -94,7 +94,7 @@ export default function PlayerStatsModal({
             {stats.name}
           </Typography.Text>
           <Typography.Text type="secondary">
-            {t("playerStats.rating")}: {Math.round(stats.rating)}
+            {t("playerStats.ratingScore")}: {Math.round(stats.rating)}
           </Typography.Text>
         </Space>
       }
