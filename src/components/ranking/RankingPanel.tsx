@@ -220,7 +220,7 @@ function RankingPanel({
       align: "right",
       render: (_, row) => (
         <Typography.Text strong className="text-slate-700">
-          {row.player.rating.toFixed(2)}
+          {Math.round(row.player.rating)}
         </Typography.Text>
       ),
     },

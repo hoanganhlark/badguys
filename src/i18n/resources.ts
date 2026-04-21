@@ -22,8 +22,7 @@ export const resources = {
         loggedIn: "Đăng nhập: {{username}} ({{role}})",
         toastCopiedSummary: "Đã sao chép bảng kê! ✨",
         toastMissingSessionId: "Thiếu mã buổi cần xóa.",
-        toastSupabaseNotReady:
-          "Chưa thể xóa lúc này. Dịch vụ chưa sẵn sàng.",
+        toastSupabaseNotReady: "Chưa thể xóa lúc này. Dịch vụ chưa sẵn sàng.",
         toastDeletedSession: "Đã xóa buổi khỏi lịch sử.",
         toastDeleteFailed: "Xóa thất bại. Vui lòng thử lại.",
         toastCopiedNote: "Đã copy note!",
@@ -222,6 +221,8 @@ export const resources = {
         toastMatchSaved: "Đã lưu kết quả",
       },
       rankingPanel: {
+        ratingScore: "Điểm kĩ năng",
+        rankingScore: "Điểm xếp hạng",
         rank: "Hạng",
         rankTrend: "Xu hướng",
         athlete: "Vận động viên",
