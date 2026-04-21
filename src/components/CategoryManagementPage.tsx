@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState } from "react";
-import { MenuOutlined } from "@ant-design/icons";
+import { useState } from "react";
 import { Layers } from "react-feather";
 import {
   Alert,
@@ -8,32 +7,19 @@ import {
   Form,
   Input,
   InputNumber,
-  Layout,
   Popconfirm,
   Table,
   Typography,
   type TableColumnsType,
 } from "antd";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 import { useRankingCategories } from "../hooks/queries";
 import type { RankingCategory } from "../types";
 import { useAuth } from "../context/AuthContext";
-import RankingSidebar from "./ranking/RankingSidebar";
-import type { RankingView } from "./ranking/types";
-
-const DASHBOARD_APPBAR_STYLE = {
-  position: "sticky" as const,
-  top: 0,
-  zIndex: 55,
-  height: 56,
-  lineHeight: "56px",
-  padding: "0 16px",
-  borderBottom: "1px solid #e2e8f0",
-  background: "rgba(250, 250, 250, 0.92)",
-  backdropFilter: "blur(8px)",
-  boxShadow: "0 2px 12px rgba(15, 23, 42, 0.08)",
-};
+import DashboardPageLayout from "./dashboard/DashboardPageLayout";
+import { DashboardPageProvider } from "./dashboard/DashboardPageContext";
+import DashboardSectionHeader from "./dashboard/DashboardSectionHeader";
+import DashboardSummaryCards from "./dashboard/DashboardSummaryCards";
 
 function buildCategoryName(displayName: string): string {
   const slug = displayName
@@ -47,7 +33,6 @@ function buildCategoryName(displayName: string): string {
 }
 
 export default function CategoryManagementPage() {
-  const navigate = useNavigate();
   const { t } = useTranslation();
   const { currentUser } = useAuth();
 
@@ -62,50 +47,14 @@ export default function CategoryManagementPage() {
     isUpdating,
   } = useRankingCategories();
 
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [newDisplayName, setNewDisplayName] = useState("");
   const [newOrder, setNewOrder] = useState<number>(1);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingDisplayName, setEditingDisplayName] = useState("");
   const [editingOrder, setEditingOrder] = useState<number>(1);
   const [localError, setLocalError] = useState("");
-  const mainContentRef = useRef<HTMLElement | null>(null);
 
   const isAdmin = currentUser?.role === "admin";
-
-  useEffect(() => {
-    const container = mainContentRef.current;
-    if (!container) return;
-
-    const handleFocusIn = (event: FocusEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (!target) return;
-      if (
-        !(
-          target instanceof HTMLInputElement ||
-          target instanceof HTMLSelectElement ||
-          target instanceof HTMLTextAreaElement
-        )
-      ) {
-        return;
-      }
-
-      window.setTimeout(() => {
-        target.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-          inline: "nearest",
-        });
-      }, 220);
-    };
-
-    container.addEventListener("focusin", handleFocusIn);
-    return () => container.removeEventListener("focusin", handleFocusIn);
-  }, []);
-
-  const handleSetDashboardView = (view: RankingView) => {
-    navigate(`/dashboard/${view}`);
-  };
 
   async function handleCreateCategory() {
     const displayName = newDisplayName.trim();
@@ -275,142 +224,107 @@ export default function CategoryManagementPage() {
   ];
 
   return (
-    <Layout style={{ minHeight: "100vh", background: "transparent" }}>
-      <Layout.Header style={DASHBOARD_APPBAR_STYLE}>
-        <div className="flex h-14 items-center justify-between">
-          <div>
-            {!mobileSidebarOpen ? (
-              <Button
-                type="default"
-                shape="circle"
-                icon={<MenuOutlined />}
-                onClick={() => setMobileSidebarOpen(true)}
-                className="md:hidden"
-                aria-label={t("categoryPage.menu")}
+    <DashboardPageProvider
+      value={{
+        pageTitle: t("categoryPage.title"),
+        menuAriaLabel: t("categoryPage.menu"),
+        categoriesActive: true,
+        showCategoriesLink: true,
+      }}
+    >
+      <DashboardPageLayout>
+        <div className="mx-auto max-w-7xl space-y-5 md:space-y-6">
+          <DashboardSectionHeader
+            icon={<Layers className="h-6 w-6 text-sky-600 md:h-8 md:w-8" />}
+            title={t("categoryPage.title")}
+            subtitle={t("categoryPage.subtitle")}
+          />
+
+          <DashboardSummaryCards
+            items={[
+              {
+                key: "total-categories",
+                label: t("categoryPage.title"),
+                value: categories.length,
+              },
+            ]}
+            className="grid-cols-1 md:max-w-xs"
+            loading={isLoading}
+          />
+
+          <Card title={t("categoryPage.createTitle")}>
+            <Form
+              layout="vertical"
+              requiredMark={false}
+              onFinish={handleCreateCategory}
+            >
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                <Form.Item
+                  label={t("categoryPage.displayName")}
+                  style={{ marginBottom: 0 }}
+                >
+                  <Input
+                    value={newDisplayName}
+                    onChange={(event) => setNewDisplayName(event.target.value)}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  label={t("categoryPage.order")}
+                  style={{ marginBottom: 0 }}
+                >
+                  <InputNumber
+                    value={newOrder}
+                    onChange={(value) => setNewOrder(Number(value ?? 0))}
+                    style={{ width: "100%" }}
+                  />
+                </Form.Item>
+
+                <Form.Item label=" " style={{ marginBottom: 0 }}>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={isCreating}
+                    disabled={!isAdmin || !newDisplayName.trim()}
+                    block
+                  >
+                    {isCreating
+                      ? t("categoryPage.creating")
+                      : t("categoryPage.createButton")}
+                  </Button>
+                </Form.Item>
+              </div>
+            </Form>
+          </Card>
+
+          <Card title={t("categoryPage.title")}>
+            {error || localError ? (
+              <Alert
+                className="mb-3"
+                message={
+                  error?.message || localError || t("categoryPage.loadFailed")
+                }
+                type="error"
+                showIcon
               />
             ) : null}
-          </div>
-          <Typography.Text className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            {t("categoryPage.title")}
-          </Typography.Text>
+
+            <Table
+              rowKey="id"
+              columns={columns}
+              dataSource={categories}
+              loading={isLoading}
+              locale={{ emptyText: t("categoryPage.noCategories") }}
+              scroll={{ x: 720 }}
+              onRow={(record) => ({
+                onClick: () => startEdit(record),
+                style: { cursor: isAdmin ? "pointer" : "default" },
+              })}
+              pagination={false}
+            />
+          </Card>
         </div>
-      </Layout.Header>
-
-      <Layout
-        className="flex min-h-0 flex-col md:flex-row"
-        style={{ background: "transparent" }}
-      >
-        <RankingSidebar
-          currentView="ranking"
-          onSetView={handleSetDashboardView}
-          onGoHome={() => navigate("/")}
-          isAdmin={isAdmin}
-          onGoUsers={() => navigate("/dashboard/users")}
-          onGoAudit={() => navigate("/dashboard/audit")}
-          onGoCategories={() => navigate("/dashboard/categories")}
-          showMatchForm={true}
-          mobileOpen={mobileSidebarOpen}
-          onMobileClose={() => setMobileSidebarOpen(false)}
-          usersActive={false}
-          auditActive={false}
-          categoriesActive={true}
-          activeView={null}
-        />
-
-        <Layout.Content
-          ref={mainContentRef}
-          className="flex-1 overflow-auto px-4 py-4 md:p-8"
-          style={{
-            paddingBottom: "calc(6rem + var(--mobile-keyboard-inset, 0px))",
-          }}
-        >
-          <div className="mx-auto max-w-7xl space-y-5 md:space-y-6">
-            <header className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm md:px-6 md:py-5">
-              <h1 className="text-xl md:text-3xl font-bold text-slate-900 inline-flex items-center gap-3">
-                <Layers className="h-6 w-6 md:h-8 md:w-8 text-sky-600" />
-                {t("categoryPage.title")}
-              </h1>
-              <p className="mt-1.5 text-xs md:text-sm text-slate-500">
-                {t("categoryPage.subtitle")}
-              </p>
-            </header>
-
-            <Card title={t("categoryPage.createTitle")}>
-              <Form
-                layout="vertical"
-                requiredMark={false}
-                onFinish={handleCreateCategory}
-              >
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                  <Form.Item
-                    label={t("categoryPage.displayName")}
-                    style={{ marginBottom: 0 }}
-                  >
-                    <Input
-                      value={newDisplayName}
-                      onChange={(event) =>
-                        setNewDisplayName(event.target.value)
-                      }
-                    />
-                  </Form.Item>
-
-                  <Form.Item
-                    label={t("categoryPage.order")}
-                    style={{ marginBottom: 0 }}
-                  >
-                    <InputNumber
-                      value={newOrder}
-                      onChange={(value) => setNewOrder(Number(value ?? 0))}
-                      style={{ width: "100%" }}
-                    />
-                  </Form.Item>
-
-                  <Form.Item label=" " style={{ marginBottom: 0 }}>
-                    <Button
-                      type="primary"
-                      htmlType="submit"
-                      loading={isCreating}
-                      disabled={!isAdmin || !newDisplayName.trim()}
-                      block
-                    >
-                      {isCreating
-                        ? t("categoryPage.creating")
-                        : t("categoryPage.createButton")}
-                    </Button>
-                  </Form.Item>
-                </div>
-              </Form>
-            </Card>
-
-            <Card title={t("categoryPage.title")}>
-              {error || localError ? (
-                <Alert
-                  className="mb-3"
-                  message={
-                    error?.message || localError || t("categoryPage.loadFailed")
-                  }
-                  type="error"
-                  showIcon
-                />
-              ) : null}
-
-              <Table
-                rowKey="id"
-                columns={columns}
-                dataSource={categories}
-                loading={isLoading}
-                locale={{ emptyText: t("categoryPage.noCategories") }}
-                scroll={{ x: 720 }}
-                onRow={(record) => ({
-                  onClick: () => startEdit(record),
-                  style: { cursor: isAdmin ? "pointer" : "default" },
-                })}
-                pagination={false}
-              />
-            </Card>
-          </div>
-        </Layout.Content>
-      </Layout>
-    </Layout>
+      </DashboardPageLayout>
+    </DashboardPageProvider>
   );
 }

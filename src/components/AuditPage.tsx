@@ -4,6 +4,7 @@ import { Alert, Card, Select, Table, type TableColumnsType } from "antd";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { useAuditEvents } from "../hooks/queries";
+import { formatLocalDateTime, getDateSortValue } from "../lib/dateTime";
 import type { AuditEventRecord } from "../types";
 import DashboardPageLayout from "./dashboard/DashboardPageLayout";
 import { DashboardPageProvider } from "./dashboard/DashboardPageContext";
@@ -126,13 +127,6 @@ export default function AuditPage() {
     [events],
   );
 
-  const getDateSortValue = (value?: string): number => {
-    if (!value) return 0;
-    const date = new Date(value);
-    const timestamp = date.getTime();
-    return Number.isFinite(timestamp) ? timestamp : 0;
-  };
-
   const filteredEvents = useMemo(() => {
     return events.filter((item) => {
       const username = String(item.userProperties?.username || "guest").trim();
@@ -150,20 +144,6 @@ export default function AuditPage() {
     return eventType === "route_change"
       ? t("auditPage.typeRouteChange")
       : t("auditPage.typeEvent");
-  };
-
-  const formatLocalDateTime = (value?: string): string => {
-    if (!value) return "-";
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "-";
-
-    const dd = String(date.getDate()).padStart(2, "0");
-    const mm = String(date.getMonth() + 1).padStart(2, "0");
-    const yyyy = date.getFullYear();
-    const hh = String(date.getHours()).padStart(2, "0");
-    const min = String(date.getMinutes()).padStart(2, "0");
-    return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
   };
 
   const formatAuditPayload = (

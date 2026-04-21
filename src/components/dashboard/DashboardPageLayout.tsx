@@ -105,7 +105,7 @@ export default function DashboardPageLayout({
   }, []);
 
   return (
-    <Layout style={{ minHeight: "100vh", background: "transparent" }}>
+    <Layout style={{ minHeight: "100vh", background: "#fafafa" }}>
       <Layout.Header style={DASHBOARD_APPBAR_STYLE}>
         <div className="flex h-14 items-center justify-between">
           <div>
@@ -126,10 +126,7 @@ export default function DashboardPageLayout({
         </div>
       </Layout.Header>
 
-      <Layout
-        className="flex min-h-0 flex-col md:flex-row"
-        style={{ background: "transparent" }}
-      >
+      <Layout className="flex min-h-0 flex-col bg-[#fafafa] md:flex-row">
         <RankingSidebar
           currentView="ranking"
           onSetView={handleSetDashboardView}
@@ -153,7 +150,7 @@ export default function DashboardPageLayout({
 
         <Layout.Content
           ref={mainContentRef}
-          className="flex-1 overflow-auto px-4 py-4 md:p-8"
+          className="flex-1 overflow-auto bg-[#fafafa] px-4 py-4 text-slate-900 md:p-8"
           style={{
             paddingBottom: "calc(6rem + var(--mobile-keyboard-inset, 0px))",
           }}
