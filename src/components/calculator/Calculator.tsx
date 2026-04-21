@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { App as AntApp } from "antd";
+import { useAuth } from "../../context/AuthContext";
 import { useCostCalculatorState } from "../../features/calculator/hooks/useCostCalculatorState";
 import { useCalculation } from "../../hooks/useCalculation";
 import {
@@ -31,19 +32,18 @@ import ResultCard from "./ResultCard";
 
 interface CalculatorProps {
   userId: string;
-  isAdmin: boolean;
   appConfig: AppConfig;
   onCopySummary?: () => void;
 }
 
 export default function Calculator({
   userId,
-  isAdmin,
   appConfig,
   onCopySummary,
 }: CalculatorProps) {
   const { t } = useTranslation();
   const { message: messageApi } = AntApp.useApp();
+  const { isAdmin } = useAuth();
   const [resetArmed, setResetArmed] = useState(false);
   const resetTimerRef = useRef<number | null>(null);
 

@@ -15,9 +15,6 @@ import { envConfig } from "../env";
 const Calculator = lazy(() => import("./calculator/Calculator"));
 
 interface MainLayoutProps {
-  isAuthenticated: boolean;
-  isAdmin: boolean;
-  currentUsername: string;
   userId: string;
   appConfig: AppConfig;
   // Config sidebar
@@ -38,9 +35,6 @@ interface MainLayoutProps {
  * Contains header, calculator, config sidebar, and modals.
  */
 export function MainLayout({
-  isAuthenticated,
-  isAdmin,
-  currentUsername,
   userId,
   appConfig,
   configOpen,
@@ -53,7 +47,7 @@ export function MainLayout({
   onLogout,
 }: MainLayoutProps) {
   const { t } = useTranslation();
-  const { currentUser } = useAuth();
+  const { isAuthenticated, isAdmin, currentUser } = useAuth();
   const {
     sessionsOpen,
     sessionsLoading,
@@ -85,8 +79,6 @@ export function MainLayout({
   return (
     <div className="relative min-h-screen bg-[#fafafa]">
       <AppHeader
-        isAuthenticated={isAuthenticated}
-        username={currentUsername}
         onOpenConfig={onConfigClose}
         rankingMenuItems={rankingMenuItems}
         userMenuItems={userMenuItems}
@@ -105,12 +97,12 @@ export function MainLayout({
             {isAuthenticated ? (
               <p className="mt-2 text-xs text-slate-500">
                 {t("app.loggedIn", {
-                  username: currentUsername,
+                  username: currentUser?.username || "",
                 })}
               </p>
             ) : null}
           </header>
-          <Calculator userId={userId} isAdmin={isAdmin} appConfig={appConfig} />
+          <Calculator userId={userId} appConfig={appConfig} />
         </div>
       </div>
 
@@ -118,8 +110,6 @@ export function MainLayout({
         open={configOpen}
         backdropInteractive={!sessionsOpen}
         config={appConfig}
-        isAdmin={isAdmin}
-        currentUsername={currentUsername}
         onClose={onConfigClose}
         onOpenSessions={openSessionsModal}
         onConfigChange={onConfigChange}

@@ -5,10 +5,9 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
+import { useAuth } from "../context/AuthContext";
 
 interface AppHeaderProps {
-  isAuthenticated: boolean;
-  username: string;
   onOpenConfig: () => void;
   rankingMenuItems: MenuProps["items"];
   userMenuItems: MenuProps["items"];
@@ -18,9 +17,8 @@ interface AppHeaderProps {
 }
 
 export default function AppHeader(props: AppHeaderProps) {
+  const { isAuthenticated, currentUser } = useAuth();
   const {
-    isAuthenticated,
-    username,
     onOpenConfig,
     rankingMenuItems,
     userMenuItems,
@@ -67,7 +65,7 @@ export default function AppHeader(props: AppHeaderProps) {
         {isAuthenticated ? (
           <Dropdown menu={{ items: userMenuItems }} trigger={["click"]}>
             <Button shape="circle" aria-label={accountMenuLabel}>
-              {username?.charAt(0)?.toUpperCase() || (
+              {currentUser?.username?.charAt(0)?.toUpperCase() || (
                 <UserOutlined />
               )}
             </Button>

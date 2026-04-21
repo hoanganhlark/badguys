@@ -32,7 +32,7 @@ interface LocationState {
 }
 
 export default function App() {
-  const { currentUser, isAuthenticated, isAdmin, logout } = useAuth();
+  const { currentUser, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { message: messageApi } = AntApp.useApp();
@@ -46,14 +46,10 @@ export default function App() {
   } = useHistoryModal();
 
   // Track analytics and page views
-  useAnalyticsTracking({
-    isAuthenticated,
-    username: currentUser?.username,
-    role: currentUser?.role,
-  });
+  useAnalyticsTracking();
 
   // Send guest visit notification once per day
-  useGuestVisitNotification({ isAdmin });
+  useGuestVisitNotification();
 
   function showToast(message: string) {
     messageApi.info(message);
@@ -104,9 +100,6 @@ export default function App() {
 
   const fallbackRouteElement = (
     <MainLayout
-      isAuthenticated={isAuthenticated}
-      isAdmin={isAdmin}
-      currentUsername={currentUser?.username || ""}
       userId={storageScopeKey}
       appConfig={appConfig}
       configOpen={configOpen}

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import {
   AnalyticsUserPropertyKey,
   initAnalytics,
@@ -8,17 +9,8 @@ import {
   trackRouteChange,
 } from "../lib/analytics";
 
-interface UseAnalyticsTrackingProps {
-  isAuthenticated: boolean;
-  username?: string;
-  role?: string;
-}
-
-export function useAnalyticsTracking({
-  isAuthenticated,
-  username,
-  role,
-}: UseAnalyticsTrackingProps) {
+export function useAnalyticsTracking() {
+  const { isAuthenticated, currentUser } = useAuth();
   const location = useLocation();
   const previousPathRef = useRef("");
 
@@ -53,8 +45,8 @@ export function useAnalyticsTracking({
   useEffect(() => {
     setUserProperties({
       [AnalyticsUserPropertyKey.IsAuthenticated]: isAuthenticated,
-      [AnalyticsUserPropertyKey.Role]: role || "guest",
-      [AnalyticsUserPropertyKey.Username]: username || "guest",
+      [AnalyticsUserPropertyKey.Role]: currentUser?.role || "guest",
+      [AnalyticsUserPropertyKey.Username]: currentUser?.username || "guest",
     });
-  }, [isAuthenticated, role, username]);
+  }, [isAuthenticated, currentUser?.role, currentUser?.username]);
 }

@@ -1,13 +1,12 @@
 import { Button, Drawer, InputNumber, Space, Switch, Typography } from "antd";
 import type { AppConfig } from "../types";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../context/AuthContext";
 
 type Props = {
   open: boolean;
   backdropInteractive: boolean;
   config: AppConfig;
-  isAdmin: boolean;
-  currentUsername: string;
   onClose: () => void;
   onOpenSessions: () => void;
   onConfigChange: (next: AppConfig) => void;
@@ -19,8 +18,6 @@ export default function ConfigSidebar({
   open,
   backdropInteractive,
   config,
-  isAdmin,
-  currentUsername,
   onClose,
   onOpenSessions,
   onConfigChange,
@@ -28,6 +25,7 @@ export default function ConfigSidebar({
   appVersion,
 }: Props) {
   const { t } = useTranslation();
+  const { isAdmin, currentUser } = useAuth();
 
   return (
     <Drawer
@@ -148,9 +146,9 @@ export default function ConfigSidebar({
       </Button>
 
       <div style={{ marginTop: "auto", paddingTop: 12 }}>
-        {currentUsername ? (
+        {currentUser?.username ? (
           <Button block onClick={onLogout}>
-            {t("common.logout")} ({currentUsername})
+            {t("common.logout")} ({currentUser.username})
           </Button>
         ) : null}
         <Typography.Text

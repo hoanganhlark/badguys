@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
 import {
   AnalyticsEventName,
   AnalyticsNotificationType,
@@ -12,17 +13,13 @@ import {
 } from "../lib/platform";
 import { notifyGuestVisited } from "../lib/telegram";
 
-interface UseGuestVisitNotificationProps {
-  isAdmin: boolean;
-}
-
 /**
  * Sends a Telegram notification when a non-admin guest visits (once per day).
  * Handles daily visit notifications and tracking.
  */
-export function useGuestVisitNotification({
-  isAdmin,
-}: UseGuestVisitNotificationProps) {
+export function useGuestVisitNotification() {
+  const { isAdmin } = useAuth();
+
   useEffect(() => {
     if (isAdmin) return;
     if (!shouldSendVisitNotificationToday()) return;
