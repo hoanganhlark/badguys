@@ -1,15 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
-import {
-  App as AntApp,
-  Button,
-  Dropdown,
-  Layout,
-} from "antd";
-import {
-  SettingOutlined,
-  TrophyOutlined,
-  UserOutlined,
-} from "@ant-design/icons";
+import { App as AntApp } from "antd";
 import { useTranslation } from "react-i18next";
 import {
   Navigate,
@@ -18,6 +8,7 @@ import {
   useLocation,
   useNavigate,
 } from "react-router-dom";
+import AppHeader from "./components/AppHeader";
 import ConfigSidebar from "./components/ConfigSidebar";
 import ChangePasswordModal from "./components/ChangePasswordModal";
 import LoginModal from "./components/LoginModal";
@@ -293,51 +284,16 @@ export default function App() {
 
   const fallbackRouteElement = (
     <div className="relative min-h-screen bg-[#fafafa]">
-      <Layout.Header
-        className="z-40"
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 56,
-          lineHeight: "56px",
-          padding: 0,
-          borderBottom: "1px solid #e2e8f0",
-          background: "rgba(250, 250, 250, 0.92)",
-          backdropFilter: "blur(8px)",
-          boxShadow: "0 2px 12px rgba(15, 23, 42, 0.08)",
-        }}
-      >
-        <div className="mx-auto flex h-14 w-full max-w-4xl items-center justify-between px-4 md:px-6">
-          <Button
-            shape="circle"
-            icon={<SettingOutlined />}
-            onClick={openConfig}
-            aria-label={t("app.openConfig")}
-          />
-
-          {!currentUser ? (
-            <Dropdown menu={{ items: rankingMenuItems }} trigger={["click"]}>
-              <Button
-                shape="circle"
-                icon={<TrophyOutlined />}
-                aria-label={t("app.ranking")}
-              />
-            </Dropdown>
-          ) : null}
-
-          {isAuthenticated ? (
-            <Dropdown menu={{ items: userMenuItems }} trigger={["click"]}>
-              <Button shape="circle" aria-label={t("app.openAccountMenu")}>
-                {currentUser?.username?.charAt(0)?.toUpperCase() || (
-                  <UserOutlined />
-                )}
-              </Button>
-            </Dropdown>
-          ) : null}
-        </div>
-      </Layout.Header>
+      <AppHeader
+        isAuthenticated={isAuthenticated}
+        username={currentUser?.username || ""}
+        onOpenConfig={openConfig}
+        rankingMenuItems={rankingMenuItems}
+        userMenuItems={userMenuItems}
+        configOpenLabel={t("app.openConfig")}
+        rankingLabel={t("app.ranking")}
+        accountMenuLabel={t("app.openAccountMenu")}
+      />
 
       <div className="px-5 pb-5 pt-20 md:px-12 md:pb-12">
         <div className="max-w-md mx-auto">
