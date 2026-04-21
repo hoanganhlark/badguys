@@ -215,12 +215,12 @@ function RankingPanel({
           {t("rankingPanel.points")}
         </span>
       ),
-      key: "rankScore",
+      key: "rating",
       width: 92,
       align: "right",
       render: (_, row) => (
         <Typography.Text strong className="text-slate-700">
-          {row.player.rankScore.toFixed(4)}
+          {row.player.rating.toFixed(2)}
         </Typography.Text>
       ),
     },

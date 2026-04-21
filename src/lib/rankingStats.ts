@@ -293,5 +293,5 @@ export function calculateRankingStats(
     });
   }
 
-  return results.sort((a, b) => b.rankScore - a.rankScore);
+  return results.sort((a, b) => b.rating - a.rating);
 }
