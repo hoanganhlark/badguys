@@ -29,7 +29,7 @@ export default function AppHeader(props: AppHeaderProps) {
     <SharedAppBar
       position="fixed"
       className="z-40"
-      contentClassName="mx-auto flex h-14 w-full max-w-4xl items-center justify-between px-4 md:px-6"
+      contentClassName="flex h-14 items-center justify-between px-4"
       left={
         <Button
           shape="circle"
@@ -38,17 +38,6 @@ export default function AppHeader(props: AppHeaderProps) {
           aria-label={configOpenLabel}
         />
       }
-      center={
-        !isAuthenticated ? (
-          <Dropdown menu={{ items: rankingMenuItems }} trigger={["click"]}>
-            <Button
-              shape="circle"
-              icon={<TrophyOutlined />}
-              aria-label={rankingLabel}
-            />
-          </Dropdown>
-        ) : null
-      }
       right={
         isAuthenticated ? (
           <AccountMenuDropdown
@@ -56,7 +45,15 @@ export default function AppHeader(props: AppHeaderProps) {
             items={userMenuItems}
             ariaLabel={accountMenuLabel}
           />
-        ) : null
+        ) : (
+          <Dropdown menu={{ items: rankingMenuItems }} trigger={["click"]}>
+            <Button
+              shape="circle"
+              icon={<TrophyOutlined />}
+              aria-label={rankingLabel}
+            />
+          </Dropdown>
+        )
       }
     />
   );

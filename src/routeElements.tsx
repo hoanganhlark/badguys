@@ -1,8 +1,7 @@
-import { lazy, Suspense, ReactNode } from "react";
+import { lazy, ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import AdminRoute from "./components/auth/AdminRoute";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
-import DashboardPageLoadingFallback from "./components/DashboardPageLoadingFallback";
 import { AppRoute } from "./lib/routes";
 
 const AuditPage = lazy(() => import("./components/AuditPage"));
@@ -12,7 +11,7 @@ const CategoryManagementPage = lazy(
 const UserManagementPage = lazy(
   () => import("./components/UserManagementPage"),
 );
-const RankingPage = lazy(() => import("./components/RankingPage"));
+const RankingPage = lazy(() => import("./components/DashboardPage"));
 
 /**
  * Builds route elements for dashboard admin/protected pages

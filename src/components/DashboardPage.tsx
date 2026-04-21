@@ -16,12 +16,12 @@ import RankingViewContent from "./ranking/RankingViewContent";
 import RankingSidebar from "./ranking/RankingSidebar";
 import PlayerStatsModalWrapper from "./ranking/PlayerStatsModalWrapper";
 
-interface RankingPageProps {
+interface DashboardPageProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
+export default function DashboardPage({ isOpen, onClose }: DashboardPageProps) {
   const { currentUser, isAdmin } = useAuth();
   // Only fetch users if the page is open
   const { users } = useUsers(isOpen);
