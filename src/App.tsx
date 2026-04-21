@@ -23,6 +23,7 @@ import ChangePasswordModal from "./components/ChangePasswordModal";
 import LoginModal from "./components/LoginModal";
 import RankingPage from "./components/RankingPage";
 import SessionsModal from "./components/SessionsModal";
+import DashboardPageLoadingFallback from "./components/DashboardPageLoadingFallback";
 const AuditPage = lazy(() => import("./components/AuditPage"));
 const CategoryManagementPage = lazy(() => import("./components/CategoryManagementPage"));
 const UserManagementPage = lazy(() => import("./components/UserManagementPage"));
