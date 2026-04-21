@@ -20,43 +20,53 @@ import {
   Select,
   Space,
   Typography,
+  App as AntApp,
 } from "antd";
 import dayjs from "dayjs";
 import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { MatchSetInput, Member } from "./types";
-import type { RankingCategory } from "../../types";
+import { useRankingMatchesContext } from "../../features/ranking/context";
+import { useRankingMembersContext } from "../../features/ranking/context";
+import type { MatchSetInput } from "./types";
 
-interface MatchFormPanelProps {
-  members: Member[];
-  categories: RankingCategory[];
-  matchType: "singles" | "doubles";
-  matchData: {
-    team1: string[];
-    team2: string[];
-    sets: MatchSetInput[];
-    playedAt: string;
-  };
-  onSetMatchType: (type: "singles" | "doubles") => void;
-  onSetMatchData: (next: {
-    team1: string[];
-    team2: string[];
-    sets: MatchSetInput[];
-    playedAt: string;
-  }) => void;
-  onSaveMatch: () => void;
-}
-
-function MatchFormPanel({
-  members,
-  categories,
-  matchType,
-  matchData,
-  onSetMatchType,
-  onSetMatchData,
-  onSaveMatch,
-}: MatchFormPanelProps) {
+function MatchFormPanel() {
   const { t } = useTranslation();
+  const { message: messageApi } = AntApp.useApp();
+  const { members } = useRankingMembersContext();
+  const { sortedCategories: categories } = useRankingMembersContext();
+  const {
+    matchType,
+    team1: team1Prop,
+    team2: team2Prop,
+    sets,
+    playedAt,
+    setMatchType: onSetMatchType,
+    setTeam1,
+    setTeam2,
+    setSets,
+    setPlayedAt,
+    getValidationError,
+    handleSaveMatch: onSaveMatch,
+  } = useRankingMatchesContext();
+
+  const matchData = {
+    team1: team1Prop,
+    team2: team2Prop,
+    sets,
+    playedAt,
+  };
+
+  const onSetMatchData = (next: {
+    team1: string[];
+    team2: string[];
+    sets: MatchSetInput[];
+    playedAt: string;
+  }) => {
+    setTeam1(next.team1);
+    setTeam2(next.team2);
+    setSets(next.sets);
+    setPlayedAt(next.playedAt);
+  };
   const categoryOrderByName = useMemo(
     () =>
       [...categories]
@@ -154,8 +164,8 @@ function MatchFormPanel({
     onSetMatchData({ ...matchData, sets: nextSets });
   };
 
-  const playedAtValue = dayjs(matchData.playedAt);
-  const playedAt = playedAtValue.isValid() ? playedAtValue : null;
+  const playedAtDayjs = dayjs(matchData.playedAt);
+  const playedAtValue = playedAtDayjs.isValid() ? playedAtDayjs : null;
 
   return (
     <Card style={{ maxWidth: 920 }}>
@@ -195,7 +205,7 @@ function MatchFormPanel({
                 <DatePicker
                   showTime
                   format="DD/MM/YYYY HH:mm"
-                  value={playedAt}
+                  value={playedAtValue}
                   style={{ width: "100%" }}
                   suffixIcon={<ClockCircleOutlined />}
                   onChange={(value) => {
@@ -370,7 +380,20 @@ function MatchFormPanel({
           type="primary"
           icon={<CheckCircleOutlined />}
           disabled={!canSaveMatch}
-          onClick={onSaveMatch}
+          onClick={async () => {
+            try {
+              const error = getValidationError();
+              if (error) {
+                messageApi.error(error);
+                return;
+              }
+              await onSaveMatch();
+              messageApi.success(t("rankingPage.toastMatchSaved"));
+            } catch (error) {
+              console.error("Failed to save match", error);
+              messageApi.error(t("rankingPage.cannotSaveMatch"));
+            }
+          }}
           block
           size="large"
         >

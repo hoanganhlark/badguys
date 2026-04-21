@@ -15,33 +15,14 @@ import {
 } from "@ant-design/icons";
 import { Button, Table, Typography, type TableColumnsType } from "antd";
 import { useTranslation } from "react-i18next";
-import type { RankingCategory } from "../../types";
-import type { AdvancedStats, Match } from "./types";
+import { useAuth } from "../../context/AuthContext";
+import {
+  useRankingMatchesContext,
+  useRankingUIContext,
+  useRankingMembersContext,
+} from "../../features/ranking/context";
+import type { Match } from "./types";
 
-interface RankingPanelProps {
-  rankings: AdvancedStats[];
-  historyMatches: Match[];
-  isHistoryExpanded: boolean;
-  isHistoryLoading: boolean;
-  onToggleHistory: (nextExpanded: boolean) => void | Promise<void>;
-  historyPagination: {
-    current: number;
-    pageSize: number;
-    total: number;
-  };
-  onHistoryPaginationChange: (page: number, pageSize: number) => void;
-  rankTrends: Record<number, number | "NEW">;
-  showRankTrend: boolean;
-  categories: RankingCategory[];
-  selectedCategoryId: string;
-  onSelectCategory: (categoryId: string) => void;
-  memberLevelById: Record<number, string>;
-  onSelectPlayer: (player: AdvancedStats) => void;
-  onClearHistory: () => void | Promise<void>;
-  onDeleteMatch: (matchId: number | string) => void | Promise<void>;
-  isAdmin: boolean;
-  currentUserId: string;
-}
 
 function formatMatchDateTime(dateText: string): string {
   if (!dateText) return "--/--/---- --:--";
@@ -80,27 +61,38 @@ function formatDisplayName(name: string): {
   };
 }
 
-function RankingPanel({
-  rankings,
-  historyMatches,
-  isHistoryExpanded,
-  isHistoryLoading,
-  onToggleHistory,
-  historyPagination,
-  onHistoryPaginationChange,
-  rankTrends,
-  showRankTrend,
-  categories,
-  selectedCategoryId,
-  onSelectCategory,
-  memberLevelById,
-  onSelectPlayer,
-  onClearHistory,
-  onDeleteMatch,
-  isAdmin,
-  currentUserId,
-}: RankingPanelProps) {
+function RankingPanel() {
   const { t } = useTranslation();
+  const { isAdmin, currentUser } = useAuth();
+  const currentUserId = currentUser?.userId || "";
+  const {
+    rankings,
+    pagedHistoryMatches: historyMatches,
+    historyMatchesForDisplay,
+    isHistoryLoading,
+    handleToggleHistory: onToggleHistory,
+    historyPage,
+    historyPageSize,
+    handleHistoryPaginationChange: onHistoryPaginationChange,
+    rankTrends,
+    showRankTrend,
+    memberLevelById,
+    handleClearHistory: onClearHistory,
+    handleDeleteMatch: onDeleteMatch,
+  } = useRankingMatchesContext();
+  const {
+    selectedCategoryId,
+    setSelectedCategoryId: onSelectCategory,
+    setSelectedPlayer: onSelectPlayer,
+  } = useRankingUIContext();
+  const { sortedCategories: categories } = useRankingMembersContext();
+
+  const isHistoryExpanded = historyMatchesForDisplay.length > 0;
+  const historyPagination = {
+    current: historyPage,
+    pageSize: historyPageSize,
+    total: historyMatchesForDisplay.length,
+  };
 
   const hasRankings = rankings.length > 0;
   const hasHistory = historyPagination.total > 0;

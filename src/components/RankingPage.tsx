@@ -91,10 +91,13 @@ function RankingPageInner({ onClose }: { onClose: () => void }) {
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { view, setViewWithRoute, mobileSidebarOpen, setMobileSidebarOpen } =
-    useRankingUIContext();
   const isPublicRankingRoute = location.pathname.startsWith("/ranking");
-
+  const {
+    view,
+    setViewWithRoute,
+    mobileSidebarOpen,
+    setMobileSidebarOpen,
+  } = useRankingUIContext();
   const categoriesActive = location.pathname === "/dashboard/categories";
 
   return (

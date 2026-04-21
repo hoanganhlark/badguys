@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import { Award, BarChart2, Settings } from "react-feather";
-import { useAuth } from "../../context/AuthContext";
 import {
   useRankingUIContext,
   useRankingMembersContext,
@@ -14,38 +13,9 @@ import RankingPanel from "./RankingPanel";
 
 export default function RankingViewContent() {
   const { t } = useTranslation();
-  const { isAdmin, currentUser } = useAuth();
   const { view } = useRankingUIContext();
-  const { sortedCategories, members } = useRankingMembersContext();
-  const {
-    matches,
-    rankings,
-    matchType,
-    team1,
-    team2,
-    sets,
-    playedAt,
-    setMatchType,
-    setTeam1,
-    setTeam2,
-    setSets,
-    setPlayedAt,
-    handleSaveMatch,
-    pagedHistoryMatches,
-    historyMatchesForDisplay,
-    isHistoryLoading,
-    historyPage,
-    historyPageSize,
-    rankTrends,
-    showRankTrend,
-    memberLevelById,
-    handleToggleHistory,
-    handleHistoryPaginationChange,
-    handleClearHistory,
-    handleDeleteMatch,
-  } = useRankingMatchesContext();
-  const { selectedCategoryId, setSelectedCategoryId, setSelectedPlayer } =
-    useRankingUIContext();
+  const { members } = useRankingMembersContext();
+  const { matches, rankings } = useRankingMatchesContext();
 
   const headerIcon =
     view === "member" ? (
@@ -101,55 +71,10 @@ export default function RankingViewContent() {
       )}
 
       {/* View: Match Form */}
-      {view === "match-form" && (
-        <MatchFormPanel
-          members={members}
-          categories={sortedCategories}
-          matchType={matchType}
-          matchData={{
-            team1,
-            team2,
-            sets,
-            playedAt,
-          }}
-          onSetMatchType={setMatchType}
-          onSetMatchData={(nextData) => {
-            setTeam1(nextData.team1);
-            setTeam2(nextData.team2);
-            setSets(nextData.sets);
-            setPlayedAt(nextData.playedAt);
-          }}
-          onSaveMatch={handleSaveMatch}
-        />
-      )}
+      {view === "match-form" && <MatchFormPanel />}
 
       {/* View: Rankings */}
-      {view === "ranking" && (
-        <RankingPanel
-          rankings={rankings}
-          historyMatches={pagedHistoryMatches}
-          isHistoryExpanded={historyMatchesForDisplay.length > 0}
-          isHistoryLoading={isHistoryLoading}
-          onToggleHistory={handleToggleHistory}
-          historyPagination={{
-            current: historyPage,
-            pageSize: historyPageSize,
-            total: historyMatchesForDisplay.length,
-          }}
-          onHistoryPaginationChange={handleHistoryPaginationChange}
-          rankTrends={rankTrends}
-          showRankTrend={showRankTrend}
-          categories={sortedCategories}
-          selectedCategoryId={selectedCategoryId}
-          onSelectCategory={setSelectedCategoryId}
-          memberLevelById={memberLevelById}
-          onSelectPlayer={setSelectedPlayer}
-          onClearHistory={handleClearHistory}
-          onDeleteMatch={handleDeleteMatch}
-          isAdmin={isAdmin}
-          currentUserId={currentUser?.userId || ""}
-        />
-      )}
+      {view === "ranking" && <RankingPanel />}
     </div>
   );
 }
