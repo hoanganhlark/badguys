@@ -1,22 +1,20 @@
 import { useTranslation } from "react-i18next";
 import { Award, BarChart2, Settings } from "react-feather";
-import { useRankingUIContext, useRankingMatchesContext } from "../../features/ranking/context";
-import { useRankingMembers } from "../../hooks/queries";
-import RankingMembersContainer from "../../features/ranking/containers/RankingMembersContainer";
+import { useRankingUIContext } from "../../features/ranking/context";
+import { useRankingMembers, useRankingCategories, useUsers } from "../../hooks/queries";
+import {
+  RankingMembersContainer,
+  RankingMatchesContainer,
+} from "../../features/ranking/containers";
 import DashboardSectionHeader from "../dashboard/DashboardSectionHeader";
 import DashboardSummaryCards from "../dashboard/DashboardSummaryCards";
-import MatchFormPanel from "./MatchFormPanel";
-import RankingPanel from "./RankingPanel";
 
 export default function RankingViewContent() {
   const { t } = useTranslation();
   const { view } = useRankingUIContext();
   const { members, isLoading: isMembersLoading } = useRankingMembers();
-  const {
-    matches,
-    isLoading: isMatchesLoading,
-    rankings,
-  } = useRankingMatchesContext();
+  const { categories } = useRankingCategories();
+  const { users } = useUsers();
 
   const headerIcon =
     view === "member" ? (
@@ -34,6 +32,15 @@ export default function RankingViewContent() {
         ? t("rankingPage.recordResult")
         : t("rankingPage.clubRanking");
 
+  // Build usernamesById from users
+  const usernamesById = users.reduce<Record<string, string>>(
+    (acc, user) => {
+      acc[user.id] = user.username;
+      return acc;
+    },
+    {},
+  );
+
   return (
     <div className="max-w-7xl mx-auto">
       <DashboardSectionHeader
@@ -44,23 +51,12 @@ export default function RankingViewContent() {
       />
 
       <DashboardSummaryCards
-        loading={isMembersLoading || isMatchesLoading}
+        loading={isMembersLoading}
         items={[
           {
             key: "members",
             label: t("rankingPage.members"),
             value: members.length,
-          },
-          {
-            key: "matches",
-            label: t("rankingPage.matches"),
-            value: matches.length,
-          },
-          {
-            key: "top-rank",
-            label: t("rankingPage.topRank"),
-            value: rankings[0]?.name ?? "-",
-            valueClassName: "text-sm md:text-base truncate",
           },
         ]}
       />
@@ -72,18 +68,13 @@ export default function RankingViewContent() {
         </div>
       )}
 
-      {/* View: Match Form */}
-      {view === "match-form" && (
-        <div>
-          <MatchFormPanel />
-        </div>
-      )}
-
-      {/* View: Rankings */}
-      {view === "ranking" && (
-        <div>
-          <RankingPanel />
-        </div>
+      {/* View: Match Form and Rankings */}
+      {(view === "match-form" || view === "ranking") && (
+        <RankingMatchesContainer
+          members={members}
+          categories={categories}
+          usernamesById={usernamesById}
+        />
       )}
     </div>
   );

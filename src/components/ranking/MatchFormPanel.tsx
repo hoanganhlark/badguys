@@ -25,29 +25,56 @@ import {
 import dayjs from "dayjs";
 import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useRankingMatchesContext } from "../../features/ranking/context";
-import { useRankingMembersContext } from "../../features/ranking/context";
-import type { MatchSetInput } from "./types";
+import type { MatchSetInput, Member } from "./types";
+import type { RankingCategory } from "../../types";
 
-function MatchFormPanel() {
+interface MatchFormPanelProps {
+  matchType: "singles" | "doubles";
+  team1: string[];
+  team2: string[];
+  sets: MatchSetInput[];
+  playedAt: string;
+  members: Member[];
+  categories: RankingCategory[];
+  isLoading: boolean;
+  onSetMatchType: (type: "singles" | "doubles") => void;
+  onSetTeam1: (team: string[]) => void;
+  onSetTeam2: (team: string[]) => void;
+  onSetSets: (sets: MatchSetInput[]) => void;
+  onSetPlayedAt: (date: string) => void;
+  onUpdateTeam1: (index: number, value: string) => void;
+  onUpdateTeam2: (index: number, value: string) => void;
+  onUpdateSet: (index: number, field: keyof MatchSetInput, value: string) => void;
+  onAddSet: () => void;
+  onRemoveSet: (index: number) => void;
+  onGetValidationError: () => string | null;
+  onSaveMatch: () => Promise<void>;
+}
+
+function MatchFormPanel({
+  matchType,
+  team1: team1Prop,
+  team2: team2Prop,
+  sets,
+  playedAt,
+  members,
+  categories,
+  isLoading: isMembersLoading,
+  onSetMatchType: onSetMatchType,
+  onSetTeam1: setTeam1,
+  onSetTeam2: setTeam2,
+  onSetSets: setSets,
+  onSetPlayedAt: setPlayedAt,
+  onUpdateTeam1,
+  onUpdateTeam2,
+  onUpdateSet,
+  onAddSet,
+  onRemoveSet,
+  onGetValidationError: getValidationError,
+  onSaveMatch,
+}: MatchFormPanelProps) {
   const { t } = useTranslation();
   const { message: messageApi } = AntApp.useApp();
-  const { members, isLoading: isMembersLoading } = useRankingMembersContext();
-  const { sortedCategories: categories } = useRankingMembersContext();
-  const {
-    matchType,
-    team1: team1Prop,
-    team2: team2Prop,
-    sets,
-    playedAt,
-    setMatchType: onSetMatchType,
-    setTeam1,
-    setTeam2,
-    setSets,
-    setPlayedAt,
-    getValidationError,
-    handleSaveMatch: onSaveMatch,
-  } = useRankingMatchesContext();
 
   const matchData = {
     team1: team1Prop,
@@ -67,18 +94,13 @@ function MatchFormPanel() {
     setSets(next.sets);
     setPlayedAt(next.playedAt);
   };
+
   const categoryOrderByName = useMemo(
     () =>
-      [...categories]
-        .sort(
-          (a, b) =>
-            a.order - b.order ||
-            a.displayName.localeCompare(b.displayName, "vi"),
-        )
-        .reduce<Record<string, number>>((acc, category, index) => {
-          acc[category.name] = index;
-          return acc;
-        }, {}),
+      categories.reduce<Record<string, number>>((acc, category, index) => {
+        acc[category.name] = index;
+        return acc;
+      }, {}),
     [categories],
   );
 
@@ -122,22 +144,12 @@ function MatchFormPanel() {
   };
 
   const addSetInput = () => {
-    onSetMatchData({
-      ...matchData,
-      sets: [
-        ...matchData.sets,
-        { team1Score: "", team2Score: "", minutes: "" },
-      ],
-    });
+    onAddSet();
   };
 
   const removeSetInput = (index: number) => {
     if (matchData.sets.length <= 1) return;
-    const nextSets = matchData.sets.filter((_, i) => i !== index);
-    onSetMatchData({
-      ...matchData,
-      sets: nextSets,
-    });
+    onRemoveSet(index);
   };
 
   const updateTeamSelection = (
@@ -145,9 +157,11 @@ function MatchFormPanel() {
     index: number,
     value?: string,
   ) => {
-    const nextTeam = [...matchData[team]];
-    nextTeam[index] = value || "";
-    onSetMatchData({ ...matchData, [team]: nextTeam });
+    if (team === "team1") {
+      onUpdateTeam1(index, value || "");
+    } else {
+      onUpdateTeam2(index, value || "");
+    }
   };
 
   const updateSetValue = (
@@ -156,12 +170,7 @@ function MatchFormPanel() {
     value: number | null,
   ) => {
     if (value !== null && value < 0) return;
-    const nextSets = [...matchData.sets];
-    nextSets[index] = {
-      ...nextSets[index],
-      [key]: value === null ? "" : String(value),
-    };
-    onSetMatchData({ ...matchData, sets: nextSets });
+    onUpdateSet(index, key, value === null ? "" : String(value));
   };
 
   const playedAtDayjs = dayjs(matchData.playedAt);

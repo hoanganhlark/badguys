@@ -4,3 +4,4 @@
  */
 
 export { RankingMembersContainer } from "./RankingMembersContainer";
+export { RankingMatchesContainer } from "./RankingMatchesContainer";

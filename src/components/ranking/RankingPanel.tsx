@@ -15,14 +15,30 @@ import {
 } from "@ant-design/icons";
 import { Button, Grid, Table, Typography, type TableColumnsType } from "antd";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../../context/AuthContext";
-import {
-  useRankingMatchesContext,
-  useRankingUIContext,
-  useRankingMembersContext,
-} from "../../features/ranking/context";
-import type { Match } from "./types";
+import { useRankingUIContext } from "../../features/ranking/context";
+import type { AdvancedStats, Match } from "./types";
+import type { RankingCategory } from "../../types";
 import DashboardTableSkeleton from "../dashboard/DashboardTableSkeleton";
+
+interface RankingPanelProps {
+  rankings: AdvancedStats[];
+  categories: RankingCategory[];
+  isLoading: boolean;
+  historyMatches: Match[];
+  historyMatchesForDisplay: Match[];
+  isHistoryLoading: boolean;
+  historyPage: number;
+  historyPageSize: number;
+  rankTrends: Record<number, number | "NEW">;
+  showRankTrend: boolean;
+  memberLevelById: Record<number, string>;
+  isAdmin: boolean;
+  currentUserId: string;
+  onToggleHistory: (expanded: boolean) => Promise<void>;
+  onHistoryPaginationChange: (page: number, pageSize: number) => void;
+  onDeleteMatch: (matchId: number | string) => Promise<void>;
+  onClearHistory: () => Promise<void>;
+}
 
 function formatMatchDateTime(dateText: string): string {
   if (!dateText) return "--/--/---- --:--";
@@ -61,34 +77,34 @@ function formatDisplayName(name: string): {
   };
 }
 
-function RankingPanel() {
+function RankingPanel({
+  rankings,
+  categories,
+  isLoading,
+  historyMatches,
+  historyMatchesForDisplay,
+  isHistoryLoading,
+  historyPage,
+  historyPageSize,
+  rankTrends,
+  showRankTrend,
+  memberLevelById,
+  isAdmin,
+  currentUserId,
+  onToggleHistory,
+  onHistoryPaginationChange,
+  onDeleteMatch,
+  onClearHistory,
+}: RankingPanelProps) {
   const { t } = useTranslation();
   const screens = Grid.useBreakpoint();
-  const { isAdmin, currentUser } = useAuth();
-  const currentUserId = currentUser?.userId || "";
-  const {
-    isLoading: isMatchesLoading,
-    rankings,
-    pagedHistoryMatches: historyMatches,
-    historyMatchesForDisplay,
-    isHistoryLoading,
-    handleToggleHistory: onToggleHistory,
-    historyPage,
-    historyPageSize,
-    handleHistoryPaginationChange: onHistoryPaginationChange,
-    rankTrends,
-    showRankTrend,
-    memberLevelById,
-    handleClearHistory: onClearHistory,
-    handleDeleteMatch: onDeleteMatch,
-  } = useRankingMatchesContext();
   const {
     selectedCategoryId,
     setSelectedCategoryId: onSelectCategory,
     setSelectedPlayer: onSelectPlayer,
   } = useRankingUIContext();
-  const { sortedCategories: categories } = useRankingMembersContext();
 
+  const isMatchesLoading = isLoading;
   const isHistoryExpanded = historyMatchesForDisplay.length > 0;
   const historyPagination = {
     current: historyPage,
@@ -416,7 +432,7 @@ function RankingPanel() {
               columns={historyColumns}
               dataSource={historyMatches}
               size="small"
-              loading={isMatchesLoading || isHistoryLoading}
+              loading={isLoading || isHistoryLoading}
               pagination={{
                 current: historyPagination.current,
                 pageSize: historyPagination.pageSize,
@@ -427,7 +443,7 @@ function RankingPanel() {
               }}
               locale={{
                 emptyText:
-                  isMatchesLoading || isHistoryLoading
+                  isLoading || isHistoryLoading
                     ? t("rankingPanel.loadingHistory")
                     : t("rankingPanel.noHistory"),
               }}
