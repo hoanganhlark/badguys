@@ -3,7 +3,6 @@ import {
   App as AntApp,
   Button,
   Dropdown,
-  Form,
   Layout,
   Typography,
   type MenuProps,
@@ -33,23 +32,29 @@ import DashboardPageLoadingFallback from "./components/DashboardPageLoadingFallb
 import { useAuth } from "./context/AuthContext";
 import { envConfig } from "./env";
 import { useHistoryModal } from "./hooks/useHistoryModal";
+import { useChangePasswordModal } from "./hooks/useChangePasswordModal";
 import { useSessions } from "./hooks/queries/useSessions";
 import { loadStoredConfig, saveConfig } from "./lib/platform";
 import type { AppConfig } from "./types";
 import { normalizeKLabels } from "./lib/core";
 import { SESSIONS_FETCH_LIMIT } from "./lib/constants";
 import {
-  getUserByUsername,
   isSupabaseReady,
-  updateUserPassword,
 } from "./lib/api";
-import { hashMd5 } from "./lib/hash";
 import {
   copyText,
   formatVisitTimestampUTC7,
   markVisitNotifiedToday,
   shouldSendVisitNotificationToday,
 } from "./lib/platform";
+import {
+  AppRoute,
+  getLoginRedirectTarget,
+  isLoginModalPath,
+  isRankingLoginPath,
+  toDashboardTarget,
+} from "./lib/routes";
+import { buildAppRouteConfigs } from "./routes/appRouteConfigs";
 import {
   AnalyticsEventName,
   AnalyticsNotificationType,
@@ -102,15 +107,16 @@ export default function App() {
   const sessionsError =
     sessionsQueryError instanceof Error ? sessionsQueryError.message : "";
 
-  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
-  const [changePasswordError, setChangePasswordError] = useState("");
-  const [changePasswordSubmitting, setChangePasswordSubmitting] =
-    useState(false);
-  const [passwordForm] = Form.useForm<{
-    currentPassword: string;
-    newPassword: string;
-    confirmPassword: string;
-  }>();
+  const {
+    open: changePasswordOpen,
+    error: changePasswordError,
+    submitting: changePasswordSubmitting,
+    form: passwordForm,
+    handleOpen: openChangePasswordModal,
+    handleClose: closeChangePasswordModal,
+    handleSubmit: handleSubmitChangePassword,
+    clearError: clearChangePasswordError,
+  } = useChangePasswordModal(showToast);
 
   const previousPathRef = useRef("");
 
@@ -171,10 +177,8 @@ export default function App() {
 
   useEffect(() => {
     if (isAuthenticated) return;
-    setChangePasswordOpen(false);
-    setChangePasswordError("");
-    passwordForm.resetFields();
-  }, [isAuthenticated]);
+    closeChangePasswordModal();
+  }, [isAuthenticated, closeChangePasswordModal]);
 
   useEffect(() => {
     saveConfig(appConfig, storageScopeKey);
@@ -239,122 +243,36 @@ export default function App() {
     });
   }
 
-  async function handleSubmitChangePassword(values: {
-    currentPassword: string;
-    newPassword: string;
-    confirmPassword: string;
-  }) {
-    if (!currentUser) {
-      setChangePasswordError(t("app.notLoggedIn"));
-      return;
-    }
-
-    const currentPassword = String(values.currentPassword || "");
-    const newPassword = String(values.newPassword || "");
-    const confirmPassword = String(values.confirmPassword || "");
-
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      setChangePasswordError(t("app.fillAllFields"));
-      return;
-    }
-
-    if (newPassword.length < 4) {
-      setChangePasswordError(t("app.newPasswordMinLength"));
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setChangePasswordError(t("app.confirmPasswordMismatch"));
-      return;
-    }
-
-    if (newPassword === currentPassword) {
-      setChangePasswordError(t("app.newPasswordMustDiffer"));
-      return;
-    }
-
-    setChangePasswordSubmitting(true);
-    setChangePasswordError("");
-
-    try {
-      const userRecord = await getUserByUsername(currentUser.username);
-      if (!userRecord || userRecord.id !== currentUser.userId) {
-        throw new Error(t("app.currentAccountNotFound"));
-      }
-
-      const currentPasswordHash = hashMd5(currentPassword);
-      if (currentPasswordHash !== userRecord.password) {
-        throw new Error(t("app.currentPasswordIncorrect"));
-      }
-
-      await updateUserPassword(userRecord.id, hashMd5(newPassword));
-
-      passwordForm.resetFields();
-      setChangePasswordOpen(false);
-      showToast(t("app.toastPasswordChanged"));
-    } catch (error) {
-      setChangePasswordError(
-        error instanceof Error ? error.message : t("app.changePasswordFailed"),
-      );
-    } finally {
-      setChangePasswordSubmitting(false);
-    }
-  }
-
-  function getLoginRedirectTarget(): string {
-    const candidate =
-      (location.state as LocationState | null)?.from || "/dashboard/ranking";
-    return (
-      String(candidate || "/dashboard/ranking").trim() || "/dashboard/ranking"
-    );
-  }
-
-  function toDashboardTarget(target: string): string {
-    const normalized = String(target || "").trim() || "/dashboard/ranking";
-
-    if (normalized === "/ranking" || normalized === "/ranking/") {
-      return "/dashboard/ranking";
-    }
-
-    if (normalized.startsWith("/ranking/")) {
-      const suffix = normalized.slice("/ranking/".length);
-      if (!suffix || suffix === "login") return "/dashboard/ranking";
-      if (suffix === "member") return "/dashboard/member";
-      if (suffix === "match-form") return "/dashboard/match-form";
-      if (suffix === "ranking") return "/dashboard/ranking";
-      return "/dashboard/ranking";
-    }
-
-    return normalized;
-  }
 
   function handleLoginSuccess(target: string) {
     navigate(toDashboardTarget(target), { replace: true });
   }
 
   function closeLoginModal() {
-    if (location.pathname === "/ranking/login") {
-      navigate("/ranking", { replace: true });
+    if (isRankingLoginPath(location.pathname)) {
+      navigate(AppRoute.Ranking, { replace: true });
       return;
     }
-    navigate("/", { replace: true });
+    navigate(AppRoute.Home, { replace: true });
   }
 
-  const loginModalOpen =
-    location.pathname === "/login" || location.pathname === "/ranking/login";
+  const loginModalOpen = isLoginModalPath(location.pathname);
+  const loginRedirectTarget = getLoginRedirectTarget(
+    (location.state as LocationState | null)?.from,
+  );
 
   const rankingMenuItems: MenuProps["items"] = [
     {
       key: "ranking-view",
       label: t("app.viewRanking"),
-      onClick: () => navigate("/ranking"),
+      onClick: () => navigate(AppRoute.Ranking),
     },
     {
       key: "ranking-login",
       label: t("common.login"),
       onClick: () =>
-        navigate("/login", {
-          state: { from: "/dashboard/ranking" },
+        navigate(AppRoute.Login, {
+          state: { from: AppRoute.DashboardRanking },
         }),
     },
   ];
@@ -373,17 +291,13 @@ export default function App() {
       key: "dashboard-open",
       label: t("app.openDashboard"),
       icon: <TrophyOutlined />,
-      onClick: () => navigate("/dashboard/ranking"),
+      onClick: () => navigate(AppRoute.DashboardRanking),
     },
     {
       key: "password-change",
       label: t("app.changePasswordTitle"),
       icon: <KeyOutlined />,
-      onClick: () => {
-        setChangePasswordOpen(true);
-        setChangePasswordError("");
-        passwordForm.resetFields();
-      },
+      onClick: openChangePasswordModal,
     },
     {
       type: "divider",
@@ -394,210 +308,196 @@ export default function App() {
       icon: <LogoutOutlined />,
       danger: true,
       onClick: () => {
-        navigate("/", { replace: true });
+        navigate(AppRoute.Home, { replace: true });
         logout();
       },
     },
   ];
 
+  const usersLegacyRouteElement = (
+    <Navigate to={AppRoute.DashboardUsers} replace />
+  );
+
+  const dashboardUsersRouteElement = (
+    <AdminRoute>
+      <Suspense fallback={<DashboardPageLoadingFallback />}>
+        <UserManagementPage />
+      </Suspense>
+    </AdminRoute>
+  );
+
+  const dashboardAuditRouteElement = (
+    <AdminRoute>
+      <Suspense fallback={<DashboardPageLoadingFallback />}>
+        <AuditPage />
+      </Suspense>
+    </AdminRoute>
+  );
+
+  const dashboardCategoriesRouteElement = (
+    <AdminRoute>
+      <Suspense fallback={<DashboardPageLoadingFallback />}>
+        <CategoryManagementPage />
+      </Suspense>
+    </AdminRoute>
+  );
+
+  const dashboardWildcardRouteElement = (
+    <ProtectedRoute>
+      <Suspense fallback={<DashboardPageLoadingFallback />}>
+        <RankingPage isOpen={true} onClose={() => navigate(AppRoute.Home)} />
+      </Suspense>
+    </ProtectedRoute>
+  );
+
+  const rankingWildcardRouteElement = (
+    <>
+      <Suspense fallback={<DashboardPageLoadingFallback />}>
+        <RankingPage isOpen={true} onClose={() => navigate(AppRoute.Home)} />
+      </Suspense>
+      <LoginModal
+        open={loginModalOpen}
+        redirectTo={loginRedirectTarget}
+        onClose={closeLoginModal}
+        onSuccess={handleLoginSuccess}
+      />
+    </>
+  );
+
+  const fallbackRouteElement = (
+    <div className="relative min-h-screen bg-[#fafafa]">
+      <Layout.Header
+        className="z-40"
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 56,
+          lineHeight: "56px",
+          padding: 0,
+          borderBottom: "1px solid #e2e8f0",
+          background: "rgba(250, 250, 250, 0.92)",
+          backdropFilter: "blur(8px)",
+          boxShadow: "0 2px 12px rgba(15, 23, 42, 0.08)",
+        }}
+      >
+        <div className="mx-auto flex h-14 w-full max-w-4xl items-center justify-between px-4 md:px-6">
+          <Button
+            shape="circle"
+            icon={<SettingOutlined />}
+            onClick={openConfig}
+            aria-label={t("app.openConfig")}
+          />
+
+          {!currentUser ? (
+            <Dropdown menu={{ items: rankingMenuItems }} trigger={["click"]}>
+              <Button
+                shape="circle"
+                icon={<TrophyOutlined />}
+                aria-label={t("app.ranking")}
+              />
+            </Dropdown>
+          ) : null}
+
+          {isAuthenticated ? (
+            <Dropdown menu={{ items: userMenuItems }} trigger={["click"]}>
+              <Button shape="circle" aria-label={t("app.openAccountMenu")}>
+                {currentUser?.username?.charAt(0)?.toUpperCase() || (
+                  <UserOutlined />
+                )}
+              </Button>
+            </Dropdown>
+          ) : null}
+        </div>
+      </Layout.Header>
+
+      <div className="px-5 pb-5 pt-20 md:px-12 md:pb-12">
+        <div className="max-w-md mx-auto">
+          <header className="mb-12 text-center">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+              {isAdmin ? "@BadGuys" : "BadGuys"}
+              <span className="text-slate-400">.</span>
+            </h1>
+            {currentUser ? (
+              <p className="mt-2 text-xs text-slate-500">
+                {t("app.loggedIn", {
+                  username: currentUser.username,
+                  role: currentUser.role,
+                })}
+              </p>
+            ) : null}
+          </header>
+          <Calculator
+            userId={storageScopeKey}
+            isAdmin={isAdmin}
+            appConfig={appConfig}
+          />
+        </div>
+      </div>
+
+      <ConfigSidebar
+        open={configOpen}
+        backdropInteractive={!sessionsOpen}
+        config={appConfig}
+        isAdmin={isAdmin}
+        currentUsername={currentUser?.username || ""}
+        onClose={closeConfig}
+        onOpenSessions={openSessionsModal}
+        onConfigChange={handleConfigChange}
+        onLogout={logout}
+        appVersion={envConfig.appVersion}
+      />
+
+      <SessionsModal
+        open={sessionsOpen}
+        loading={sessionsLoading}
+        error={sessionsError}
+        sessions={sessions}
+        canRemove={isAdmin}
+        onClose={closeSessions}
+        onRemove={handleRemoveSession}
+        onCopyNote={handleCopySessionNote}
+      />
+
+      <ChangePasswordModal
+        open={changePasswordOpen}
+        submitting={changePasswordSubmitting}
+        error={changePasswordError}
+        form={passwordForm}
+        onCancel={closeChangePasswordModal}
+        onSubmit={handleSubmitChangePassword}
+        onClearError={clearChangePasswordError}
+      />
+
+      <LoginModal
+        open={loginModalOpen}
+        redirectTo={loginRedirectTarget}
+        onClose={closeLoginModal}
+        onSuccess={handleLoginSuccess}
+      />
+    </div>
+  );
+
+  const routeConfigs = buildAppRouteConfigs({
+    usersLegacy: usersLegacyRouteElement,
+    dashboardUsers: dashboardUsersRouteElement,
+    dashboardAudit: dashboardAuditRouteElement,
+    dashboardCategories: dashboardCategoriesRouteElement,
+    dashboardWildcard: dashboardWildcardRouteElement,
+    rankingWildcard: rankingWildcardRouteElement,
+    fallback: fallbackRouteElement,
+  });
+
   return (
     <Routes>
-      <Route
-        path="/users"
-        element={<Navigate to="/dashboard/users" replace />}
-      />
-
-      <Route
-        path="/dashboard/users"
-        element={
-          <AdminRoute>
-            <Suspense fallback={<DashboardPageLoadingFallback />}>
-              <UserManagementPage />
-            </Suspense>
-          </AdminRoute>
-        }
-      />
-
-      <Route
-        path="/dashboard/audit"
-        element={
-          <AdminRoute>
-            <Suspense fallback={<DashboardPageLoadingFallback />}>
-              <AuditPage />
-            </Suspense>
-          </AdminRoute>
-        }
-      />
-
-      <Route
-        path="/dashboard/categories"
-        element={
-          <AdminRoute>
-            <Suspense fallback={<DashboardPageLoadingFallback />}>
-              <CategoryManagementPage />
-            </Suspense>
-          </AdminRoute>
-        }
-      />
-
-      <Route
-        path="/dashboard/*"
-        element={
-          <ProtectedRoute>
-            <Suspense fallback={<DashboardPageLoadingFallback />}>
-              <RankingPage isOpen={true} onClose={() => navigate("/")} />
-            </Suspense>
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/ranking/*"
-        element={
-          <>
-            <Suspense fallback={<DashboardPageLoadingFallback />}>
-              <RankingPage isOpen={true} onClose={() => navigate("/")} />
-            </Suspense>
-            <LoginModal
-              open={loginModalOpen}
-              redirectTo={getLoginRedirectTarget()}
-              onClose={closeLoginModal}
-              onSuccess={handleLoginSuccess}
-            />
-          </>
-        }
-      />
-
-      <Route
-        path="*"
-        element={
-          <div className="relative min-h-screen bg-[#fafafa]">
-            <Layout.Header
-              className="z-40"
-              style={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 56,
-                lineHeight: "56px",
-                padding: 0,
-                borderBottom: "1px solid #e2e8f0",
-                background: "rgba(250, 250, 250, 0.92)",
-                backdropFilter: "blur(8px)",
-                boxShadow: "0 2px 12px rgba(15, 23, 42, 0.08)",
-              }}
-            >
-              <div className="mx-auto flex h-14 w-full max-w-4xl items-center justify-between px-4 md:px-6">
-                <Button
-                  shape="circle"
-                  icon={<SettingOutlined />}
-                  onClick={openConfig}
-                  aria-label={t("app.openConfig")}
-                />
-
-                {!currentUser ? (
-                  <Dropdown
-                    menu={{ items: rankingMenuItems }}
-                    trigger={["click"]}
-                  >
-                    <Button
-                      shape="circle"
-                      icon={<TrophyOutlined />}
-                      aria-label={t("app.ranking")}
-                    />
-                  </Dropdown>
-                ) : null}
-
-                {isAuthenticated ? (
-                  <Dropdown menu={{ items: userMenuItems }} trigger={["click"]}>
-                    <Button
-                      shape="circle"
-                      aria-label={t("app.openAccountMenu")}
-                    >
-                      {currentUser?.username?.charAt(0)?.toUpperCase() || (
-                        <UserOutlined />
-                      )}
-                    </Button>
-                  </Dropdown>
-                ) : null}
-              </div>
-            </Layout.Header>
-
-            <div className="px-5 pb-5 pt-20 md:px-12 md:pb-12">
-              <div className="max-w-md mx-auto">
-                <header className="mb-12 text-center">
-                  <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-                    {isAdmin ? "@BadGuys" : "BadGuys"}
-                    <span className="text-slate-400">.</span>
-                  </h1>
-                  {currentUser ? (
-                    <p className="mt-2 text-xs text-slate-500">
-                      {t("app.loggedIn", {
-                        username: currentUser.username,
-                        role: currentUser.role,
-                      })}
-                    </p>
-                  ) : null}
-                </header>
-
-                <Suspense fallback={<DashboardPageLoadingFallback />}>
-                  <Calculator
-                    userId={storageScopeKey}
-                    isAdmin={isAdmin}
-                    appConfig={appConfig}
-                  />
-                </Suspense>
-              </div>
-            </div>
-
-            <ConfigSidebar
-              open={configOpen}
-              backdropInteractive={!sessionsOpen}
-              config={appConfig}
-              isAdmin={isAdmin}
-              currentUsername={currentUser?.username || ""}
-              onClose={closeConfig}
-              onOpenSessions={openSessionsModal}
-              onConfigChange={handleConfigChange}
-              onLogout={logout}
-              appVersion={envConfig.appVersion}
-            />
-
-            <SessionsModal
-              open={sessionsOpen}
-              loading={sessionsLoading}
-              error={sessionsError}
-              sessions={sessions}
-              canRemove={isAdmin}
-              onClose={closeSessions}
-              onRemove={handleRemoveSession}
-              onCopyNote={handleCopySessionNote}
-            />
-
-            <ChangePasswordModal
-              open={changePasswordOpen}
-              submitting={changePasswordSubmitting}
-              error={changePasswordError}
-              form={passwordForm}
-              onCancel={() => {
-                setChangePasswordOpen(false);
-                setChangePasswordError("");
-                passwordForm.resetFields();
-              }}
-              onSubmit={handleSubmitChangePassword}
-              onClearError={() => setChangePasswordError("")}
-            />
-
-            <LoginModal
-              open={loginModalOpen}
-              redirectTo={getLoginRedirectTarget()}
-              onClose={closeLoginModal}
-              onSuccess={handleLoginSuccess}
-            />
-          </div>
-        }
-      />
+      {routeConfigs.map((routeConfig) => (
+        <Route
+          key={routeConfig.path}
+          path={routeConfig.path}
+          element={routeConfig.element}
+        />
+      ))}
     </Routes>
   );
 }
