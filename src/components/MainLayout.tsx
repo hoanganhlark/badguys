@@ -5,6 +5,7 @@ import ConfigSidebar from "./ConfigSidebar";
 import ChangePasswordModal from "./ChangePasswordModal";
 import LoginModal from "./LoginModal";
 import SessionsModal from "./SessionsModal";
+import { useSessionContext } from "../context/SessionContext";
 import type { AppConfig } from "../types";
 import { envConfig } from "../env";
 
@@ -23,15 +24,6 @@ interface MainLayoutProps {
   configOpen: boolean;
   onConfigClose: () => void;
   onConfigChange: (config: AppConfig) => void;
-  onOpenSessions: () => void;
-  // Sessions modal
-  sessionsOpen: boolean;
-  sessionsLoading: boolean;
-  sessionsError: string;
-  sessions: any[];
-  onSessionsClose: () => void;
-  onRemoveSession: (sessionId: string) => void;
-  onCopySessionNote: (note: string) => void;
   // Password modal
   changePasswordOpen: boolean;
   changePasswordSubmitting: boolean;
@@ -64,14 +56,6 @@ export function MainLayout({
   configOpen,
   onConfigClose,
   onConfigChange,
-  onOpenSessions,
-  sessionsOpen,
-  sessionsLoading,
-  sessionsError,
-  sessions,
-  onSessionsClose,
-  onRemoveSession,
-  onCopySessionNote,
   changePasswordOpen,
   changePasswordSubmitting,
   changePasswordError,
@@ -86,6 +70,16 @@ export function MainLayout({
   onLogout,
 }: MainLayoutProps) {
   const { t } = useTranslation();
+  const {
+    sessionsOpen,
+    sessionsLoading,
+    sessionsError,
+    sessions,
+    openSessionsModal,
+    closeSessions,
+    handleRemoveSession,
+    handleCopySessionNote,
+  } = useSessionContext();
 
   return (
     <div className="relative min-h-screen bg-[#fafafa]">
@@ -126,7 +120,7 @@ export function MainLayout({
         isAdmin={isAdmin}
         currentUsername={currentUsername}
         onClose={onConfigClose}
-        onOpenSessions={onOpenSessions}
+        onOpenSessions={openSessionsModal}
         onConfigChange={onConfigChange}
         onLogout={onLogout}
         appVersion={envConfig.appVersion}
@@ -138,9 +132,9 @@ export function MainLayout({
         error={sessionsError}
         sessions={sessions}
         canRemove={isAdmin}
-        onClose={onSessionsClose}
-        onRemove={onRemoveSession}
-        onCopyNote={onCopySessionNote}
+        onClose={closeSessions}
+        onRemove={handleRemoveSession}
+        onCopyNote={handleCopySessionNote}
       />
 
       <ChangePasswordModal

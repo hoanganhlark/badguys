@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { App as AntApp } from "antd";
 import { useTranslation } from "react-i18next";
 import {
@@ -10,15 +10,13 @@ import {
 import LoginModal from "./components/LoginModal";
 import { MainLayout } from "./components/MainLayout";
 import { useAuth } from "./context/AuthContext";
+import { SessionProvider } from "./context/SessionContext";
 import { useHistoryModal } from "./hooks/useHistoryModal";
 import { useChangePasswordModal } from "./hooks/useChangePasswordModal";
-import { useSessionHandlers } from "./hooks/useSessionHandlers";
 import { useAnalyticsTracking } from "./hooks/useAnalyticsTracking";
 import { useGuestVisitNotification } from "./hooks/useGuestVisitNotification";
 import { useAppConfig } from "./hooks/useAppConfig";
 import { useAppMenus } from "./hooks/useAppMenus";
-import { useSessions } from "./hooks/queries/useSessions";
-import { SESSIONS_FETCH_LIMIT } from "./lib/constants";
 import {
   AppRoute,
   getLoginRedirectTarget,
@@ -46,18 +44,6 @@ export default function App() {
   const storageScopeKey = currentUser?.userId || "guest";
   const { appConfig, handleConfigChange } = useAppConfig(storageScopeKey);
 
-  // Sessions data loaded via React Query hook - only when modal is open
-  const [sessionsFetched, setSessionsFetched] = useState(false);
-  const {
-    sessions,
-    isLoading: sessionsLoading,
-    error: sessionsQueryError,
-    refetch: refetchSessions,
-    removeSessionAsync,
-  } = useSessions(SESSIONS_FETCH_LIMIT, sessionsFetched);
-  const sessionsError =
-    sessionsQueryError instanceof Error ? sessionsQueryError.message : "";
-
   const {
     open: changePasswordOpen,
     error: changePasswordError,
@@ -71,10 +57,7 @@ export default function App() {
 
   const {
     configOpen,
-    sessionsOpen,
     closeConfig,
-    openSessions,
-    closeSessions,
   } = useHistoryModal();
 
   // Track analytics and page views
@@ -96,18 +79,6 @@ export default function App() {
     messageApi.info(message);
   }
 
-  function openSessionsModal() {
-    if (!sessionsFetched) {
-      setSessionsFetched(true);
-    }
-    openSessions();
-    refetchSessions();
-  }
-
-  const { handleRemoveSession, handleCopySessionNote } = useSessionHandlers({
-    showToast,
-    removeSessions: removeSessionAsync,
-  });
 
 
   function handleLoginSuccess(target: string) {
@@ -170,14 +141,6 @@ export default function App() {
       configOpen={configOpen}
       onConfigClose={closeConfig}
       onConfigChange={handleConfigChange}
-      onOpenSessions={openSessionsModal}
-      sessionsOpen={sessionsOpen}
-      sessionsLoading={sessionsLoading}
-      sessionsError={sessionsError}
-      sessions={sessions}
-      onSessionsClose={closeSessions}
-      onRemoveSession={handleRemoveSession}
-      onCopySessionNote={handleCopySessionNote}
       changePasswordOpen={changePasswordOpen}
       changePasswordSubmitting={changePasswordSubmitting}
       changePasswordError={changePasswordError}
@@ -204,14 +167,16 @@ export default function App() {
   });
 
   return (
-    <Routes>
-      {routeConfigs.map((routeConfig) => (
-        <Route
-          key={routeConfig.path}
-          path={routeConfig.path}
-          element={routeConfig.element}
-        />
-      ))}
-    </Routes>
+    <SessionProvider showToast={showToast}>
+      <Routes>
+        {routeConfigs.map((routeConfig) => (
+          <Route
+            key={routeConfig.path}
+            path={routeConfig.path}
+            element={routeConfig.element}
+          />
+        ))}
+      </Routes>
+    </SessionProvider>
   );
 }
