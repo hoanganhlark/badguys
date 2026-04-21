@@ -1,18 +1,21 @@
-import { useTranslation } from "react-i18next";
 import { Award, BarChart2, Settings } from "react-feather";
-import { useRankingUIContext } from "../../features/ranking/context";
-import { useRankingMembers, useRankingCategories, useUsers } from "../../hooks/queries";
+import { useTranslation } from "react-i18next";
 import {
-  RankingMembersContainer,
   RankingMatchesContainer,
+  RankingMembersContainer,
 } from "../../features/ranking/containers";
+import { useRankingUIContext } from "../../features/ranking/context";
+import {
+  useRankingCategories,
+  useRankingMembers,
+  useUsers,
+} from "../../hooks/queries";
 import DashboardSectionHeader from "../dashboard/DashboardSectionHeader";
-import DashboardSummaryCards from "../dashboard/DashboardSummaryCards";
 
 export default function RankingViewContent() {
   const { t } = useTranslation();
   const { view } = useRankingUIContext();
-  const { members, isLoading: isMembersLoading } = useRankingMembers();
+  const { members } = useRankingMembers();
   const { categories } = useRankingCategories();
   const { users } = useUsers();
 
@@ -33,13 +36,10 @@ export default function RankingViewContent() {
         : t("rankingPage.clubRanking");
 
   // Build usernamesById from users
-  const usernamesById = users.reduce<Record<string, string>>(
-    (acc, user) => {
-      acc[user.id] = user.username;
-      return acc;
-    },
-    {},
-  );
+  const usernamesById = users.reduce<Record<string, string>>((acc, user) => {
+    acc[user.id] = user.username;
+    return acc;
+  }, {});
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -48,17 +48,6 @@ export default function RankingViewContent() {
         icon={headerIcon}
         title={headerTitle}
         subtitle={t("rankingPage.systemDescription")}
-      />
-
-      <DashboardSummaryCards
-        loading={isMembersLoading}
-        items={[
-          {
-            key: "members",
-            label: t("rankingPage.members"),
-            value: members.length,
-          },
-        ]}
       />
 
       {/* View: Members */}

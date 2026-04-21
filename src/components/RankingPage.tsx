@@ -27,7 +27,9 @@ export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   const location = useLocation();
   const isPublicRankingRoute = location.pathname.startsWith("/ranking");
 
-  const [usernamesById, setUsernamesById] = useState<Record<string, string>>({});
+  const [usernamesById, setUsernamesById] = useState<Record<string, string>>(
+    {},
+  );
 
   useEffect(() => {
     if (!isOpen || !isSupabaseReady()) return;
@@ -92,12 +94,8 @@ function RankingPageInner({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate();
   const location = useLocation();
   const isPublicRankingRoute = location.pathname.startsWith("/ranking");
-  const {
-    view,
-    setViewWithRoute,
-    mobileSidebarOpen,
-    setMobileSidebarOpen,
-  } = useRankingUIContext();
+  const { view, setViewWithRoute, mobileSidebarOpen, setMobileSidebarOpen } =
+    useRankingUIContext();
   const categoriesActive = location.pathname === "/dashboard/categories";
 
   return (
