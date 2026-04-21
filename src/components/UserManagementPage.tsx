@@ -262,6 +262,7 @@ export default function UserManagementPage() {
           />
 
           <DashboardSummaryCards
+            loading={isLoading}
             items={[
               {
                 key: "total-users",
