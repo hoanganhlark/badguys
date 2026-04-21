@@ -1,8 +1,7 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, useEffect, useState } from "react";
 import { App as AntApp } from "antd";
 import { useTranslation } from "react-i18next";
 import {
-  Navigate,
   Route,
   Routes,
   useLocation,
@@ -13,9 +12,6 @@ import ConfigSidebar from "./components/ConfigSidebar";
 import ChangePasswordModal from "./components/ChangePasswordModal";
 import LoginModal from "./components/LoginModal";
 import SessionsModal from "./components/SessionsModal";
-import AdminRoute from "./components/auth/AdminRoute";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
-import DashboardPageLoadingFallback from "./components/DashboardPageLoadingFallback";
 import { useAuth } from "./context/AuthContext";
 import { envConfig } from "./env";
 import { useHistoryModal } from "./hooks/useHistoryModal";
@@ -35,20 +31,16 @@ import {
   toDashboardTarget,
 } from "./lib/routes";
 import { buildAppRouteConfigs } from "./routes/appRouteConfigs";
+import {
+  buildDashboardRouteElements,
+  buildRankingRouteElement,
+} from "./routeElements";
 
 interface LocationState {
   from?: string;
 }
 
 const Calculator = lazy(() => import("./components/calculator/Calculator"));
-const RankingPage = lazy(() => import("./components/RankingPage"));
-const AuditPage = lazy(() => import("./components/AuditPage"));
-const CategoryManagementPage = lazy(
-  () => import("./components/CategoryManagementPage"),
-);
-const UserManagementPage = lazy(
-  () => import("./components/UserManagementPage"),
-);
 
 export default function App() {
   const { currentUser, isAuthenticated, isAdmin, logout } = useAuth();
@@ -149,54 +141,28 @@ export default function App() {
     t,
   });
 
-  const usersLegacyRouteElement = (
-    <Navigate to={AppRoute.DashboardUsers} replace />
+  const onNavigateHome = () => navigate(AppRoute.Home);
+
+  const loginModalElement = (
+    <LoginModal
+      open={loginModalOpen}
+      redirectTo={loginRedirectTarget}
+      onClose={closeLoginModal}
+      onSuccess={handleLoginSuccess}
+    />
   );
 
-  const dashboardUsersRouteElement = (
-    <AdminRoute>
-      <Suspense fallback={<DashboardPageLoadingFallback />}>
-        <UserManagementPage />
-      </Suspense>
-    </AdminRoute>
-  );
+  const {
+    usersLegacy: usersLegacyRouteElement,
+    dashboardUsers: dashboardUsersRouteElement,
+    dashboardAudit: dashboardAuditRouteElement,
+    dashboardCategories: dashboardCategoriesRouteElement,
+    dashboardWildcard: dashboardWildcardRouteElement,
+  } = buildDashboardRouteElements(onNavigateHome);
 
-  const dashboardAuditRouteElement = (
-    <AdminRoute>
-      <Suspense fallback={<DashboardPageLoadingFallback />}>
-        <AuditPage />
-      </Suspense>
-    </AdminRoute>
-  );
-
-  const dashboardCategoriesRouteElement = (
-    <AdminRoute>
-      <Suspense fallback={<DashboardPageLoadingFallback />}>
-        <CategoryManagementPage />
-      </Suspense>
-    </AdminRoute>
-  );
-
-  const dashboardWildcardRouteElement = (
-    <ProtectedRoute>
-      <Suspense fallback={<DashboardPageLoadingFallback />}>
-        <RankingPage isOpen={true} onClose={() => navigate(AppRoute.Home)} />
-      </Suspense>
-    </ProtectedRoute>
-  );
-
-  const rankingWildcardRouteElement = (
-    <>
-      <Suspense fallback={<DashboardPageLoadingFallback />}>
-        <RankingPage isOpen={true} onClose={() => navigate(AppRoute.Home)} />
-      </Suspense>
-      <LoginModal
-        open={loginModalOpen}
-        redirectTo={loginRedirectTarget}
-        onClose={closeLoginModal}
-        onSuccess={handleLoginSuccess}
-      />
-    </>
+  const rankingWildcardRouteElement = buildRankingRouteElement(
+    onNavigateHome,
+    loginModalElement,
   );
 
   const fallbackRouteElement = (
