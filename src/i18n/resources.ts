@@ -22,17 +22,15 @@ export const resources = {
         loggedIn: "Đăng nhập: {{username}} ({{role}})",
         toastCopiedSummary: "Đã sao chép bảng kê! ✨",
         toastMissingSessionId: "Thiếu mã buổi cần xóa.",
-        toastFirebaseNotReadyDelete:
-          "Chưa thể xóa lúc này. Firebase chưa sẵn sàng.",
+        toastSupabaseNotReady:
+          "Chưa thể xóa lúc này. Dịch vụ chưa sẵn sàng.",
         toastDeletedSession: "Đã xóa buổi khỏi lịch sử.",
         toastDeleteFailed: "Xóa thất bại. Vui lòng thử lại.",
         toastCopiedNote: "Đã copy note!",
         toastClearedData: "Dữ liệu đã được xóa.",
         toastPasswordChanged: "Đổi mật khẩu thành công.",
-        loadSessionsFirebaseError:
-          "Firebase chưa khởi tạo được. Kiểm tra kết nối mạng hoặc cấu hình Firestore.",
         loadSessionsFailed:
-          "Không thể tải lịch sử. Kiểm tra quyền Firestore và thử lại.",
+          "Không thể tải lịch sử. Kiểm tra kết nối mạng và thử lại.",
         changePasswordTitle: "Đổi mật khẩu",
         closeChangePassword: "Đóng đổi mật khẩu",
         currentPassword: "Mật khẩu hiện tại",
@@ -210,6 +208,7 @@ export const resources = {
         members: "Thành viên",
         matches: "Trận đấu",
         topRank: "Hạng cao nhất",
+        loading: "Đang tải dữ liệu xếp hạng...",
         rankingConfig: "Cấu hình bảng xếp hạng",
         penaltyCoefficient: "Hệ số phạt",
         showMetricsInModal: "Hiển thị chỉ số trong modal",

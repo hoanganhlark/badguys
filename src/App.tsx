@@ -31,6 +31,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
 import { envConfig } from "./env";
 import { useHistoryModal } from "./hooks/useHistoryModal";
+import { useSessions } from "./hooks/queries/useSessions";
 import { loadStoredConfig, saveConfig } from "./lib/platform";
 import type { AppConfig } from "./types";
 import {
@@ -41,9 +42,7 @@ import {
 } from "./lib/constants";
 import {
   getUserByUsername,
-  getRecentSessions,
   isSupabaseReady,
-  removeSession,
   updateUserPassword,
 } from "./lib/api";
 import { hashMd5 } from "./lib/hash";
@@ -65,7 +64,6 @@ import {
   trackRouteChange,
 } from "./lib/analytics";
 import { notifyGuestVisited } from "./lib/telegram";
-import type { SessionRecord } from "./types";
 
 interface LocationState {
   from?: string;
@@ -84,9 +82,10 @@ export default function App() {
     loadStoredConfig(envConfig.defaultConfig, storageScopeKey),
   );
 
-  const [sessionsLoading, setSessionsLoading] = useState(false);
-  const [sessionsError, setSessionsError] = useState("");
-  const [sessions, setSessions] = useState<SessionRecord[]>([]);
+  // Sessions data loaded via React Query hook instead of manual state
+  const { sessions, isLoading: sessionsLoading, error: sessionsQueryError, refetch: refetchSessions, removeSession: removeSessions } = useSessions(SESSIONS_FETCH_LIMIT);
+  const sessionsError = sessionsQueryError instanceof Error ? sessionsQueryError.message : "";
+
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [changePasswordError, setChangePasswordError] = useState("");
   const [changePasswordSubmitting, setChangePasswordSubmitting] =
@@ -179,29 +178,9 @@ export default function App() {
     messageApi.info(message);
   }
 
-  async function loadLastSessions() {
-    setSessionsLoading(true);
-    setSessionsError("");
-
-    try {
-      if (!isSupabaseReady()) {
-        setSessionsError(t("app.loadSessionsFirebaseError"));
-        return;
-      }
-
-      const items = await getRecentSessions(SESSIONS_FETCH_LIMIT);
-      setSessions(items);
-    } catch (error) {
-      console.warn("Load recent sessions failed", error);
-      setSessionsError(t("app.loadSessionsFailed"));
-    } finally {
-      setSessionsLoading(false);
-    }
-  }
-
   function openSessionsModal() {
     openSessions();
-    loadLastSessions();
+    refetchSessions();
   }
 
   async function handleRemoveSession(sessionId: string) {
@@ -211,7 +190,7 @@ export default function App() {
     }
 
     if (!isSupabaseReady()) {
-      showToast(t("app.toastFirebaseNotReadyDelete"));
+      showToast(t("app.toastSupabaseNotReady"));
       return;
     }
 
@@ -219,9 +198,8 @@ export default function App() {
     if (!confirmed) return;
 
     try {
-      await removeSession(sessionId);
+      await removeSessions(sessionId);
       showToast(t("app.toastDeletedSession"));
-      loadLastSessions();
     } catch (error) {
       console.warn("Remove session failed", error);
       showToast(t("app.toastDeleteFailed"));

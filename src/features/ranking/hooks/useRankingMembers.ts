@@ -9,6 +9,7 @@ import type { RankingLevel } from "../../../types";
 
 export interface UseRankingMembersReturn {
   members: Member[];
+  isLoading: boolean;
   addMember: (name: string, level: RankingLevel) => void;
   editMember: (id: number, name: string, level: RankingLevel) => void;
   deleteMember: (id: number) => void;
@@ -144,6 +145,7 @@ export function useRankingMembers(): UseRankingMembersReturn {
 
   return {
     members,
+    isLoading: !isHydrated,
     addMember,
     editMember,
     deleteMember,

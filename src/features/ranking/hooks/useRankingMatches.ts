@@ -10,6 +10,7 @@ import type { MatchRecord } from "../../../types";
 
 export interface UseRankingMatchesReturn {
   matches: Match[];
+  isLoading: boolean;
   historyMatches: Match[];
   isHistoryLoading: boolean;
   historyPage: number;
@@ -106,6 +107,7 @@ function parseToIsoDate(input: string): string {
  */
 export function useRankingMatches(): UseRankingMatchesReturn {
   const [matches, setMatches] = useState<Match[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [historyMatches, setHistoryMatches] = useState<Match[]>([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [historyPage, setHistoryPage] = useState(1);
@@ -253,15 +255,18 @@ export function useRankingMatches(): UseRankingMatchesReturn {
     if (!isSupabaseReady()) return;
 
     let mounted = true;
+    setIsLoading(true);
 
     void getMatches()
       .then((records) => {
         if (!mounted) return;
         const remoteMatches = records.map(mapMatchRecordToRankingMatch);
         setMatches(remoteMatches);
+        setIsLoading(false);
       })
       .catch((error) => {
         console.error("Failed to load matches from Supabase", error);
+        if (mounted) setIsLoading(false);
       });
 
     return () => {
@@ -271,6 +276,7 @@ export function useRankingMatches(): UseRankingMatchesReturn {
 
   return {
     matches,
+    isLoading,
     historyMatches,
     isHistoryLoading,
     historyPage,

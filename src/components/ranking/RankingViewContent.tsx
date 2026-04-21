@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Award, BarChart2, Settings } from "react-feather";
+import { Spin } from "antd";
 import {
   useRankingUIContext,
   useRankingMembersContext,
@@ -14,8 +15,10 @@ import RankingPanel from "./RankingPanel";
 export default function RankingViewContent() {
   const { t } = useTranslation();
   const { view } = useRankingUIContext();
-  const { members } = useRankingMembersContext();
-  const { matches, rankings } = useRankingMatchesContext();
+  const { members, isLoading: isMembersLoading } = useRankingMembersContext();
+  const { matches, isLoading: isMatchesLoading, rankings } = useRankingMatchesContext();
+
+  const isLoading = isMembersLoading || isMatchesLoading;
 
   const headerIcon =
     view === "member" ? (
@@ -32,6 +35,14 @@ export default function RankingViewContent() {
       : view === "match-form"
         ? t("rankingPage.recordResult")
         : t("rankingPage.clubRanking");
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-16">
+        <Spin tip={t("rankingPage.loading")} />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto">

@@ -34,6 +34,7 @@ function normalizeMemberNameKey(name: string): string {
 type RankingMatchesContextValue = {
   // From useRankingMatches
   matches: Match[];
+  isLoading: boolean;
   historyMatches: Match[];
   isHistoryLoading: boolean;
   historyPage: number;
@@ -97,6 +98,7 @@ export function RankingMatchesProvider({
 }: RankingMatchesProviderProps) {
   const {
     matches,
+    isLoading,
     historyMatches,
     isHistoryLoading,
     historyPage,
@@ -363,6 +365,7 @@ export function RankingMatchesProvider({
   const value = useMemo<RankingMatchesContextValue>(
     () => ({
       matches,
+      isLoading,
       historyMatches,
       isHistoryLoading,
       historyPage,
@@ -401,6 +404,7 @@ export function RankingMatchesProvider({
     }),
     [
       matches,
+      isLoading,
       historyMatches,
       isHistoryLoading,
       historyPage,

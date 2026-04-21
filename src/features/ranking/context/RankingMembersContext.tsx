@@ -13,6 +13,7 @@ import type { RankingLevel } from "../../../types";
 type RankingMembersContextValue = {
   // From useRankingMembers
   members: Member[];
+  isLoading: boolean;
   // From useRankingCategories
   categories: any[];
   sortedCategories: any[];
@@ -43,7 +44,7 @@ export function RankingMembersProvider({
   isAdmin,
   children,
 }: RankingMembersProviderProps) {
-  const { members, addMember, editMember, deleteMember } =
+  const { members, isLoading, addMember, editMember, deleteMember } =
     useRankingMembers();
   const { categories, sortedCategories, defaultMemberLevel } =
     useRankingCategories();
@@ -99,6 +100,7 @@ export function RankingMembersProvider({
   const value = useMemo<RankingMembersContextValue>(
     () => ({
       members,
+      isLoading,
       categories,
       sortedCategories,
       defaultMemberLevel,
@@ -114,6 +116,7 @@ export function RankingMembersProvider({
     }),
     [
       members,
+      isLoading,
       categories,
       sortedCategories,
       defaultMemberLevel,
