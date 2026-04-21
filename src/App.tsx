@@ -395,7 +395,7 @@ export default function App() {
   if (location.pathname === "/dashboard/users") {
     return (
       <AdminRoute>
-        <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
+        <Suspense fallback={<DashboardPageLoadingFallback />}>
           <UserManagementPage />
         </Suspense>
       </AdminRoute>
@@ -405,7 +405,7 @@ export default function App() {
   if (location.pathname === "/dashboard/audit") {
     return (
       <AdminRoute>
-        <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
+        <Suspense fallback={<DashboardPageLoadingFallback />}>
           <AuditPage />
         </Suspense>
       </AdminRoute>
@@ -415,7 +415,7 @@ export default function App() {
   if (location.pathname === "/dashboard/categories") {
     return (
       <AdminRoute>
-        <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
+        <Suspense fallback={<DashboardPageLoadingFallback />}>
           <CategoryManagementPage />
         </Suspense>
       </AdminRoute>
