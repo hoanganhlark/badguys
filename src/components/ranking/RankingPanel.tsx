@@ -1,4 +1,11 @@
-import { ChevronDown, ChevronRight, Clock, Trash2, User, Users } from "react-feather";
+import {
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  Trash2,
+  User,
+  Users,
+} from "react-feather";
 import { memo, useMemo } from "react";
 import {
   CaretDownOutlined,
@@ -50,7 +57,10 @@ function formatSet(setText: string): string {
   return `${score} (${normalizedMinutes}p)`;
 }
 
-function formatDisplayName(name: string): { firstName: string; lastName: string } {
+function formatDisplayName(name: string): {
+  firstName: string;
+  lastName: string;
+} {
   const tokens = String(name || "")
     .trim()
     .split(/\s+/)
@@ -166,15 +176,18 @@ function RankingPanel({
         }
 
         return (
-            <div className="flex leading-tight whitespace-nowrap">
-              <Typography.Text className="text-slate-400 text-xs">{rank}</Typography.Text>
-              <span className={`inline-flex items-center gap-1 text-[12px] font-semibold pl-2 ${trendClassName}`}>
-                {trendDisplay}
-              </span>
-            </div>
+          <div className="flex leading-tight whitespace-nowrap">
+            <Typography.Text className="text-slate-400 text-xs">
+              {rank}
+            </Typography.Text>
+            <span
+              className={`inline-flex items-center gap-1 text-[12px] font-semibold pl-2 ${trendClassName}`}
+            >
+              {trendDisplay}
+            </span>
+          </div>
         );
       },
-
     },
     {
       title: (
@@ -192,7 +205,9 @@ function RankingPanel({
         return (
           <Typography.Text ellipsis={{ tooltip: String(name || "") }}>
             {displayName.firstName}{" "}
-            {displayName.lastName ? <strong>{displayName.lastName}</strong> : null}
+            {displayName.lastName ? (
+              <strong>{displayName.lastName}</strong>
+            ) : null}
           </Typography.Text>
         );
       },
@@ -221,7 +236,11 @@ function RankingPanel({
       width: 300,
       ellipsis: true,
       render: (_, row) => (
-        <Typography.Text ellipsis={{ tooltip: `${row.team1.join(" & ")} vs ${row.team2.join(" & ")}` }}>
+        <Typography.Text
+          ellipsis={{
+            tooltip: `${row.team1.join(" & ")} vs ${row.team2.join(" & ")}`,
+          }}
+        >
           <span className="inline-flex items-center gap-1.5">
             {row.type === "singles" ? (
               <User className="h-3.5 w-3.5 text-slate-500" />
@@ -229,7 +248,9 @@ function RankingPanel({
               <Users className="h-3.5 w-3.5 text-slate-500" />
             )}
             <span>
-              {row.team1.join(" & ")} <span className="mx-1 text-slate-400">vs</span> {row.team2.join(" & ")}
+              {row.team1.join(" & ")}{" "}
+              <span className="mx-1 text-slate-400">vs</span>{" "}
+              {row.team2.join(" & ")}
             </span>
           </span>
         </Typography.Text>

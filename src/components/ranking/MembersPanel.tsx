@@ -21,6 +21,8 @@ import {
 } from "antd";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../../context/AuthContext";
+import { useRankingMembersContext } from "../../features/ranking/context";
 import type { Member } from "./types";
 import type { RankingCategory, RankingLevel } from "../../types";
 import {
@@ -28,30 +30,24 @@ import {
   normalizeRankingLevel,
 } from "../../lib/rankingLevel";
 
-interface MembersPanelProps {
-  isEditing: number | null;
-  newMember: { name: string; level: RankingLevel };
-  members: Member[];
-  categories: RankingCategory[];
-  canManage: boolean;
-  onSetNewMember: (next: { name: string; level: RankingLevel }) => void;
-  onAddOrUpdateMember: () => void;
-  onStartEdit: (member: Member) => void;
-  onDeleteMember: (id: number) => void;
-}
-
-function MembersPanel({
-  isEditing,
-  newMember,
-  members,
-  categories,
-  canManage,
-  onSetNewMember,
-  onAddOrUpdateMember,
-  onStartEdit,
-  onDeleteMember,
-}: MembersPanelProps) {
+function MembersPanel() {
   const { t } = useTranslation();
+  const { isAdmin } = useAuth();
+  const {
+    isEditing,
+    memberFormName: name,
+    memberFormLevel: level,
+    members,
+    sortedCategories: categories,
+    handleAddOrEditMember: onAddOrUpdateMember,
+    handleStartEditMember: onStartEdit,
+    handleDeleteMember: onDeleteMember,
+    setMemberFormName,
+    setMemberFormLevel,
+  } = useRankingMembersContext();
+
+  const canManage = isAdmin;
+  const newMember = { name, level };
 
   const sortedCategories = [...categories].sort(
     (a, b) =>
@@ -237,9 +233,7 @@ function MembersPanel({
                 <Input
                   placeholder={t("membersPanel.fullNamePlaceholder")}
                   value={newMember.name}
-                  onChange={(event) =>
-                    onSetNewMember({ ...newMember, name: event.target.value })
-                  }
+                  onChange={(event) => setMemberFormName(event.target.value)}
                 />
               </Form.Item>
 
@@ -257,10 +251,7 @@ function MembersPanel({
                   disabled={!hasCategoryOptions}
                   value={newMember.level}
                   onChange={(value: RankingLevel) =>
-                    onSetNewMember({
-                      ...newMember,
-                      level: normalizeRankingLevel(value),
-                    })
+                    setMemberFormLevel(normalizeRankingLevel(value))
                   }
                 />
               </Form.Item>

@@ -206,8 +206,7 @@ export const resources = {
         memberManagement: "Quản lý thành viên",
         recordResult: "Ghi nhận kết quả",
         clubRanking: "Bảng xếp hạng câu lạc bộ",
-        systemDescription:
-          "Hệ thống theo dõi trình độ và kết quả thi đấu theo mô hình Glicko-2 kết hợp",
+        systemDescription: "Hệ thống theo dõi trình độ và kết quả thi đấu",
         members: "Thành viên",
         matches: "Trận đấu",
         topRank: "Hạng cao nhất",
