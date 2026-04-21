@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import AppHeader from "./AppHeader";
 import ConfigSidebar from "./ConfigSidebar";
-import ChangePasswordModal from "./ChangePasswordModal";
 import LoginModal from "./LoginModal";
 import SessionsModal from "./SessionsModal";
 import { useSessionContext } from "../context/SessionContext";
@@ -60,16 +59,7 @@ export function MainLayout({
     handleRemoveSession,
     handleCopySessionNote,
   } = useSessionContext();
-  const {
-    open: changePasswordOpen,
-    error: changePasswordError,
-    submitting: changePasswordSubmitting,
-    form: passwordForm,
-    handleClose: onChangePasswordClose,
-    handleSubmit: onChangePasswordSubmit,
-    clearError: onClearChangePasswordError,
-    handleOpen: openChangePasswordModal,
-  } = useChangePasswordContext();
+  const { handleOpen: openChangePasswordModal } = useChangePasswordContext();
 
   const { rankingMenuItems, userMenuItems } = useAppMenus({
     username: currentUser?.username || "",
@@ -129,16 +119,6 @@ export function MainLayout({
         onClose={closeSessions}
         onRemove={handleRemoveSession}
         onCopyNote={handleCopySessionNote}
-      />
-
-      <ChangePasswordModal
-        open={changePasswordOpen}
-        submitting={changePasswordSubmitting}
-        error={changePasswordError}
-        form={passwordForm}
-        onCancel={onChangePasswordClose}
-        onSubmit={onChangePasswordSubmit}
-        onClearError={onClearChangePasswordError}
       />
 
       <LoginModal

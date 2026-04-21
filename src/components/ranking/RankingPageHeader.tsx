@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Button, Dropdown, type MenuProps } from "antd";
 import {
   HomeOutlined,
+  KeyOutlined,
   LoginOutlined,
   LogoutOutlined,
   MenuOutlined,
@@ -10,7 +11,9 @@ import {
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useChangePasswordContext } from "../../context/ChangePasswordContext";
 import { useRankingUIContext } from "../../features/ranking/context";
+import AccountMenuDropdown from "../AccountMenuDropdown";
 
 const DASHBOARD_APPBAR_STYLE: React.CSSProperties = {
   position: "sticky",
@@ -27,19 +30,12 @@ const DASHBOARD_APPBAR_STYLE: React.CSSProperties = {
 
 export default function RankingPageHeader() {
   const { currentUser, logout } = useAuth();
+  const { handleOpen: openChangePasswordModal } = useChangePasswordContext();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const {
-    mobileSidebarOpen,
-    setMobileSidebarOpen,
-    isPublicRankingRoute,
-  } = useRankingUIContext();
-
-  const currentUserInitial = useMemo(() => {
-    if (!currentUser?.username) return "U";
-    return currentUser.username.charAt(0).toUpperCase();
-  }, [currentUser?.username]);
+  const { mobileSidebarOpen, setMobileSidebarOpen, isPublicRankingRoute } =
+    useRankingUIContext();
 
   const hideFloatingHeaderActions = mobileSidebarOpen;
 
@@ -49,6 +45,11 @@ export default function RankingPageHeader() {
         key: "home",
         icon: <HomeOutlined />,
         label: t("app.home"),
+      },
+      {
+        key: "password-change",
+        icon: <KeyOutlined />,
+        label: t("app.changePasswordTitle"),
       },
       {
         key: "logout",
@@ -100,36 +101,33 @@ export default function RankingPageHeader() {
         </div>
 
         {currentUser && !hideFloatingHeaderActions ? (
-          <Dropdown
-            menu={{
-              items: userMenuItems,
-              onClick: ({ key }) => {
-                if (key === "home") {
-                  navigate("/");
-                  return;
-                }
+          <AccountMenuDropdown
+            username={currentUser.username}
+            items={userMenuItems}
+            onMenuClick={({ key }) => {
+              if (key === "home") {
+                navigate("/");
+                return;
+              }
 
-                if (key === "logout") {
-                  navigate("/");
-                  logout();
-                }
-              },
+              if (key === "password-change") {
+                openChangePasswordModal();
+                return;
+              }
+
+              if (key === "logout") {
+                navigate("/");
+                logout();
+              }
             }}
-            trigger={["click"]}
-          >
-            <Button
-              type="text"
-              shape="circle"
-              title={t("rankingPage.userMenuTitle", {
-                username: currentUser.username,
-              })}
-              aria-label={t("rankingPage.userMenuTitle", {
-                username: currentUser.username,
-              })}
-            >
-              {currentUserInitial}
-            </Button>
-          </Dropdown>
+            buttonType="text"
+            title={t("rankingPage.userMenuTitle", {
+              username: currentUser.username,
+            })}
+            ariaLabel={t("rankingPage.userMenuTitle", {
+              username: currentUser.username,
+            })}
+          />
         ) : null}
 
         {isPublicRankingRoute && !currentUser && !hideFloatingHeaderActions ? (

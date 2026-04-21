@@ -22,33 +22,25 @@ export function buildDashboardRouteElements(onNavigateHome: () => void) {
 
   const dashboardUsers = (
     <AdminRoute>
-      <Suspense fallback={<DashboardPageLoadingFallback />}>
-        <UserManagementPage />
-      </Suspense>
+      <UserManagementPage />
     </AdminRoute>
   );
 
   const dashboardAudit = (
     <AdminRoute>
-      <Suspense fallback={<DashboardPageLoadingFallback />}>
-        <AuditPage />
-      </Suspense>
+      <AuditPage />
     </AdminRoute>
   );
 
   const dashboardCategories = (
     <AdminRoute>
-      <Suspense fallback={<DashboardPageLoadingFallback />}>
-        <CategoryManagementPage />
-      </Suspense>
+      <CategoryManagementPage />
     </AdminRoute>
   );
 
   const dashboardWildcard = (
     <ProtectedRoute>
-      <Suspense fallback={<DashboardPageLoadingFallback />}>
-        <RankingPage isOpen={true} onClose={onNavigateHome} />
-      </Suspense>
+      <RankingPage isOpen={true} onClose={onNavigateHome} />
     </ProtectedRoute>
   );
 
@@ -70,9 +62,7 @@ export function buildRankingRouteElement(
 ): ReactNode {
   return (
     <>
-      <Suspense fallback={<DashboardPageLoadingFallback />}>
-        <RankingPage isOpen={true} onClose={onNavigateHome} />
-      </Suspense>
+      <RankingPage isOpen={true} onClose={onNavigateHome} />
       {loginModalElement}
     </>
   );

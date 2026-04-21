@@ -1,11 +1,8 @@
 import { Button, Dropdown, Layout } from "antd";
-import {
-  SettingOutlined,
-  TrophyOutlined,
-  UserOutlined,
-} from "@ant-design/icons";
+import { SettingOutlined, TrophyOutlined } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { useAuth } from "../context/AuthContext";
+import AccountMenuDropdown from "./AccountMenuDropdown";
 
 interface AppHeaderProps {
   onOpenConfig: () => void;
@@ -63,13 +60,11 @@ export default function AppHeader(props: AppHeaderProps) {
         ) : null}
 
         {isAuthenticated ? (
-          <Dropdown menu={{ items: userMenuItems }} trigger={["click"]}>
-            <Button shape="circle" aria-label={accountMenuLabel}>
-              {currentUser?.username?.charAt(0)?.toUpperCase() || (
-                <UserOutlined />
-              )}
-            </Button>
-          </Dropdown>
+          <AccountMenuDropdown
+            username={currentUser?.username}
+            items={userMenuItems}
+            ariaLabel={accountMenuLabel}
+          />
         ) : null}
       </div>
     </Layout.Header>

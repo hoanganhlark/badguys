@@ -275,6 +275,7 @@ export default function AuditPage() {
           />
 
           <DashboardSummaryCards
+            loading={isLoading}
             items={[
               {
                 key: "total-events",
@@ -334,13 +335,14 @@ export default function AuditPage() {
             </div>
 
             {isLoading ? (
-              <DashboardTableSkeleton columns={7} rows={8} className="mt-1" />
+              <>
+                <DashboardTableSkeleton columns={7} rows={8} className="mt-1" />
+              </>
             ) : (
               <Table
                 rowKey="id"
                 columns={columns}
                 dataSource={filteredEvents}
-                loading={false}
                 scroll={{ x: 980 }}
                 pagination={{
                   defaultPageSize: 10,

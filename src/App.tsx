@@ -1,11 +1,7 @@
 import { App as AntApp } from "antd";
-import {
-  Route,
-  Routes,
-  useLocation,
-  useNavigate,
-} from "react-router-dom";
+import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import LoginModal from "./components/LoginModal";
+import GlobalChangePasswordModal from "./components/GlobalChangePasswordModal";
 import { MainLayout } from "./components/MainLayout";
 import { useAuth } from "./context/AuthContext";
 import { SessionProvider } from "./context/SessionContext";
@@ -40,11 +36,7 @@ export default function App() {
   const storageScopeKey = currentUser?.userId || "guest";
   const { appConfig, handleConfigChange } = useAppConfig(storageScopeKey);
 
-  const {
-    configOpen,
-    openConfig,
-    closeConfig,
-  } = useHistoryModal();
+  const { configOpen, openConfig, closeConfig } = useHistoryModal();
 
   // Track analytics and page views
   useAnalyticsTracking();
@@ -55,8 +47,6 @@ export default function App() {
   function showToast(message: string) {
     messageApi.info(message);
   }
-
-
 
   function handleLoginSuccess(target: string) {
     navigate(toDashboardTarget(target), { replace: true });
@@ -127,6 +117,7 @@ export default function App() {
 
   return (
     <ChangePasswordProvider showToast={showToast}>
+      <GlobalChangePasswordModal />
       <SessionProvider showToast={showToast}>
         <Routes>
           {routeConfigs.map((routeConfig) => (
