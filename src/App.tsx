@@ -29,20 +29,11 @@ import { useAuth } from "./context/AuthContext";
 import { envConfig } from "./env";
 import { useHistoryModal } from "./hooks/useHistoryModal";
 import { useChangePasswordModal } from "./hooks/useChangePasswordModal";
+import { useSessionHandlers } from "./hooks/useSessionHandlers";
 import { useSessions } from "./hooks/queries/useSessions";
-import { loadStoredConfig, saveConfig } from "./lib/platform";
+import { loadStoredConfig, saveConfig, formatVisitTimestampUTC7, markVisitNotifiedToday, shouldSendVisitNotificationToday } from "./lib/platform";
 import type { AppConfig } from "./types";
-import { normalizeKLabels } from "./lib/core";
 import { SESSIONS_FETCH_LIMIT } from "./lib/constants";
-import {
-  isSupabaseReady,
-} from "./lib/api";
-import {
-  copyText,
-  formatVisitTimestampUTC7,
-  markVisitNotifiedToday,
-  shouldSendVisitNotificationToday,
-} from "./lib/platform";
 import {
   AppRoute,
   getLoginRedirectTarget,
@@ -99,7 +90,7 @@ export default function App() {
     isLoading: sessionsLoading,
     error: sessionsQueryError,
     refetch: refetchSessions,
-    removeSession: removeSessions,
+    removeSessionAsync,
   } = useSessions(SESSIONS_FETCH_LIMIT, sessionsFetched);
   const sessionsError =
     sessionsQueryError instanceof Error ? sessionsQueryError.message : "";
@@ -197,38 +188,10 @@ export default function App() {
     refetchSessions();
   }
 
-  async function handleRemoveSession(sessionId: string) {
-    if (!sessionId) {
-      showToast(t("app.toastMissingSessionId"));
-      return;
-    }
-
-    if (!isSupabaseReady()) {
-      showToast(t("app.toastSupabaseNotReady"));
-      return;
-    }
-
-    const confirmed = window.confirm(t("common.confirmDelete"));
-    if (!confirmed) return;
-
-    try {
-      await removeSessions(sessionId);
-      showToast(t("app.toastDeletedSession"));
-    } catch (error) {
-      console.warn("Remove session failed", error);
-      showToast(t("app.toastDeleteFailed"));
-    }
-  }
-
-  async function handleCopySessionNote(summaryText: string) {
-    if (!summaryText) return;
-    try {
-      await copyText(normalizeKLabels(summaryText));
-      showToast(t("app.toastCopiedNote"));
-    } catch {
-      showToast(t("common.copyFailed"));
-    }
-  }
+  const { handleRemoveSession, handleCopySessionNote } = useSessionHandlers({
+    showToast,
+    removeSessions: removeSessionAsync,
+  });
 
   function handleConfigChange(next: AppConfig) {
     setAppConfig({
