@@ -5,7 +5,6 @@ import type { AdvancedStats } from "./types";
 
 interface PlayerStatsModalProps {
   stats: AdvancedStats;
-  penaltyCoefficient: number;
   metricVisibility: RankingMetricVisibility;
   onClose: () => void;
 }
@@ -28,7 +27,6 @@ export default function PlayerStatsModal({
   const skillProgress = clamp((stats.rating - 1000) / 1000, 0, 1);
   const stabilityProgress = clamp(1 - stats.vol / 0.2, 0, 1);
   const uncertaintyProgress = clamp(1 - stats.rd / 350, 0, 1);
-  const motivationProgress = clamp(stats.motivation / 2, 0, 1);
 
   const metricItems = [
     {
@@ -51,13 +49,6 @@ export default function PlayerStatsModal({
       progress: toPercent(uncertaintyProgress),
       tone: "#f59e0b",
       description: t("playerStats.descriptionUncertainty"),
-    },
-    {
-      id: "motivation",
-      label: t("playerStats.motivation"),
-      progress: toPercent(motivationProgress),
-      tone: "#8b5cf6",
-      description: t("playerStats.descriptionMotivation"),
     },
     {
       id: "winRate",
