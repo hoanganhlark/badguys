@@ -21,8 +21,6 @@ import {
 } from "antd";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../../context/AuthContext";
-import { useRankingMembersContext } from "../../features/ranking/context";
 import type { Member } from "./types";
 import type { RankingCategory, RankingLevel } from "../../types";
 import {
@@ -31,30 +29,39 @@ import {
 } from "../../lib/rankingLevel";
 import DashboardTableSkeleton from "../dashboard/DashboardTableSkeleton";
 
-function MembersPanel() {
-  const { t } = useTranslation();
-  const { isAdmin } = useAuth();
-  const {
-    isEditing,
-    isLoading,
-    memberFormName: name,
-    memberFormLevel: level,
-    members,
-    sortedCategories: categories,
-    handleAddOrEditMember: onAddOrUpdateMember,
-    handleStartEditMember: onStartEdit,
-    handleDeleteMember: onDeleteMember,
-    setMemberFormName,
-    setMemberFormLevel,
-  } = useRankingMembersContext();
+interface MembersPanelProps {
+  members: Member[];
+  sortedCategories: RankingCategory[];
+  isLoading: boolean;
+  isEditing: boolean;
+  formName: string;
+  formLevel: RankingLevel;
+  canManage: boolean;
+  onDeleteMember: (id: number) => Promise<void>;
+  onStartEditMember: (member: Member) => void;
+  onSetFormName: (name: string) => void;
+  onSetFormLevel: (level: RankingLevel) => void;
+  onSubmit: () => Promise<void>;
+}
 
-  const canManage = isAdmin;
+function MembersPanel({
+  members,
+  sortedCategories,
+  isLoading,
+  isEditing,
+  formName: name,
+  formLevel: level,
+  canManage,
+  onDeleteMember,
+  onStartEditMember: onStartEdit,
+  onSetFormName: setMemberFormName,
+  onSetFormLevel: setMemberFormLevel,
+  onSubmit: onAddOrUpdateMember,
+}: MembersPanelProps) {
+  const { t } = useTranslation();
+
   const newMember = { name, level };
 
-  const sortedCategories = [...categories].sort(
-    (a, b) =>
-      a.order - b.order || a.displayName.localeCompare(b.displayName, "vi"),
-  );
   const categoryByName = sortedCategories.reduce<
     Record<string, RankingCategory>
   >((acc, category) => {

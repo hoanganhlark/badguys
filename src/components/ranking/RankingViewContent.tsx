@@ -1,20 +1,17 @@
 import { useTranslation } from "react-i18next";
 import { Award, BarChart2, Settings } from "react-feather";
-import {
-  useRankingUIContext,
-  useRankingMembersContext,
-  useRankingMatchesContext,
-} from "../../features/ranking/context";
+import { useRankingUIContext, useRankingMatchesContext } from "../../features/ranking/context";
+import { useRankingMembers } from "../../hooks/queries";
+import RankingMembersContainer from "../../features/ranking/containers/RankingMembersContainer";
 import DashboardSectionHeader from "../dashboard/DashboardSectionHeader";
 import DashboardSummaryCards from "../dashboard/DashboardSummaryCards";
-import MembersPanel from "./MembersPanel";
 import MatchFormPanel from "./MatchFormPanel";
 import RankingPanel from "./RankingPanel";
 
 export default function RankingViewContent() {
   const { t } = useTranslation();
   const { view } = useRankingUIContext();
-  const { members, isLoading: isMembersLoading } = useRankingMembersContext();
+  const { members, isLoading: isMembersLoading } = useRankingMembers();
   const {
     matches,
     isLoading: isMatchesLoading,
@@ -71,7 +68,7 @@ export default function RankingViewContent() {
       {/* View: Members */}
       {view === "member" && (
         <div className="space-y-4">
-          <MembersPanel />
+          <RankingMembersContainer />
         </div>
       )}
 

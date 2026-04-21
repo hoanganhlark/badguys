@@ -12,7 +12,7 @@ import {
   RankingMatchesProvider,
 } from "../features/ranking/context";
 import RankingPageHeader from "./ranking/RankingPageHeader";
-import RankingPageContent from "./ranking/RankingViewContent";
+import RankingViewContent from "./ranking/RankingViewContent";
 import RankingSidebar from "./ranking/RankingSidebar";
 import PlayerStatsModalWrapper from "./ranking/PlayerStatsModalWrapper";
 
@@ -127,7 +127,7 @@ function RankingPageInner({ onClose }: { onClose: () => void }) {
                 paddingBottom: "calc(6rem + var(--mobile-keyboard-inset, 0px))",
               }}
             >
-              <RankingPageContent />
+              <RankingViewContent />
             </main>
           </Layout.Content>
         </Layout>
