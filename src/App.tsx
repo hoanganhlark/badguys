@@ -42,6 +42,7 @@ export default function App() {
 
   const {
     configOpen,
+    openConfig,
     closeConfig,
   } = useHistoryModal();
 
@@ -103,6 +104,7 @@ export default function App() {
       userId={storageScopeKey}
       appConfig={appConfig}
       configOpen={configOpen}
+      onConfigOpen={openConfig}
       onConfigClose={closeConfig}
       onConfigChange={handleConfigChange}
       loginModalOpen={loginModalOpen}

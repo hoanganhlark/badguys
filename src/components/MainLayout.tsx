@@ -19,6 +19,7 @@ interface MainLayoutProps {
   appConfig: AppConfig;
   // Config sidebar
   configOpen: boolean;
+  onConfigOpen: () => void;
   onConfigClose: () => void;
   onConfigChange: (config: AppConfig) => void;
   // Login modal
@@ -38,6 +39,7 @@ export function MainLayout({
   userId,
   appConfig,
   configOpen,
+  onConfigOpen,
   onConfigClose,
   onConfigChange,
   loginModalOpen,
@@ -79,7 +81,7 @@ export function MainLayout({
   return (
     <div className="relative min-h-screen bg-[#fafafa]">
       <AppHeader
-        onOpenConfig={onConfigClose}
+        onOpenConfig={onConfigOpen}
         rankingMenuItems={rankingMenuItems}
         userMenuItems={userMenuItems}
         configOpenLabel={t("app.openConfig")}
@@ -98,6 +100,7 @@ export function MainLayout({
               <p className="mt-2 text-xs text-slate-500">
                 {t("app.loggedIn", {
                   username: currentUser?.username || "",
+                  role: currentUser?.role || "",
                 })}
               </p>
             ) : null}
