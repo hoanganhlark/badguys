@@ -23,9 +23,8 @@ import { useChangePasswordModal } from "./hooks/useChangePasswordModal";
 import { useSessionHandlers } from "./hooks/useSessionHandlers";
 import { useAnalyticsTracking } from "./hooks/useAnalyticsTracking";
 import { useGuestVisitNotification } from "./hooks/useGuestVisitNotification";
+import { useAppConfig } from "./hooks/useAppConfig";
 import { useSessions } from "./hooks/queries/useSessions";
-import { loadStoredConfig, saveConfig } from "./lib/platform";
-import type { AppConfig } from "./types";
 import { SESSIONS_FETCH_LIMIT } from "./lib/constants";
 import {
   AppRoute,
@@ -59,10 +58,7 @@ export default function App() {
   const { message: messageApi } = AntApp.useApp();
 
   const storageScopeKey = currentUser?.userId || "guest";
-
-  const [appConfig, setAppConfig] = useState<AppConfig>(() =>
-    loadStoredConfig(envConfig.defaultConfig, storageScopeKey),
-  );
+  const { appConfig, handleConfigChange } = useAppConfig(storageScopeKey);
 
   // Sessions data loaded via React Query hook - only when modal is open
   const [sessionsFetched, setSessionsFetched] = useState(false);
@@ -111,14 +107,6 @@ export default function App() {
     closeChangePasswordModal();
   }, [isAuthenticated, closeChangePasswordModal]);
 
-  useEffect(() => {
-    saveConfig(appConfig, storageScopeKey);
-  }, [appConfig, storageScopeKey]);
-
-  useEffect(() => {
-    setAppConfig(loadStoredConfig(envConfig.defaultConfig, storageScopeKey));
-  }, [storageScopeKey]);
-
   function showToast(message: string) {
     messageApi.info(message);
   }
@@ -135,16 +123,6 @@ export default function App() {
     showToast,
     removeSessions: removeSessionAsync,
   });
-
-  function handleConfigChange(next: AppConfig) {
-    setAppConfig({
-      ...next,
-      femaleMax: Math.max(0, next.femaleMax || 0),
-      tubePrice: Math.max(0, next.tubePrice || 0),
-      setPrice: Math.max(0, next.setPrice || 0),
-      enableCourtCount: !!next.enableCourtCount,
-    });
-  }
 
 
   function handleLoginSuccess(target: string) {
