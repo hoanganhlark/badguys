@@ -18,8 +18,6 @@ export default function RankingViewContent() {
   const { members, isLoading: isMembersLoading } = useRankingMembersContext();
   const { matches, isLoading: isMatchesLoading, rankings } = useRankingMatchesContext();
 
-  const isLoading = isMembersLoading || isMatchesLoading;
-
   const headerIcon =
     view === "member" ? (
       <Settings className="h-6 w-6 text-sky-600 md:h-8 md:w-8" />
@@ -35,14 +33,6 @@ export default function RankingViewContent() {
       : view === "match-form"
         ? t("rankingPage.recordResult")
         : t("rankingPage.clubRanking");
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center py-16">
-        <Spin tip={t("rankingPage.loading")} />
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -77,15 +67,41 @@ export default function RankingViewContent() {
       {/* View: Members */}
       {view === "member" && (
         <div className="space-y-4">
-          <MembersPanel />
+          {isMembersLoading ? (
+            <div className="flex justify-center py-8">
+              <Spin tip={t("rankingPage.loading")} />
+            </div>
+          ) : (
+            <MembersPanel />
+          )}
         </div>
       )}
 
       {/* View: Match Form */}
-      {view === "match-form" && <MatchFormPanel />}
+      {view === "match-form" && (
+        <div>
+          {isMembersLoading ? (
+            <div className="flex justify-center py-8">
+              <Spin tip={t("rankingPage.loading")} />
+            </div>
+          ) : (
+            <MatchFormPanel />
+          )}
+        </div>
+      )}
 
       {/* View: Rankings */}
-      {view === "ranking" && <RankingPanel />}
+      {view === "ranking" && (
+        <div>
+          {isMatchesLoading ? (
+            <div className="flex justify-center py-8">
+              <Spin tip={t("rankingPage.loading")} />
+            </div>
+          ) : (
+            <RankingPanel />
+          )}
+        </div>
+      )}
     </div>
   );
 }
