@@ -22,8 +22,9 @@ import { useHistoryModal } from "./hooks/useHistoryModal";
 import { useChangePasswordModal } from "./hooks/useChangePasswordModal";
 import { useSessionHandlers } from "./hooks/useSessionHandlers";
 import { useAnalyticsTracking } from "./hooks/useAnalyticsTracking";
+import { useGuestVisitNotification } from "./hooks/useGuestVisitNotification";
 import { useSessions } from "./hooks/queries/useSessions";
-import { loadStoredConfig, saveConfig, formatVisitTimestampUTC7, markVisitNotifiedToday, shouldSendVisitNotificationToday } from "./lib/platform";
+import { loadStoredConfig, saveConfig } from "./lib/platform";
 import type { AppConfig } from "./types";
 import { SESSIONS_FETCH_LIMIT } from "./lib/constants";
 import {
@@ -35,13 +36,6 @@ import {
 } from "./lib/routes";
 import { buildRankingMenuItems, buildUserMenuItems } from "./lib/menus";
 import { buildAppRouteConfigs } from "./routes/appRouteConfigs";
-import {
-  AnalyticsEventName,
-  AnalyticsNotificationType,
-  AnalyticsParamKey,
-  trackEvent,
-} from "./lib/analytics";
-import { notifyGuestVisited } from "./lib/telegram";
 
 interface LocationState {
   from?: string;
@@ -109,19 +103,8 @@ export default function App() {
     role: currentUser?.role,
   });
 
-  useEffect(() => {
-    if (isAdmin) return;
-    if (!shouldSendVisitNotificationToday()) return;
-
-    (async () => {
-      await notifyGuestVisited(formatVisitTimestampUTC7());
-      trackEvent(AnalyticsEventName.SendTelegramNotification, {
-        [AnalyticsParamKey.NotificationType]:
-          AnalyticsNotificationType.GuestVisit,
-      });
-      markVisitNotifiedToday();
-    })();
-  }, [isAdmin]);
+  // Send guest visit notification once per day
+  useGuestVisitNotification({ isAdmin });
 
   useEffect(() => {
     if (isAuthenticated) return;
