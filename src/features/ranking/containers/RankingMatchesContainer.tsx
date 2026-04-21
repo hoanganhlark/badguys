@@ -1,13 +1,14 @@
 import { useMemo, useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import { useRankingMatches, useMatchForm } from "../hooks";
-import { getLatestRankingSnapshot, saveRankingSnapshot } from "../../../lib/api";
+import {
+  getLatestRankingSnapshot,
+  saveRankingSnapshot,
+} from "../../../lib/api";
 import { calculateRankingStats } from "../../../lib/rankingStats";
 import MatchFormPanel from "../../../components/ranking/MatchFormPanel";
 import RankingPanel from "../../../components/ranking/RankingPanel";
-import type {
-  Member,
-} from "../../../components/ranking/types";
+import type { Member } from "../../../components/ranking/types";
 import type { RankingCategory, RankingSnapshot } from "../../../types";
 
 const DEFAULT_RANKING_CONFIG = {
@@ -100,6 +101,7 @@ export function RankingMatchesContainer({
   const [latestSnapshot, setLatestSnapshot] = useState<RankingSnapshot | null>(
     null,
   );
+  const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
 
   // Load latest snapshot on mount
   useEffect(() => {
@@ -277,6 +279,7 @@ export function RankingMatchesContainer({
 
   const handleToggleHistory = useCallback(
     async (nextExpanded: boolean) => {
+      setIsHistoryExpanded(nextExpanded);
       if (!nextExpanded) return;
 
       resetHistoryPagination();
@@ -334,7 +337,13 @@ export function RankingMatchesContainer({
       console.error("Failed to clear matches", error);
       throw error;
     }
-  }, [isAdmin, matches.length, rankings, clearAllMatches, resetHistoryPagination]);
+  }, [
+    isAdmin,
+    matches.length,
+    rankings,
+    clearAllMatches,
+    resetHistoryPagination,
+  ]);
 
   if (view === "match-form") {
     return (
@@ -371,6 +380,7 @@ export function RankingMatchesContainer({
       historyMatches={pagedHistoryMatches}
       historyMatchesForDisplay={historyMatchesForDisplay}
       isHistoryLoading={isHistoryLoading}
+      isHistoryExpanded={isHistoryExpanded}
       historyPage={historyPage}
       historyPageSize={historyPageSize}
       rankTrends={rankTrends}

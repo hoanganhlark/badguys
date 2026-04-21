@@ -1,11 +1,3 @@
-import {
-  ChevronDown,
-  ChevronRight,
-  Clock,
-  Trash2,
-  User,
-  Users,
-} from "react-feather";
 import { memo, useEffect, useMemo } from "react";
 import {
   CaretDownOutlined,
@@ -13,12 +5,13 @@ import {
   MinusOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
-import { Button, Grid, Table, Typography, type TableColumnsType } from "antd";
+import { Grid, Table, Typography, type TableColumnsType } from "antd";
 import { useTranslation } from "react-i18next";
 import { useRankingUIContext } from "../../features/ranking/context";
 import type { AdvancedStats, Match } from "./types";
 import type { RankingCategory } from "../../types";
 import DashboardTableSkeleton from "../dashboard/DashboardTableSkeleton";
+import RankingHistorySection from "./RankingHistorySection";
 
 interface RankingPanelProps {
   rankings: AdvancedStats[];
@@ -27,31 +20,17 @@ interface RankingPanelProps {
   historyMatches: Match[];
   historyMatchesForDisplay: Match[];
   isHistoryLoading: boolean;
+  isHistoryExpanded: boolean;
   historyPage: number;
   historyPageSize: number;
   rankTrends: Record<number, number | "NEW">;
   showRankTrend: boolean;
   memberLevelById: Record<number, string>;
-  isAdmin: boolean;
   currentUserId: string;
   onToggleHistory: (expanded: boolean) => Promise<void>;
   onHistoryPaginationChange: (page: number, pageSize: number) => void;
   onDeleteMatch: (matchId: number | string) => Promise<void>;
   onClearHistory: () => Promise<void>;
-}
-
-function formatMatchDateTime(dateText: string): string {
-  if (!dateText) return "--/--/---- --:--";
-  return dateText;
-}
-
-function formatSet(setText: string): string {
-  const [score, minutes] = String(setText || "").split("@");
-  const normalizedMinutes = Number.parseInt(String(minutes || ""), 10);
-  if (!Number.isFinite(normalizedMinutes) || normalizedMinutes <= 0) {
-    return score;
-  }
-  return `${score} (${normalizedMinutes}p)`;
 }
 
 function formatDisplayName(name: string): {
@@ -84,12 +63,12 @@ function RankingPanel({
   historyMatches,
   historyMatchesForDisplay,
   isHistoryLoading,
+  isHistoryExpanded,
   historyPage,
   historyPageSize,
   rankTrends,
   showRankTrend,
   memberLevelById,
-  isAdmin,
   currentUserId,
   onToggleHistory,
   onHistoryPaginationChange,
@@ -105,7 +84,6 @@ function RankingPanel({
   } = useRankingUIContext();
 
   const isMatchesLoading = isLoading;
-  const isHistoryExpanded = historyMatchesForDisplay.length > 0;
   const historyPagination = {
     current: historyPage,
     pageSize: historyPageSize,
@@ -113,11 +91,7 @@ function RankingPanel({
   };
 
   const hasRankings = rankings.length > 0;
-  const hasHistory = historyPagination.total > 0;
   const rankingTableScroll = screens.md ? undefined : { y: 320 };
-  const historyTableScroll = screens.md
-    ? { x: 860, y: 360 }
-    : { x: 860, y: 300 };
 
   const sortedCategories = useMemo(
     () =>
@@ -252,85 +226,6 @@ function RankingPanel({
     },
   ];
 
-  const historyColumns: TableColumnsType<Match> = [
-    {
-      title: t("rankingPanel.historyTeams"),
-      key: "teams",
-      width: 300,
-      ellipsis: true,
-      render: (_, row) => (
-        <Typography.Text
-          ellipsis={{
-            tooltip: `${row.team1.join(" & ")} vs ${row.team2.join(" & ")}`,
-          }}
-        >
-          <span className="inline-flex items-center gap-1.5">
-            {row.type === "singles" ? (
-              <User className="h-3.5 w-3.5 text-slate-500" />
-            ) : (
-              <Users className="h-3.5 w-3.5 text-slate-500" />
-            )}
-            <span>
-              {row.team1.join(" & ")}{" "}
-              <span className="mx-1 text-slate-400">vs</span>{" "}
-              {row.team2.join(" & ")}
-            </span>
-          </span>
-        </Typography.Text>
-      ),
-    },
-    {
-      title: t("rankingPanel.historyResult"),
-      key: "sets",
-      width: 170,
-      render: (_, row) => (
-        <Typography.Text className="text-xs text-slate-700">
-          {row.sets.map(formatSet).join(", ")}
-        </Typography.Text>
-      ),
-    },
-    {
-      title: t("rankingPanel.historyCreator"),
-      key: "creator",
-      width: 130,
-      ellipsis: true,
-      render: (_, row) => (
-        <Typography.Text ellipsis className="text-xs text-slate-500">
-          {row.createdByUsername || row.createdBy || "-"}
-        </Typography.Text>
-      ),
-    },
-    {
-      title: t("rankingPanel.historyTime"),
-      dataIndex: "date",
-      key: "date",
-      width: 148,
-      render: (value: string) => (
-        <Typography.Text className="text-xs text-slate-500">
-          {formatMatchDateTime(value)}
-        </Typography.Text>
-      ),
-    },
-    {
-      title: t("rankingPanel.historyActions"),
-      key: "actions",
-      width: 74,
-      align: "center",
-      render: (_, row) =>
-        isAdmin || row.createdBy === currentUserId ? (
-          <button
-            type="button"
-            onClick={() => onDeleteMatch(row.id)}
-            className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-red-600 hover:bg-red-50"
-            aria-label={t("rankingPanel.deleteThisMatch")}
-            title={t("rankingPanel.deleteThisMatch")}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        ) : null,
-    },
-  ];
-
   return (
     <div className="max-w-5xl space-y-4 md:space-y-6">
       <div className="rounded-xl border border-slate-200 bg-white p-3 md:p-4">
@@ -388,71 +283,20 @@ function RankingPanel({
         ) : null}
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-3 py-2.5 md:px-4 md:py-3">
-          <h3 className="font-bold text-slate-900 flex items-center gap-2">
-            <Clock className="h-5 w-5 text-slate-700" />{" "}
-            {t("rankingPanel.recentHistory")}
-          </h3>
-          <div className="flex flex-wrap items-center gap-2">
-            {isAdmin ? (
-              <button
-                type="button"
-                onClick={onClearHistory}
-                disabled={!hasHistory}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 text-xs font-semibold hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <Trash2 className="h-3.5 w-3.5" />{" "}
-                {t("rankingPanel.clearHistory")}
-              </button>
-            ) : null}
-            <Button
-              type="default"
-              size="small"
-              onClick={() => void onToggleHistory(!isHistoryExpanded)}
-              icon={
-                isHistoryExpanded ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" />
-                )
-              }
-            >
-              {isHistoryExpanded
-                ? t("rankingPanel.collapseHistory")
-                : t("rankingPanel.expandHistory")}
-            </Button>
-          </div>
-        </div>
-
-        {isHistoryExpanded ? (
-          <div className="p-2.5 md:p-3">
-            <Table
-              rowKey={(row) => String(row.id)}
-              columns={historyColumns}
-              dataSource={historyMatches}
-              size="small"
-              loading={isLoading || isHistoryLoading}
-              pagination={{
-                current: historyPagination.current,
-                pageSize: historyPagination.pageSize,
-                total: historyPagination.total,
-                showSizeChanger: true,
-                pageSizeOptions: [5, 10, 20],
-                onChange: onHistoryPaginationChange,
-              }}
-              locale={{
-                emptyText:
-                  isLoading || isHistoryLoading
-                    ? t("rankingPanel.loadingHistory")
-                    : t("rankingPanel.noHistory"),
-              }}
-              scroll={historyTableScroll}
-              className="ranking-ui-table"
-            />
-          </div>
-        ) : null}
-      </div>
+      <RankingHistorySection
+        historyMatches={historyMatches}
+        totalHistoryCount={historyPagination.total}
+        isHistoryLoading={isHistoryLoading}
+        isMatchesLoading={isLoading}
+        historyPage={historyPagination.current}
+        historyPageSize={historyPagination.pageSize}
+        isHistoryExpanded={isHistoryExpanded}
+        currentUserId={currentUserId}
+        onToggleHistory={onToggleHistory}
+        onHistoryPaginationChange={onHistoryPaginationChange}
+        onDeleteMatch={onDeleteMatch}
+        onClearHistory={onClearHistory}
+      />
     </div>
   );
 }

@@ -289,7 +289,7 @@ function MembersPanel({
 
       <Card bodyStyle={{ padding: 0 }}>
         {isLoading ? (
-          <DashboardTableSkeleton columns={7} rows={8} className="mt-1" />
+          <DashboardTableSkeleton columns={3} rows={5} className="mt-1" />
         ) : (
           <Table<Member>
             rowKey="id"
