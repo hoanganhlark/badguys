@@ -4,13 +4,9 @@ import {
   Button,
   Dropdown,
   Layout,
-  Typography,
-  type MenuProps,
 } from "antd";
 import {
-  LogoutOutlined,
   SettingOutlined,
-  KeyOutlined,
   TrophyOutlined,
   UserOutlined,
 } from "@ant-design/icons";
@@ -54,6 +50,7 @@ import {
   isRankingLoginPath,
   toDashboardTarget,
 } from "./lib/routes";
+import { buildRankingMenuItems, buildUserMenuItems } from "./lib/menus";
 import { buildAppRouteConfigs } from "./routes/appRouteConfigs";
 import {
   AnalyticsEventName,
@@ -261,58 +258,25 @@ export default function App() {
     (location.state as LocationState | null)?.from,
   );
 
-  const rankingMenuItems: MenuProps["items"] = [
-    {
-      key: "ranking-view",
-      label: t("app.viewRanking"),
-      onClick: () => navigate(AppRoute.Ranking),
-    },
-    {
-      key: "ranking-login",
-      label: t("common.login"),
-      onClick: () =>
-        navigate(AppRoute.Login, {
-          state: { from: AppRoute.DashboardRanking },
-        }),
-    },
-  ];
+  const rankingMenuItems = buildRankingMenuItems({
+    onViewRanking: () => navigate(AppRoute.Ranking),
+    onLogin: () =>
+      navigate(AppRoute.Login, {
+        state: { from: AppRoute.DashboardRanking },
+      }),
+    t,
+  });
 
-  const userMenuItems: MenuProps["items"] = [
-    {
-      key: "user-name",
-      label: (
-        <Typography.Text strong style={{ maxWidth: 130 }} ellipsis>
-          {currentUser?.username}
-        </Typography.Text>
-      ),
-      disabled: true,
+  const userMenuItems = buildUserMenuItems({
+    username: currentUser?.username || "",
+    onOpenDashboard: () => navigate(AppRoute.DashboardRanking),
+    onChangePassword: openChangePasswordModal,
+    onLogout: () => {
+      navigate(AppRoute.Home, { replace: true });
+      logout();
     },
-    {
-      key: "dashboard-open",
-      label: t("app.openDashboard"),
-      icon: <TrophyOutlined />,
-      onClick: () => navigate(AppRoute.DashboardRanking),
-    },
-    {
-      key: "password-change",
-      label: t("app.changePasswordTitle"),
-      icon: <KeyOutlined />,
-      onClick: openChangePasswordModal,
-    },
-    {
-      type: "divider",
-    },
-    {
-      key: "logout",
-      label: t("common.logout"),
-      icon: <LogoutOutlined />,
-      danger: true,
-      onClick: () => {
-        navigate(AppRoute.Home, { replace: true });
-        logout();
-      },
-    },
-  ];
+    t,
+  });
 
   const usersLegacyRouteElement = (
     <Navigate to={AppRoute.DashboardUsers} replace />
