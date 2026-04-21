@@ -24,6 +24,7 @@ import { useSessionHandlers } from "./hooks/useSessionHandlers";
 import { useAnalyticsTracking } from "./hooks/useAnalyticsTracking";
 import { useGuestVisitNotification } from "./hooks/useGuestVisitNotification";
 import { useAppConfig } from "./hooks/useAppConfig";
+import { useAppMenus } from "./hooks/useAppMenus";
 import { useSessions } from "./hooks/queries/useSessions";
 import { SESSIONS_FETCH_LIMIT } from "./lib/constants";
 import {
@@ -33,7 +34,6 @@ import {
   isRankingLoginPath,
   toDashboardTarget,
 } from "./lib/routes";
-import { buildRankingMenuItems, buildUserMenuItems } from "./lib/menus";
 import { buildAppRouteConfigs } from "./routes/appRouteConfigs";
 
 interface LocationState {
@@ -142,23 +142,10 @@ export default function App() {
     (location.state as LocationState | null)?.from,
   );
 
-  const rankingMenuItems = buildRankingMenuItems({
-    onViewRanking: () => navigate(AppRoute.Ranking),
-    onLogin: () =>
-      navigate(AppRoute.Login, {
-        state: { from: AppRoute.DashboardRanking },
-      }),
-    t,
-  });
-
-  const userMenuItems = buildUserMenuItems({
+  const { rankingMenuItems, userMenuItems } = useAppMenus({
     username: currentUser?.username || "",
-    onOpenDashboard: () => navigate(AppRoute.DashboardRanking),
     onChangePassword: openChangePasswordModal,
-    onLogout: () => {
-      navigate(AppRoute.Home, { replace: true });
-      logout();
-    },
+    onLogout: logout,
     t,
   });
 
