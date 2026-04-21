@@ -6,14 +6,14 @@ import {
   User,
   Users,
 } from "react-feather";
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo } from "react";
 import {
   CaretDownOutlined,
   CaretUpOutlined,
   MinusOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
-import { Button, Table, Typography, type TableColumnsType } from "antd";
+import { Button, Grid, Table, Typography, type TableColumnsType } from "antd";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -22,7 +22,6 @@ import {
   useRankingMembersContext,
 } from "../../features/ranking/context";
 import type { Match } from "./types";
-
 
 function formatMatchDateTime(dateText: string): string {
   if (!dateText) return "--/--/---- --:--";
@@ -63,6 +62,7 @@ function formatDisplayName(name: string): {
 
 function RankingPanel() {
   const { t } = useTranslation();
+  const screens = Grid.useBreakpoint();
   const { isAdmin, currentUser } = useAuth();
   const currentUserId = currentUser?.userId || "";
   const {
@@ -96,6 +96,7 @@ function RankingPanel() {
 
   const hasRankings = rankings.length > 0;
   const hasHistory = historyPagination.total > 0;
+  const rankingTableScroll = screens.md ? undefined : { y: 320 };
 
   const sortedCategories = useMemo(
     () =>
@@ -112,6 +113,16 @@ function RankingPanel() {
       sortedCategories[0],
     [selectedCategoryId, sortedCategories],
   );
+
+  useEffect(() => {
+    if (sortedCategories.length === 0) return;
+    const hasSelectedCategory = sortedCategories.some(
+      (category) => category.id === selectedCategoryId,
+    );
+    if (!hasSelectedCategory) {
+      onSelectCategory(sortedCategories[0].id);
+    }
+  }, [onSelectCategory, selectedCategoryId, sortedCategories]);
 
   const filteredRankings = useMemo(() => {
     if (!selectedCategory) return [];
@@ -135,7 +146,7 @@ function RankingPanel() {
       ),
       dataIndex: "rank",
       key: "rank",
-      width: 72,
+      width: 60,
       render: (rank: number, row) => {
         const trend = showRankTrend ? rankTrends[row.player.id] : undefined;
         let trendClassName = "text-slate-400";
@@ -189,7 +200,6 @@ function RankingPanel() {
       ),
       dataIndex: ["player", "name"],
       key: "name",
-      width: 140,
       ellipsis: true,
       render: (name: string) => {
         const displayName = formatDisplayName(name);
@@ -211,7 +221,7 @@ function RankingPanel() {
         </span>
       ),
       key: "rankScore",
-      width: 104,
+      width: 92,
       align: "right",
       render: (_, row) => (
         <Typography.Text strong className="text-slate-700">
@@ -310,7 +320,7 @@ function RankingPanel() {
               type="button"
               onClick={() => onSelectCategory(category.id)}
               className={`rounded-sm border px-5 py-2 text-xs font-semibold transition-colors ${
-                selectedCategoryId === category.id
+                selectedCategory?.id === category.id
                   ? "border-red-500 bg-red-500 text-white"
                   : "border-transparent bg-transparent text-slate-700 hover:bg-slate-100"
               }`}
@@ -327,19 +337,21 @@ function RankingPanel() {
         ) : null}
 
         {hasRankings && rankingRows.length > 0 ? (
-          <Table
-            columns={rankingColumns}
-            dataSource={rankingRows}
-            size="small"
-            showSorterTooltip={false}
-            pagination={false}
-            scroll={{ x: 340 }}
-            className="ranking-ui-table"
-            onRow={(row) => ({
-              onClick: () => onSelectPlayer(row.player),
-              style: { cursor: "pointer" },
-            })}
-          />
+          <div className="min-h-[240px] md:min-h-[280px]">
+            <Table
+              columns={rankingColumns}
+              dataSource={rankingRows}
+              size="small"
+              showSorterTooltip={false}
+              pagination={false}
+              scroll={rankingTableScroll}
+              className="ranking-ui-table"
+              onRow={(row) => ({
+                onClick: () => onSelectPlayer(row.player),
+                style: { cursor: "pointer" },
+              })}
+            />
+          </div>
         ) : null}
 
         {hasRankings && rankingRows.length === 0 ? (

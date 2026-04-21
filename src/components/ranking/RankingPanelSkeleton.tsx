@@ -1,4 +1,5 @@
-import { Card, Skeleton, Table, type TableColumnsType } from "antd";
+import { Skeleton, Table, type TableColumnsType } from "antd";
+import { useTranslation } from "react-i18next";
 
 interface SkeletonRow {
   key: number;
@@ -8,12 +9,7 @@ interface SkeletonRow {
 }
 
 export default function RankingPanelSkeleton() {
-  // Skeleton for category filter/controls
-  const controlsSkeleton = (
-    <Card className="mb-4">
-      <Skeleton paragraph={{ rows: 2 }} active />
-    </Card>
-  );
+  const { t } = useTranslation();
 
   // Skeleton for rankings table with 8 rows - matching actual RankingPanel columns
   const tableData: SkeletonRow[] = Array(8)
@@ -28,30 +24,49 @@ export default function RankingPanelSkeleton() {
   // Columns matching the actual RankingPanel structure
   const columns: TableColumnsType<SkeletonRow> = [
     {
-      title: "Rank",
+      title: (
+        <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+          {t("rankingPanel.rank")}
+        </span>
+      ),
       dataIndex: "rank",
       key: "rank",
-      width: 72,
+      width: 60,
     },
     {
-      title: "Athlete",
+      title: (
+        <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+          {t("rankingPanel.athlete")}
+        </span>
+      ),
       dataIndex: "name",
       key: "name",
-      width: 140,
     },
     {
-      title: "Points",
+      title: (
+        <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+          {t("rankingPanel.points")}
+        </span>
+      ),
       dataIndex: "score",
       key: "score",
-      width: 104,
+      width: 92,
       align: "right",
     },
   ];
 
   return (
-    <div className="space-y-4">
-      {controlsSkeleton}
-      <Table columns={columns} dataSource={tableData} pagination={false} />
+    <div className="max-w-5xl space-y-4 md:space-y-6">
+      <div className="rounded-xl border border-slate-200 bg-white p-3 md:p-4">
+        <Table
+          columns={columns}
+          dataSource={tableData}
+          size="small"
+          showSorterTooltip={false}
+          pagination={false}
+          className="ranking-ui-table"
+        />
+      </div>
     </div>
   );
 }
