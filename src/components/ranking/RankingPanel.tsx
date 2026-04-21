@@ -97,6 +97,7 @@ function RankingPanel() {
   const hasRankings = rankings.length > 0;
   const hasHistory = historyPagination.total > 0;
   const rankingTableScroll = screens.md ? undefined : { y: 320 };
+  const historyTableScroll = screens.md ? { x: 860, y: 360 } : { x: 860, y: 300 };
 
   const sortedCategories = useMemo(
     () =>
@@ -337,20 +338,22 @@ function RankingPanel() {
         ) : null}
 
         {hasRankings && rankingRows.length > 0 ? (
-          <div className="min-h-[240px] md:min-h-[280px]">
-            <Table
-              columns={rankingColumns}
-              dataSource={rankingRows}
-              size="small"
-              showSorterTooltip={false}
-              pagination={false}
-              scroll={rankingTableScroll}
-              className="ranking-ui-table"
-              onRow={(row) => ({
-                onClick: () => onSelectPlayer(row.player),
-                style: { cursor: "pointer" },
-              })}
-            />
+          <div className="overflow-hidden rounded-lg border border-slate-100 bg-white">
+            <div className="min-h-[240px] md:min-h-[280px]">
+              <Table
+                columns={rankingColumns}
+                dataSource={rankingRows}
+                size="small"
+                showSorterTooltip={false}
+                pagination={false}
+                scroll={rankingTableScroll}
+                className="ranking-ui-table"
+                onRow={(row) => ({
+                  onClick: () => onSelectPlayer(row.player),
+                  style: { cursor: "pointer" },
+                })}
+              />
+            </div>
           </div>
         ) : null}
 
@@ -361,13 +364,13 @@ function RankingPanel() {
         ) : null}
       </div>
 
-      <div className="space-y-3">
-        <div className="flex items-center justify-between gap-2">
+      <div className="rounded-xl border border-slate-200 bg-white">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-3 py-2.5 md:px-4 md:py-3">
           <h3 className="font-bold text-slate-900 flex items-center gap-2">
             <Clock className="h-5 w-5 text-slate-700" />{" "}
             {t("rankingPanel.recentHistory")}
           </h3>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {isAdmin ? (
               <button
                 type="button"
@@ -399,7 +402,7 @@ function RankingPanel() {
         </div>
 
         {isHistoryExpanded ? (
-          <div className="rounded-xl border border-slate-200 bg-white p-2.5">
+          <div className="p-2.5 md:p-3">
             <Table
               rowKey={(row) => String(row.id)}
               columns={historyColumns}
@@ -419,7 +422,7 @@ function RankingPanel() {
                   ? t("rankingPanel.loadingHistory")
                   : t("rankingPanel.noHistory"),
               }}
-              scroll={{ x: 860 }}
+              scroll={historyTableScroll}
               className="ranking-ui-table"
             />
           </div>
