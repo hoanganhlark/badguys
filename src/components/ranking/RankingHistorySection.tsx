@@ -10,6 +10,7 @@ import { Button, Grid, Table, Typography, type TableColumnsType } from "antd";
 import { useTranslation } from "react-i18next";
 import type { Match } from "./types";
 import { useAuth } from "../../context/AuthContext";
+import DashboardTableSkeleton from "../dashboard/DashboardTableSkeleton";
 
 interface RankingHistorySectionProps {
   historyMatches: Match[];
@@ -187,29 +188,32 @@ export default function RankingHistorySection({
       </div>
 
       <div className="p-2.5 md:p-3">
-        <Table
-          rowKey={(row) => String(row.id)}
-          columns={historyColumns}
-          dataSource={historyMatches}
-          size="small"
-          loading={isMatchesLoading || isHistoryLoading}
-          pagination={{
-            current: historyPage,
-            pageSize: historyPageSize,
-            total: totalHistoryCount,
-            showSizeChanger: true,
-            pageSizeOptions: [5, 10, 20],
-            onChange: onHistoryPaginationChange,
-          }}
-          locale={{
-            emptyText:
-              isMatchesLoading || isHistoryLoading
-                ? t("rankingPanel.loadingHistory")
-                : t("rankingPanel.noHistory"),
-          }}
-          scroll={historyTableScroll}
-          className="ranking-ui-table"
-        />
+        {isHistoryLoading ? (
+          <DashboardTableSkeleton columns={3} rows={1} className="mt-1" />
+        ) : (
+          <Table
+            rowKey={(row) => String(row.id)}
+            columns={historyColumns}
+            dataSource={historyMatches}
+            size="small"
+            pagination={{
+              current: historyPage,
+              pageSize: historyPageSize,
+              total: totalHistoryCount,
+              showSizeChanger: true,
+              pageSizeOptions: [5, 10, 20],
+              onChange: onHistoryPaginationChange,
+            }}
+            locale={{
+              emptyText:
+                isMatchesLoading || isHistoryLoading
+                  ? t("rankingPanel.loadingHistory")
+                  : t("rankingPanel.noHistory"),
+            }}
+            scroll={historyTableScroll}
+            className="ranking-ui-table"
+          />
+        )}
       </div>
     </div>
   );

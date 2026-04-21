@@ -15,8 +15,8 @@ import DashboardSectionHeader from "../dashboard/DashboardSectionHeader";
 export default function RankingViewContent() {
   const { t } = useTranslation();
   const { view } = useRankingUIContext();
-  const { members } = useRankingMembers();
-  const { categories } = useRankingCategories();
+  const { members, isLoading: isMembersLoading } = useRankingMembers();
+  const { categories, isLoading: isCategoriesLoading } = useRankingCategories();
   const { users } = useUsers();
 
   const headerIcon =
@@ -63,6 +63,7 @@ export default function RankingViewContent() {
           members={members}
           categories={categories}
           usernamesById={usernamesById}
+          isLoadingDependencies={isMembersLoading || isCategoriesLoading}
           view={view as "match-form" | "ranking"}
         />
       )}

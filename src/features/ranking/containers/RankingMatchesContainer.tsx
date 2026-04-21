@@ -33,6 +33,7 @@ interface RankingMatchesContainerProps {
   members: Member[];
   categories: RankingCategory[];
   usernamesById: Record<string, string>;
+  isLoadingDependencies: boolean;
   view: "match-form" | "ranking";
 }
 
@@ -54,6 +55,7 @@ export function RankingMatchesContainer({
   members,
   categories,
   usernamesById,
+  isLoadingDependencies,
   view,
 }: RankingMatchesContainerProps) {
   const { isAdmin, currentUser } = useAuth();
@@ -76,6 +78,8 @@ export function RankingMatchesContainer({
     resetHistoryPagination,
     clearAllMatches,
   } = useRankingMatches();
+
+  const isRankingLoading = isLoading || isLoadingDependencies;
 
   const {
     matchType,
@@ -355,7 +359,7 @@ export function RankingMatchesContainer({
         playedAt={playedAt}
         members={members}
         categories={sortedCategories}
-        isLoading={isLoading}
+        isLoading={isRankingLoading}
         onSetMatchType={setMatchType}
         onSetTeam1={setTeam1}
         onSetTeam2={setTeam2}
@@ -376,7 +380,7 @@ export function RankingMatchesContainer({
     <RankingPanel
       rankings={rankings}
       categories={sortedCategories}
-      isLoading={isLoading}
+      isLoading={isRankingLoading}
       historyMatches={pagedHistoryMatches}
       historyMatchesForDisplay={historyMatchesForDisplay}
       isHistoryLoading={isHistoryLoading}
