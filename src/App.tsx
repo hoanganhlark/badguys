@@ -1,4 +1,4 @@
-import { lazy, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { App as AntApp } from "antd";
 import { useTranslation } from "react-i18next";
 import {
@@ -7,13 +7,9 @@ import {
   useLocation,
   useNavigate,
 } from "react-router-dom";
-import AppHeader from "./components/AppHeader";
-import ConfigSidebar from "./components/ConfigSidebar";
-import ChangePasswordModal from "./components/ChangePasswordModal";
 import LoginModal from "./components/LoginModal";
-import SessionsModal from "./components/SessionsModal";
+import { MainLayout } from "./components/MainLayout";
 import { useAuth } from "./context/AuthContext";
-import { envConfig } from "./env";
 import { useHistoryModal } from "./hooks/useHistoryModal";
 import { useChangePasswordModal } from "./hooks/useChangePasswordModal";
 import { useSessionHandlers } from "./hooks/useSessionHandlers";
@@ -39,8 +35,6 @@ import {
 interface LocationState {
   from?: string;
 }
-
-const Calculator = lazy(() => import("./components/calculator/Calculator"));
 
 export default function App() {
   const { currentUser, isAuthenticated, isAdmin, logout } = useAuth();
@@ -78,7 +72,6 @@ export default function App() {
   const {
     configOpen,
     sessionsOpen,
-    openConfig,
     closeConfig,
     openSessions,
     closeSessions,
@@ -166,83 +159,38 @@ export default function App() {
   );
 
   const fallbackRouteElement = (
-    <div className="relative min-h-screen bg-[#fafafa]">
-      <AppHeader
-        isAuthenticated={isAuthenticated}
-        username={currentUser?.username || ""}
-        onOpenConfig={openConfig}
-        rankingMenuItems={rankingMenuItems}
-        userMenuItems={userMenuItems}
-        configOpenLabel={t("app.openConfig")}
-        rankingLabel={t("app.ranking")}
-        accountMenuLabel={t("app.openAccountMenu")}
-      />
-
-      <div className="px-5 pb-5 pt-20 md:px-12 md:pb-12">
-        <div className="max-w-md mx-auto">
-          <header className="mb-12 text-center">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-              {isAdmin ? "@BadGuys" : "BadGuys"}
-              <span className="text-slate-400">.</span>
-            </h1>
-            {currentUser ? (
-              <p className="mt-2 text-xs text-slate-500">
-                {t("app.loggedIn", {
-                  username: currentUser.username,
-                  role: currentUser.role,
-                })}
-              </p>
-            ) : null}
-          </header>
-          <Calculator
-            userId={storageScopeKey}
-            isAdmin={isAdmin}
-            appConfig={appConfig}
-          />
-        </div>
-      </div>
-
-      <ConfigSidebar
-        open={configOpen}
-        backdropInteractive={!sessionsOpen}
-        config={appConfig}
-        isAdmin={isAdmin}
-        currentUsername={currentUser?.username || ""}
-        onClose={closeConfig}
-        onOpenSessions={openSessionsModal}
-        onConfigChange={handleConfigChange}
-        onLogout={logout}
-        appVersion={envConfig.appVersion}
-      />
-
-      <SessionsModal
-        open={sessionsOpen}
-        loading={sessionsLoading}
-        error={sessionsError}
-        sessions={sessions}
-        canRemove={isAdmin}
-        onClose={closeSessions}
-        onRemove={handleRemoveSession}
-        onCopyNote={handleCopySessionNote}
-      />
-
-      <ChangePasswordModal
-        open={changePasswordOpen}
-        submitting={changePasswordSubmitting}
-        error={changePasswordError}
-        form={passwordForm}
-        onCancel={closeChangePasswordModal}
-        onSubmit={handleSubmitChangePassword}
-        onClearError={clearChangePasswordError}
-      />
-
-      <LoginModal
-        open={loginModalOpen}
-        redirectTo={loginRedirectTarget}
-        onClose={closeLoginModal}
-        onSuccess={handleLoginSuccess}
-      />
-    </div>
+    <MainLayout
+      isAuthenticated={isAuthenticated}
+      isAdmin={isAdmin}
+      currentUsername={currentUser?.username || ""}
+      userId={storageScopeKey}
+      appConfig={appConfig}
+      rankingMenuItems={rankingMenuItems}
+      userMenuItems={userMenuItems}
+      configOpen={configOpen}
+      onConfigClose={closeConfig}
+      onConfigChange={handleConfigChange}
+      onOpenSessions={openSessionsModal}
+      sessionsOpen={sessionsOpen}
+      sessionsLoading={sessionsLoading}
+      sessionsError={sessionsError}
+      sessions={sessions}
+      onSessionsClose={closeSessions}
+      onRemoveSession={handleRemoveSession}
+      onCopySessionNote={handleCopySessionNote}
+      changePasswordOpen={changePasswordOpen}
+      changePasswordSubmitting={changePasswordSubmitting}
+      changePasswordError={changePasswordError}
+      passwordForm={passwordForm}
+      onChangePasswordClose={closeChangePasswordModal}
+      onChangePasswordSubmit={handleSubmitChangePassword}
+      onClearChangePasswordError={clearChangePasswordError}
+      loginModalOpen={loginModalOpen}
+      loginRedirectTarget={loginRedirectTarget}
+      onLoginModalClose={closeLoginModal}
+      onLoginSuccess={handleLoginSuccess}
+      onLogout={logout}
+    />
   );
 
   const routeConfigs = buildAppRouteConfigs({
