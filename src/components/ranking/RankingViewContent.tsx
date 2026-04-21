@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import { Award, BarChart2, Settings } from "react-feather";
-import { Spin } from "antd";
 import {
   useRankingUIContext,
   useRankingMembersContext,
@@ -8,9 +7,13 @@ import {
 } from "../../features/ranking/context";
 import DashboardSectionHeader from "../dashboard/DashboardSectionHeader";
 import DashboardSummaryCards from "../dashboard/DashboardSummaryCards";
+import DashboardSummaryCardsSkeleton from "../dashboard/DashboardSummaryCardsSkeleton";
 import MembersPanel from "./MembersPanel";
+import MembersPanelSkeleton from "./MembersPanelSkeleton";
 import MatchFormPanel from "./MatchFormPanel";
+import MatchFormPanelSkeleton from "./MatchFormPanelSkeleton";
 import RankingPanel from "./RankingPanel";
+import RankingPanelSkeleton from "./RankingPanelSkeleton";
 
 export default function RankingViewContent() {
   const { t } = useTranslation();
@@ -43,37 +46,35 @@ export default function RankingViewContent() {
         subtitle={t("rankingPage.systemDescription")}
       />
 
-      <DashboardSummaryCards
-        items={[
-          {
-            key: "members",
-            label: t("rankingPage.members"),
-            value: members.length,
-          },
-          {
-            key: "matches",
-            label: t("rankingPage.matches"),
-            value: matches.length,
-          },
-          {
-            key: "top-rank",
-            label: t("rankingPage.topRank"),
-            value: rankings[0]?.name ?? "-",
-            valueClassName: "text-sm md:text-base truncate",
-          },
-        ]}
-      />
+      {isMembersLoading || isMatchesLoading ? (
+        <DashboardSummaryCardsSkeleton />
+      ) : (
+        <DashboardSummaryCards
+          items={[
+            {
+              key: "members",
+              label: t("rankingPage.members"),
+              value: members.length,
+            },
+            {
+              key: "matches",
+              label: t("rankingPage.matches"),
+              value: matches.length,
+            },
+            {
+              key: "top-rank",
+              label: t("rankingPage.topRank"),
+              value: rankings[0]?.name ?? "-",
+              valueClassName: "text-sm md:text-base truncate",
+            },
+          ]}
+        />
+      )}
 
       {/* View: Members */}
       {view === "member" && (
         <div className="space-y-4">
-          {isMembersLoading ? (
-            <div className="flex justify-center py-8">
-              <Spin tip={t("rankingPage.loading")} />
-            </div>
-          ) : (
-            <MembersPanel />
-          )}
+          {isMembersLoading ? <MembersPanelSkeleton /> : <MembersPanel />}
         </div>
       )}
 
@@ -81,9 +82,7 @@ export default function RankingViewContent() {
       {view === "match-form" && (
         <div>
           {isMembersLoading ? (
-            <div className="flex justify-center py-8">
-              <Spin tip={t("rankingPage.loading")} />
-            </div>
+            <MatchFormPanelSkeleton />
           ) : (
             <MatchFormPanel />
           )}
@@ -94,9 +93,7 @@ export default function RankingViewContent() {
       {view === "ranking" && (
         <div>
           {isMatchesLoading ? (
-            <div className="flex justify-center py-8">
-              <Spin tip={t("rankingPage.loading")} />
-            </div>
+            <RankingPanelSkeleton />
           ) : (
             <RankingPanel />
           )}

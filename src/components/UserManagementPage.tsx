@@ -9,7 +9,6 @@ import {
   Layout,
   Popconfirm,
   Select,
-  Spin,
   Table,
   Typography,
   type TableColumnsType,
@@ -22,6 +21,7 @@ import { hashPassword } from "../lib/api";
 import type { UserRecord, UserRole } from "../types";
 import DashboardSectionHeader from "./dashboard/DashboardSectionHeader";
 import DashboardSummaryCards from "./dashboard/DashboardSummaryCards";
+import UserManagementPageSkeleton from "./UserManagementPageSkeleton";
 import RankingSidebar from "./ranking/RankingSidebar";
 import type { RankingView } from "./ranking/types";
 
@@ -519,9 +519,7 @@ export default function UserManagementPage() {
               ) : null}
 
               {isLoading ? (
-                <div className="py-8 text-center">
-                  <Spin tip={t("userManagement.loadingUsers")} />
-                </div>
+                <UserManagementPageSkeleton />
               ) : (
                 <Table
                   rowKey="id"

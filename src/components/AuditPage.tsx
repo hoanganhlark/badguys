@@ -7,7 +7,6 @@ import {
   Card,
   Layout,
   Select,
-  Spin,
   Table,
   Typography,
   type TableColumnsType,
@@ -19,6 +18,7 @@ import { useAuditEvents } from "../hooks/queries";
 import type { AuditEventRecord } from "../types";
 import DashboardSectionHeader from "./dashboard/DashboardSectionHeader";
 import DashboardSummaryCards from "./dashboard/DashboardSummaryCards";
+import AuditPageSkeleton from "./AuditPageSkeleton";
 import RankingSidebar from "./ranking/RankingSidebar";
 import type { RankingView } from "./ranking/types";
 
@@ -487,9 +487,7 @@ export default function AuditPage() {
               </div>
 
               {isLoading ? (
-                <div className="py-8 text-center">
-                  <Spin tip={t("auditPage.loadingAudit")} />
-                </div>
+                <AuditPageSkeleton />
               ) : (
                 <Table
                   rowKey="id"

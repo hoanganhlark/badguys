@@ -10,7 +10,6 @@ import {
   InputNumber,
   Layout,
   Popconfirm,
-  Spin,
   Table,
   Typography,
   type TableColumnsType,
@@ -20,6 +19,7 @@ import { useNavigate } from "react-router-dom";
 import { useRankingCategories } from "../hooks/queries";
 import type { RankingCategory } from "../types";
 import { useAuth } from "../context/AuthContext";
+import CategoryManagementPageSkeleton from "./CategoryManagementPageSkeleton";
 import RankingSidebar from "./ranking/RankingSidebar";
 import type { RankingView } from "./ranking/types";
 
@@ -382,9 +382,7 @@ export default function CategoryManagementPage() {
               ) : null}
 
               {isLoading ? (
-                <div className="py-8 text-center">
-                  <Spin />
-                </div>
+                <CategoryManagementPageSkeleton />
               ) : (
                 <Table
                   rowKey="id"
