@@ -100,11 +100,14 @@ function RankingPageInner({ onClose }: { onClose: () => void }) {
   const categoriesActive = location.pathname === "/dashboard/categories";
 
   return (
-    <div className="min-h-screen">
-      <div className="min-h-screen w-full text-slate-900 font-sans">
+    <div className="min-h-[100dvh] bg-[#fafafa]">
+      <div className="min-h-[100dvh] w-full bg-[#fafafa] text-slate-900 font-sans">
         <RankingPageHeader />
 
-        <Layout hasSider style={{ minHeight: 0 }}>
+        <Layout
+          hasSider
+          style={{ minHeight: "calc(100dvh - 56px)", background: "#fafafa" }}
+        >
           <RankingSidebar
             currentView={view}
             onSetView={setViewWithRoute}
@@ -119,9 +122,9 @@ function RankingPageInner({ onClose }: { onClose: () => void }) {
             categoriesActive={categoriesActive}
           />
 
-          <Layout.Content>
+          <Layout.Content style={{ background: "#fafafa" }}>
             <main
-              className="flex-1 overflow-auto px-4 py-4 md:p-8 relative"
+              className="relative flex-1 min-h-[calc(100dvh-56px)] overflow-auto bg-[#fafafa] px-4 py-4 md:p-8"
               style={{
                 paddingBottom: "calc(6rem + var(--mobile-keyboard-inset, 0px))",
               }}
