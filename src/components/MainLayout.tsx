@@ -1,11 +1,14 @@
 import { lazy } from "react";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../context/AuthContext";
 import AppHeader from "./AppHeader";
 import ConfigSidebar from "./ConfigSidebar";
 import ChangePasswordModal from "./ChangePasswordModal";
 import LoginModal from "./LoginModal";
 import SessionsModal from "./SessionsModal";
 import { useSessionContext } from "../context/SessionContext";
+import { useChangePasswordContext } from "../context/ChangePasswordContext";
+import { useAppMenus } from "../hooks/useAppMenus";
 import type { AppConfig } from "../types";
 import { envConfig } from "../env";
 
@@ -17,21 +20,10 @@ interface MainLayoutProps {
   currentUsername: string;
   userId: string;
   appConfig: AppConfig;
-  // Header & menus
-  rankingMenuItems: any[] | undefined;
-  userMenuItems: any[] | undefined;
   // Config sidebar
   configOpen: boolean;
   onConfigClose: () => void;
   onConfigChange: (config: AppConfig) => void;
-  // Password modal
-  changePasswordOpen: boolean;
-  changePasswordSubmitting: boolean;
-  changePasswordError: string;
-  passwordForm: any;
-  onChangePasswordClose: () => void;
-  onChangePasswordSubmit: (values: any) => Promise<void>;
-  onClearChangePasswordError: () => void;
   // Login modal
   loginModalOpen: boolean;
   loginRedirectTarget: string;
@@ -51,18 +43,9 @@ export function MainLayout({
   currentUsername,
   userId,
   appConfig,
-  rankingMenuItems,
-  userMenuItems,
   configOpen,
   onConfigClose,
   onConfigChange,
-  changePasswordOpen,
-  changePasswordSubmitting,
-  changePasswordError,
-  passwordForm,
-  onChangePasswordClose,
-  onChangePasswordSubmit,
-  onClearChangePasswordError,
   loginModalOpen,
   loginRedirectTarget,
   onLoginModalClose,
@@ -70,6 +53,7 @@ export function MainLayout({
   onLogout,
 }: MainLayoutProps) {
   const { t } = useTranslation();
+  const { currentUser } = useAuth();
   const {
     sessionsOpen,
     sessionsLoading,
@@ -80,6 +64,23 @@ export function MainLayout({
     handleRemoveSession,
     handleCopySessionNote,
   } = useSessionContext();
+  const {
+    open: changePasswordOpen,
+    error: changePasswordError,
+    submitting: changePasswordSubmitting,
+    form: passwordForm,
+    handleClose: onChangePasswordClose,
+    handleSubmit: onChangePasswordSubmit,
+    clearError: onClearChangePasswordError,
+    handleOpen: openChangePasswordModal,
+  } = useChangePasswordContext();
+
+  const { rankingMenuItems, userMenuItems } = useAppMenus({
+    username: currentUser?.username || "",
+    onChangePassword: openChangePasswordModal,
+    onLogout,
+    t,
+  });
 
   return (
     <div className="relative min-h-screen bg-[#fafafa]">

@@ -1,6 +1,4 @@
-import { useEffect } from "react";
 import { App as AntApp } from "antd";
-import { useTranslation } from "react-i18next";
 import {
   Route,
   Routes,
@@ -11,12 +9,11 @@ import LoginModal from "./components/LoginModal";
 import { MainLayout } from "./components/MainLayout";
 import { useAuth } from "./context/AuthContext";
 import { SessionProvider } from "./context/SessionContext";
+import { ChangePasswordProvider } from "./context/ChangePasswordContext";
 import { useHistoryModal } from "./hooks/useHistoryModal";
-import { useChangePasswordModal } from "./hooks/useChangePasswordModal";
 import { useAnalyticsTracking } from "./hooks/useAnalyticsTracking";
 import { useGuestVisitNotification } from "./hooks/useGuestVisitNotification";
 import { useAppConfig } from "./hooks/useAppConfig";
-import { useAppMenus } from "./hooks/useAppMenus";
 import {
   AppRoute,
   getLoginRedirectTarget,
@@ -36,24 +33,12 @@ interface LocationState {
 
 export default function App() {
   const { currentUser, isAuthenticated, isAdmin, logout } = useAuth();
-  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { message: messageApi } = AntApp.useApp();
 
   const storageScopeKey = currentUser?.userId || "guest";
   const { appConfig, handleConfigChange } = useAppConfig(storageScopeKey);
-
-  const {
-    open: changePasswordOpen,
-    error: changePasswordError,
-    submitting: changePasswordSubmitting,
-    form: passwordForm,
-    handleOpen: openChangePasswordModal,
-    handleClose: closeChangePasswordModal,
-    handleSubmit: handleSubmitChangePassword,
-    clearError: clearChangePasswordError,
-  } = useChangePasswordModal(showToast);
 
   const {
     configOpen,
@@ -69,11 +54,6 @@ export default function App() {
 
   // Send guest visit notification once per day
   useGuestVisitNotification({ isAdmin });
-
-  useEffect(() => {
-    if (isAuthenticated) return;
-    closeChangePasswordModal();
-  }, [isAuthenticated, closeChangePasswordModal]);
 
   function showToast(message: string) {
     messageApi.info(message);
@@ -97,13 +77,6 @@ export default function App() {
   const loginRedirectTarget = getLoginRedirectTarget(
     (location.state as LocationState | null)?.from,
   );
-
-  const { rankingMenuItems, userMenuItems } = useAppMenus({
-    username: currentUser?.username || "",
-    onChangePassword: openChangePasswordModal,
-    onLogout: logout,
-    t,
-  });
 
   const onNavigateHome = () => navigate(AppRoute.Home);
 
@@ -136,18 +109,9 @@ export default function App() {
       currentUsername={currentUser?.username || ""}
       userId={storageScopeKey}
       appConfig={appConfig}
-      rankingMenuItems={rankingMenuItems}
-      userMenuItems={userMenuItems}
       configOpen={configOpen}
       onConfigClose={closeConfig}
       onConfigChange={handleConfigChange}
-      changePasswordOpen={changePasswordOpen}
-      changePasswordSubmitting={changePasswordSubmitting}
-      changePasswordError={changePasswordError}
-      passwordForm={passwordForm}
-      onChangePasswordClose={closeChangePasswordModal}
-      onChangePasswordSubmit={handleSubmitChangePassword}
-      onClearChangePasswordError={clearChangePasswordError}
       loginModalOpen={loginModalOpen}
       loginRedirectTarget={loginRedirectTarget}
       onLoginModalClose={closeLoginModal}
@@ -167,16 +131,18 @@ export default function App() {
   });
 
   return (
-    <SessionProvider showToast={showToast}>
-      <Routes>
-        {routeConfigs.map((routeConfig) => (
-          <Route
-            key={routeConfig.path}
-            path={routeConfig.path}
-            element={routeConfig.element}
-          />
-        ))}
-      </Routes>
-    </SessionProvider>
+    <ChangePasswordProvider showToast={showToast}>
+      <SessionProvider showToast={showToast}>
+        <Routes>
+          {routeConfigs.map((routeConfig) => (
+            <Route
+              key={routeConfig.path}
+              path={routeConfig.path}
+              element={routeConfig.element}
+            />
+          ))}
+        </Routes>
+      </SessionProvider>
+    </ChangePasswordProvider>
   );
 }
