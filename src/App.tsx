@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { App as AntApp } from "antd";
 import { useTranslation } from "react-i18next";
 import {
@@ -21,6 +21,7 @@ import { envConfig } from "./env";
 import { useHistoryModal } from "./hooks/useHistoryModal";
 import { useChangePasswordModal } from "./hooks/useChangePasswordModal";
 import { useSessionHandlers } from "./hooks/useSessionHandlers";
+import { useAnalyticsTracking } from "./hooks/useAnalyticsTracking";
 import { useSessions } from "./hooks/queries/useSessions";
 import { loadStoredConfig, saveConfig, formatVisitTimestampUTC7, markVisitNotifiedToday, shouldSendVisitNotificationToday } from "./lib/platform";
 import type { AppConfig } from "./types";
@@ -38,12 +39,7 @@ import {
   AnalyticsEventName,
   AnalyticsNotificationType,
   AnalyticsParamKey,
-  AnalyticsUserPropertyKey,
-  initAnalytics,
-  setUserProperties,
   trackEvent,
-  trackPageView,
-  trackRouteChange,
 } from "./lib/analytics";
 import { notifyGuestVisited } from "./lib/telegram";
 
@@ -97,8 +93,6 @@ export default function App() {
     clearError: clearChangePasswordError,
   } = useChangePasswordModal(showToast);
 
-  const previousPathRef = useRef("");
-
   const {
     configOpen,
     sessionsOpen,
@@ -108,37 +102,12 @@ export default function App() {
     closeSessions,
   } = useHistoryModal();
 
-  useEffect(() => {
-    initAnalytics();
-  }, []);
-
-  useEffect(() => {
-    trackPageView(`${location.pathname}${location.search}${location.hash}`);
-  }, [location.pathname, location.search, location.hash]);
-
-  useEffect(() => {
-    const nextPath = `${location.pathname}${location.search}${location.hash}`;
-    const previousPath = previousPathRef.current;
-
-    if (!previousPath) {
-      previousPathRef.current = nextPath;
-      return;
-    }
-
-    if (isAuthenticated && previousPath !== nextPath) {
-      trackRouteChange(previousPath, nextPath);
-    }
-
-    previousPathRef.current = nextPath;
-  }, [isAuthenticated, location.pathname, location.search, location.hash]);
-
-  useEffect(() => {
-    setUserProperties({
-      [AnalyticsUserPropertyKey.IsAuthenticated]: isAuthenticated,
-      [AnalyticsUserPropertyKey.Role]: currentUser?.role || "guest",
-      [AnalyticsUserPropertyKey.Username]: currentUser?.username || "guest",
-    });
-  }, [isAuthenticated, currentUser?.role, currentUser?.username]);
+  // Track analytics and page views
+  useAnalyticsTracking({
+    isAuthenticated,
+    username: currentUser?.username,
+    role: currentUser?.role,
+  });
 
   useEffect(() => {
     if (isAdmin) return;
