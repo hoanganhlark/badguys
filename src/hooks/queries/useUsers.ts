@@ -20,12 +20,14 @@ export const usersKeys = {
 /**
  * Fetch users
  * Uses reference defaults (infrequent changes)
+ * @param enabled Whether to enable the query (default: true). Set to false to defer fetching
  */
-export function useUsersQuery() {
+export function useUsersQuery(enabled = true) {
   return useQuery({
     queryKey: usersKeys.list(),
     queryFn: getUsers,
     ...queryDefaults.reference,
+    enabled,
   });
 }
 
@@ -90,9 +92,10 @@ export function useToggleUserDisabledMutation() {
 
 /**
  * Combined hook for users management
+ * @param enabled Whether to enable the query (default: true). Set to false to defer fetching
  */
-export function useUsers() {
-  const query = useUsersQuery();
+export function useUsers(enabled = true) {
+  const query = useUsersQuery(enabled);
   const createMutation = useCreateUserMutation();
   const deleteMutation = useDeleteUserMutation();
   const updateRoleMutation = useUpdateUserRoleMutation();

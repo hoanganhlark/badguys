@@ -90,14 +90,15 @@ export default function App() {
     loadStoredConfig(envConfig.defaultConfig, storageScopeKey),
   );
 
-  // Sessions data loaded via React Query hook instead of manual state
+  // Sessions data loaded via React Query hook - only when modal is open
+  const [sessionsFetched, setSessionsFetched] = useState(false);
   const {
     sessions,
     isLoading: sessionsLoading,
     error: sessionsQueryError,
     refetch: refetchSessions,
     removeSession: removeSessions,
-  } = useSessions(SESSIONS_FETCH_LIMIT);
+  } = useSessions(SESSIONS_FETCH_LIMIT, sessionsFetched);
   const sessionsError =
     sessionsQueryError instanceof Error ? sessionsQueryError.message : "";
 
@@ -188,6 +189,9 @@ export default function App() {
   }
 
   function openSessionsModal() {
+    if (!sessionsFetched) {
+      setSessionsFetched(true);
+    }
     openSessions();
     refetchSessions();
   }

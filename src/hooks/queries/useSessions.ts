@@ -11,12 +11,13 @@ import { queryDefaults } from "./config";
  * Fetch recent sessions
  * Uses historical defaults (historical data, no auto-refetch)
  */
-export function useSessionsQuery(maxItems = 14) {
+export function useSessionsQuery(maxItems = 14, enabled = true) {
   return useQuery<SessionRecord[]>({
     queryKey: ["sessions", maxItems],
     queryFn: async (): Promise<SessionRecord[]> => getRecentSessions(maxItems),
     staleTime: queryDefaults.historical.staleTime,
     refetchInterval: queryDefaults.historical.refetchInterval,
+    enabled,
   } as any);
 }
 
@@ -50,9 +51,11 @@ export function useRemoveSessionMutation() {
 
 /**
  * Combined hook for sessions
+ * @param maxItems Maximum number of sessions to fetch
+ * @param enabled Whether to enable the query (default: true). Set to false to defer fetching
  */
-export function useSessions(maxItems = 14) {
-  const query = useSessionsQuery(maxItems);
+export function useSessions(maxItems = 14, enabled = true) {
+  const query = useSessionsQuery(maxItems, enabled);
   const saveMutation = useSaveSessionMutation();
   const removeMutation = useRemoveSessionMutation();
 

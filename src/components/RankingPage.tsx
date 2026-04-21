@@ -23,7 +23,8 @@ interface RankingPageProps {
 
 export default function RankingPage({ isOpen, onClose }: RankingPageProps) {
   const { currentUser, isAdmin } = useAuth();
-  const { users } = useUsers();
+  // Only fetch users if the page is open
+  const { users } = useUsers(isOpen);
   const location = useLocation();
   const isPublicRankingRoute = location.pathname.startsWith("/ranking");
 
