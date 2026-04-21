@@ -1,15 +1,22 @@
-import { Card, Skeleton, Table } from "antd";
+import { Card, Skeleton, Table, type TableColumnsType } from "antd";
+
+interface SkeletonRow {
+  key: number;
+  name: React.ReactElement;
+  level: React.ReactElement;
+  actions: React.ReactElement;
+}
 
 export default function MembersPanelSkeleton() {
-  // Skeleton for form section
+  // Skeleton for member form section (add/edit)
   const formSkeleton = (
-    <Card className="mb-4">
-      <Skeleton paragraph={{ rows: 3 }} active />
+    <Card>
+      <Skeleton paragraph={{ rows: 4 }} active />
     </Card>
   );
 
-  // Skeleton for table with 5 rows
-  const tableData = Array(5)
+  // Skeleton for members table with 6 rows matching actual structure
+  const tableData: SkeletonRow[] = Array(6)
     .fill(null)
     .map((_, i) => ({
       key: i,
@@ -18,36 +25,30 @@ export default function MembersPanelSkeleton() {
       actions: <Skeleton paragraph={{ rows: 1 }} active />,
     }));
 
-  const columns = [
+  // Columns matching actual MembersPanel structure
+  const columns: TableColumnsType<SkeletonRow> = [
     {
       title: "Member",
       dataIndex: "name",
       key: "name",
-      render: (text: any) => text,
     },
     {
       title: "Rank",
       dataIndex: "level",
       key: "level",
-      render: (text: any) => text,
     },
     {
       title: "Actions",
       dataIndex: "actions",
       key: "actions",
-      render: (text: any) => text,
+      align: "right",
     },
   ];
 
   return (
     <div className="space-y-4">
       {formSkeleton}
-      <Table
-        columns={columns}
-        dataSource={tableData}
-        pagination={false}
-        bordered
-      />
+      <Table columns={columns} dataSource={tableData} pagination={false} />
     </div>
   );
 }

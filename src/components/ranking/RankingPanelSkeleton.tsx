@@ -1,4 +1,11 @@
-import { Card, Skeleton, Table } from "antd";
+import { Card, Skeleton, Table, type TableColumnsType } from "antd";
+
+interface SkeletonRow {
+  key: number;
+  rank: React.ReactElement;
+  name: React.ReactElement;
+  score: React.ReactElement;
+}
 
 export default function RankingPanelSkeleton() {
   // Skeleton for category filter/controls
@@ -8,64 +15,43 @@ export default function RankingPanelSkeleton() {
     </Card>
   );
 
-  // Skeleton for rankings table with 10 rows
-  const tableData = Array(10)
+  // Skeleton for rankings table with 8 rows - matching actual RankingPanel columns
+  const tableData: SkeletonRow[] = Array(8)
     .fill(null)
     .map((_, i) => ({
       key: i,
       rank: <Skeleton paragraph={{ rows: 1 }} active />,
       name: <Skeleton paragraph={{ rows: 1 }} active />,
       score: <Skeleton paragraph={{ rows: 1 }} active />,
-      stability: <Skeleton paragraph={{ rows: 1 }} active />,
-      trend: <Skeleton paragraph={{ rows: 1 }} active />,
     }));
 
-  const columns = [
+  // Columns matching the actual RankingPanel structure
+  const columns: TableColumnsType<SkeletonRow> = [
     {
       title: "Rank",
       dataIndex: "rank",
       key: "rank",
-      width: "10%",
-      render: (text: any) => text,
+      width: 72,
     },
     {
-      title: "Player",
+      title: "Athlete",
       dataIndex: "name",
       key: "name",
-      render: (text: any) => text,
+      width: 140,
     },
     {
-      title: "Score",
+      title: "Points",
       dataIndex: "score",
       key: "score",
-      width: "15%",
-      render: (text: any) => text,
-    },
-    {
-      title: "Stability",
-      dataIndex: "stability",
-      key: "stability",
-      width: "15%",
-      render: (text: any) => text,
-    },
-    {
-      title: "Trend",
-      dataIndex: "trend",
-      key: "trend",
-      width: "15%",
-      render: (text: any) => text,
+      width: 104,
+      align: "right",
     },
   ];
 
   return (
     <div className="space-y-4">
       {controlsSkeleton}
-      <Table
-        columns={columns}
-        dataSource={tableData}
-        pagination={false}
-        bordered
-      />
+      <Table columns={columns} dataSource={tableData} pagination={false} />
     </div>
   );
 }
