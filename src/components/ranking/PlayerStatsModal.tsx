@@ -20,7 +20,6 @@ function toPercent(value: number): number {
 
 export default function PlayerStatsModal({
   stats,
-  penaltyCoefficient,
   metricVisibility,
   onClose,
 }: PlayerStatsModalProps) {
@@ -111,22 +110,6 @@ export default function PlayerStatsModal({
     >
       <Space direction="vertical" size={16} style={{ width: "100%" }}>
         <Collapse items={metricPanels} defaultActiveKey={[]} />
-
-        <Space direction="vertical" size={4} style={{ width: "100%" }}>
-          <Typography.Text strong>
-            {t("playerStats.formulaTitle")}
-          </Typography.Text>
-          <Typography.Text>
-            {t("playerStats.formulaText", {
-              penalty: penaltyCoefficient.toFixed(2),
-            })}
-          </Typography.Text>
-          <Typography.Text type="secondary">
-            {stats.skillNorm.toFixed(4)} - ({stats.uncertaintyNorm.toFixed(4)} x
-            {stats.vol.toFixed(4)} x {penaltyCoefficient.toFixed(2)} x{" "}
-            {stats.motivation.toFixed(4)})
-          </Typography.Text>
-        </Space>
 
         <Collapse
           defaultActiveKey={[]}

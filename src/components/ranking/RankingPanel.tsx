@@ -126,11 +126,19 @@ function RankingPanel({
     );
   }, [memberLevelById, rankings, selectedCategory]);
 
-  const rankingRows = filteredRankings.map((player) => ({
-    key: player.name,
-    rank: rankings.findIndex((entry) => entry.id === player.id) + 1,
-    player,
-  }));
+  const rankingRows = useMemo(
+    () =>
+      [...filteredRankings]
+        .sort(
+          (a, b) => b.rating - a.rating || a.name.localeCompare(b.name, "vi"),
+        )
+        .map((player, index) => ({
+          key: player.id,
+          rank: index + 1,
+          player,
+        })),
+    [filteredRankings],
+  );
 
   const rankingColumns: TableColumnsType<(typeof rankingRows)[number]> = [
     {
