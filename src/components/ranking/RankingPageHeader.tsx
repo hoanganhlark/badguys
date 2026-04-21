@@ -14,19 +14,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useChangePasswordContext } from "../../context/ChangePasswordContext";
 import { useRankingUIContext } from "../../features/ranking/context";
 import AccountMenuDropdown from "../AccountMenuDropdown";
-
-const DASHBOARD_APPBAR_STYLE: React.CSSProperties = {
-  position: "sticky",
-  top: 0,
-  zIndex: 55,
-  height: 56,
-  lineHeight: "56px",
-  padding: "0 16px",
-  borderBottom: "1px solid #e2e8f0",
-  background: "rgba(250, 250, 250, 0.92)",
-  backdropFilter: "blur(8px)",
-  boxShadow: "0 2px 12px rgba(15, 23, 42, 0.08)",
-};
+import SharedAppBar from "../SharedAppBar";
 
 export default function RankingPageHeader() {
   const { currentUser, logout } = useAuth();
@@ -78,29 +66,28 @@ export default function RankingPageHeader() {
   );
 
   return (
-    <div
+    <SharedAppBar
+      position="sticky"
       className={`z-[55] ${
         mobileSidebarOpen
           ? "opacity-0 pointer-events-none md:opacity-100 md:pointer-events-auto"
           : ""
       }`}
-      style={DASHBOARD_APPBAR_STYLE}
-    >
-      <div className="flex h-14 items-center justify-between">
-        <div>
-          {!mobileSidebarOpen ? (
-            <Button
-              type="default"
-              shape="circle"
-              onClick={() => setMobileSidebarOpen(true)}
-              className="md:hidden"
-              aria-label={t("rankingPage.menu")}
-              icon={<MenuOutlined />}
-            />
-          ) : null}
-        </div>
-
-        {currentUser && !hideFloatingHeaderActions ? (
+      contentClassName="flex h-14 items-center justify-between px-4"
+      left={
+        !mobileSidebarOpen ? (
+          <Button
+            type="default"
+            shape="circle"
+            onClick={() => setMobileSidebarOpen(true)}
+            className="md:hidden"
+            aria-label={t("rankingPage.menu")}
+            icon={<MenuOutlined />}
+          />
+        ) : null
+      }
+      right={
+        currentUser && !hideFloatingHeaderActions ? (
           <AccountMenuDropdown
             username={currentUser.username}
             items={userMenuItems}
@@ -128,9 +115,9 @@ export default function RankingPageHeader() {
               username: currentUser.username,
             })}
           />
-        ) : null}
-
-        {isPublicRankingRoute && !currentUser && !hideFloatingHeaderActions ? (
+        ) : isPublicRankingRoute &&
+          !currentUser &&
+          !hideFloatingHeaderActions ? (
           <Dropdown
             menu={{
               items: guestMenuItems,
@@ -158,8 +145,8 @@ export default function RankingPageHeader() {
               icon={<UserOutlined />}
             />
           </Dropdown>
-        ) : null}
-      </div>
-    </div>
+        ) : null
+      }
+    />
   );
 }
