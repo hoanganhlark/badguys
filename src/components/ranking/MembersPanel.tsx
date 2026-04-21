@@ -29,6 +29,7 @@ import {
   getRankingLevelDisplay,
   normalizeRankingLevel,
 } from "../../lib/rankingLevel";
+import DashboardTableSkeleton from "../dashboard/DashboardTableSkeleton";
 
 function MembersPanel() {
   const { t } = useTranslation();
@@ -280,22 +281,25 @@ function MembersPanel() {
       ) : null}
 
       <Card bodyStyle={{ padding: 0 }}>
-        <Table<Member>
-          rowKey="id"
-          columns={columns}
-          dataSource={sortedMembers}
-          loading={isLoading}
-          pagination={{
-            defaultPageSize: 5,
-            pageSizeOptions: ["5", "10", "20", "50"],
-            showSizeChanger: true,
-            showQuickJumper: true,
-            hideOnSinglePage: false,
-            position: ["bottomCenter"],
-            showTotal: (total, range) => `${range[0]}-${range[1]} / ${total}`,
-          }}
-          scroll={{ x: 560 }}
-        />
+        {isLoading ? (
+          <DashboardTableSkeleton columns={7} rows={8} className="mt-1" />
+        ) : (
+          <Table<Member>
+            rowKey="id"
+            columns={columns}
+            dataSource={sortedMembers}
+            pagination={{
+              defaultPageSize: 5,
+              pageSizeOptions: ["5", "10", "20", "50"],
+              showSizeChanger: true,
+              showQuickJumper: true,
+              hideOnSinglePage: false,
+              position: ["bottomCenter"],
+              showTotal: (total, range) => `${range[0]}-${range[1]} / ${total}`,
+            }}
+            scroll={{ x: 560 }}
+          />
+        )}
       </Card>
     </Space>
   );

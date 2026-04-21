@@ -10,6 +10,7 @@ import DashboardPageLayout from "./dashboard/DashboardPageLayout";
 import { DashboardPageProvider } from "./dashboard/DashboardPageContext";
 import DashboardSectionHeader from "./dashboard/DashboardSectionHeader";
 import DashboardSummaryCards from "./dashboard/DashboardSummaryCards";
+import DashboardTableSkeleton from "./dashboard/DashboardTableSkeleton";
 
 type AuditFilterType = "all" | "event" | "route_change";
 
@@ -332,24 +333,28 @@ export default function AuditPage() {
               />
             </div>
 
-            <Table
-              rowKey="id"
-              columns={columns}
-              dataSource={filteredEvents}
-              loading={isLoading}
-              scroll={{ x: 980 }}
-              pagination={{
-                defaultPageSize: 10,
-                pageSizeOptions: ["5", "10", "20", "50"],
-                showSizeChanger: true,
-                showQuickJumper: true,
-                hideOnSinglePage: false,
-                position: ["bottomCenter"],
-                showTotal: (total, range) =>
-                  `${range[0]}-${range[1]} / ${total}`,
-              }}
-              locale={{ emptyText: t("auditPage.noLogs") }}
-            />
+            {isLoading ? (
+              <DashboardTableSkeleton columns={7} rows={8} className="mt-1" />
+            ) : (
+              <Table
+                rowKey="id"
+                columns={columns}
+                dataSource={filteredEvents}
+                loading={false}
+                scroll={{ x: 980 }}
+                pagination={{
+                  defaultPageSize: 10,
+                  pageSizeOptions: ["5", "10", "20", "50"],
+                  showSizeChanger: true,
+                  showQuickJumper: true,
+                  hideOnSinglePage: false,
+                  position: ["bottomCenter"],
+                  showTotal: (total, range) =>
+                    `${range[0]}-${range[1]} / ${total}`,
+                }}
+                locale={{ emptyText: t("auditPage.noLogs") }}
+              />
+            )}
           </Card>
         </div>
       </DashboardPageLayout>

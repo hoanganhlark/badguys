@@ -20,6 +20,7 @@ import DashboardPageLayout from "./dashboard/DashboardPageLayout";
 import { DashboardPageProvider } from "./dashboard/DashboardPageContext";
 import DashboardSectionHeader from "./dashboard/DashboardSectionHeader";
 import DashboardSummaryCards from "./dashboard/DashboardSummaryCards";
+import DashboardTableSkeleton from "./dashboard/DashboardTableSkeleton";
 
 export default function UserManagementPage() {
   const { t } = useTranslation();
@@ -375,23 +376,27 @@ export default function UserManagementPage() {
               </p>
             ) : null}
 
-            <Table
-              rowKey="id"
-              columns={userColumns}
-              dataSource={sortedUsers}
-              loading={isLoading}
-              scroll={{ x: 900 }}
-              pagination={{
-                defaultPageSize: 10,
-                pageSizeOptions: ["5", "10", "20", "50"],
-                showSizeChanger: true,
-                showQuickJumper: true,
-                hideOnSinglePage: false,
-                position: ["bottomCenter"],
-                showTotal: (total, range) =>
-                  `${range[0]}-${range[1]} / ${total}`,
-              }}
-            />
+            {isLoading ? (
+              <DashboardTableSkeleton columns={5} rows={8} className="mt-1" />
+            ) : (
+              <Table
+                rowKey="id"
+                columns={userColumns}
+                dataSource={sortedUsers}
+                loading={false}
+                scroll={{ x: 900 }}
+                pagination={{
+                  defaultPageSize: 10,
+                  pageSizeOptions: ["5", "10", "20", "50"],
+                  showSizeChanger: true,
+                  showQuickJumper: true,
+                  hideOnSinglePage: false,
+                  position: ["bottomCenter"],
+                  showTotal: (total, range) =>
+                    `${range[0]}-${range[1]} / ${total}`,
+                }}
+              />
+            )}
           </Card>
         </div>
       </DashboardPageLayout>

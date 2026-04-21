@@ -20,6 +20,7 @@ import DashboardPageLayout from "./dashboard/DashboardPageLayout";
 import { DashboardPageProvider } from "./dashboard/DashboardPageContext";
 import DashboardSectionHeader from "./dashboard/DashboardSectionHeader";
 import DashboardSummaryCards from "./dashboard/DashboardSummaryCards";
+import DashboardTableSkeleton from "./dashboard/DashboardTableSkeleton";
 
 function buildCategoryName(displayName: string): string {
   const slug = displayName
@@ -309,19 +310,23 @@ export default function CategoryManagementPage() {
               />
             ) : null}
 
-            <Table
-              rowKey="id"
-              columns={columns}
-              dataSource={categories}
-              loading={isLoading}
-              locale={{ emptyText: t("categoryPage.noCategories") }}
-              scroll={{ x: 720 }}
-              onRow={(record) => ({
-                onClick: () => startEdit(record),
-                style: { cursor: isAdmin ? "pointer" : "default" },
-              })}
-              pagination={false}
-            />
+            {isLoading ? (
+              <DashboardTableSkeleton columns={4} rows={6} className="mt-1" />
+            ) : (
+              <Table
+                rowKey="id"
+                columns={columns}
+                dataSource={categories}
+                loading={false}
+                locale={{ emptyText: t("categoryPage.noCategories") }}
+                scroll={{ x: 720 }}
+                onRow={(record) => ({
+                  onClick: () => startEdit(record),
+                  style: { cursor: isAdmin ? "pointer" : "default" },
+                })}
+                pagination={false}
+              />
+            )}
           </Card>
         </div>
       </DashboardPageLayout>

@@ -22,6 +22,7 @@ import {
   useRankingMembersContext,
 } from "../../features/ranking/context";
 import type { Match } from "./types";
+import DashboardTableSkeleton from "../dashboard/DashboardTableSkeleton";
 
 function formatMatchDateTime(dateText: string): string {
   if (!dateText) return "--/--/---- --:--";
@@ -343,20 +344,23 @@ function RankingPanel() {
         {isMatchesLoading || (hasRankings && rankingRows.length > 0) ? (
           <div className="overflow-hidden rounded-lg border border-slate-100 bg-white">
             <div className="min-h-[240px] md:min-h-[280px]">
-              <Table
-                columns={rankingColumns}
-                dataSource={rankingRows}
-                loading={isMatchesLoading}
-                size="small"
-                showSorterTooltip={false}
-                pagination={false}
-                scroll={rankingTableScroll}
-                className="ranking-ui-table"
-                onRow={(row) => ({
-                  onClick: () => onSelectPlayer(row.player),
-                  style: { cursor: "pointer" },
-                })}
-              />
+              {isMatchesLoading ? (
+                <DashboardTableSkeleton columns={3} rows={5} className="mt-1" />
+              ) : (
+                <Table
+                  columns={rankingColumns}
+                  dataSource={rankingRows}
+                  size="small"
+                  showSorterTooltip={false}
+                  pagination={false}
+                  scroll={rankingTableScroll}
+                  className="ranking-ui-table"
+                  onRow={(row) => ({
+                    onClick: () => onSelectPlayer(row.player),
+                    style: { cursor: "pointer" },
+                  })}
+                />
+              )}
             </div>
           </div>
         ) : null}
