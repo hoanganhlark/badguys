@@ -386,7 +386,6 @@ export function RankingMatchesContainer({
       rankTrends={rankTrends}
       showRankTrend={showRankTrend}
       memberLevelById={memberLevelById}
-      isAdmin={isAdmin}
       currentUserId={currentUserId}
       onToggleHistory={handleToggleHistory}
       onHistoryPaginationChange={handleHistoryPaginationChange}

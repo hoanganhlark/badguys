@@ -1,7 +1,6 @@
 import {
   ChevronDown,
   ChevronLeft,
-  ChevronRight,
   Clock,
   Trash2,
   User,
