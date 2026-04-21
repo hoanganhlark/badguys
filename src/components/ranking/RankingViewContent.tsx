@@ -74,6 +74,7 @@ export default function RankingViewContent() {
           members={members}
           categories={categories}
           usernamesById={usernamesById}
+          view={view as "match-form" | "ranking"}
         />
       )}
     </div>

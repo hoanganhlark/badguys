@@ -32,6 +32,7 @@ interface RankingMatchesContainerProps {
   members: Member[];
   categories: RankingCategory[];
   usernamesById: Record<string, string>;
+  view: "match-form" | "ranking";
 }
 
 /**
@@ -52,6 +53,7 @@ export function RankingMatchesContainer({
   members,
   categories,
   usernamesById,
+  view,
 }: RankingMatchesContainerProps) {
   const { isAdmin, currentUser } = useAuth();
   const currentUserId = currentUser?.userId || "";
@@ -334,8 +336,8 @@ export function RankingMatchesContainer({
     }
   }, [isAdmin, matches.length, rankings, clearAllMatches, resetHistoryPagination]);
 
-  return (
-    <div className="space-y-4">
+  if (view === "match-form") {
+    return (
       <MatchFormPanel
         matchType={matchType}
         team1={team1}
@@ -358,27 +360,29 @@ export function RankingMatchesContainer({
         onGetValidationError={getValidationError}
         onSaveMatch={handleSaveMatch}
       />
+    );
+  }
 
-      <RankingPanel
-        rankings={rankings}
-        categories={sortedCategories}
-        isLoading={isLoading}
-        historyMatches={pagedHistoryMatches}
-        historyMatchesForDisplay={historyMatchesForDisplay}
-        isHistoryLoading={isHistoryLoading}
-        historyPage={historyPage}
-        historyPageSize={historyPageSize}
-        rankTrends={rankTrends}
-        showRankTrend={showRankTrend}
-        memberLevelById={memberLevelById}
-        isAdmin={isAdmin}
-        currentUserId={currentUserId}
-        onToggleHistory={handleToggleHistory}
-        onHistoryPaginationChange={handleHistoryPaginationChange}
-        onDeleteMatch={handleDeleteMatch}
-        onClearHistory={handleClearHistory}
-      />
-    </div>
+  return (
+    <RankingPanel
+      rankings={rankings}
+      categories={sortedCategories}
+      isLoading={isLoading}
+      historyMatches={pagedHistoryMatches}
+      historyMatchesForDisplay={historyMatchesForDisplay}
+      isHistoryLoading={isHistoryLoading}
+      historyPage={historyPage}
+      historyPageSize={historyPageSize}
+      rankTrends={rankTrends}
+      showRankTrend={showRankTrend}
+      memberLevelById={memberLevelById}
+      isAdmin={isAdmin}
+      currentUserId={currentUserId}
+      onToggleHistory={handleToggleHistory}
+      onHistoryPaginationChange={handleHistoryPaginationChange}
+      onDeleteMatch={handleDeleteMatch}
+      onClearHistory={handleClearHistory}
+    />
   );
 }
 
