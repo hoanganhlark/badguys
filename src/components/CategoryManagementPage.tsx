@@ -19,7 +19,6 @@ import { useNavigate } from "react-router-dom";
 import { useRankingCategories } from "../hooks/queries";
 import type { RankingCategory } from "../types";
 import { useAuth } from "../context/AuthContext";
-import CategoryManagementPageSkeleton from "./CategoryManagementPageSkeleton";
 import RankingSidebar from "./ranking/RankingSidebar";
 import type { RankingView } from "./ranking/types";
 
@@ -238,7 +237,10 @@ export default function CategoryManagementPage() {
       width: 170,
       render: (_, category) =>
         editingId === category.id ? (
-          <div className="inline-flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="inline-flex items-center gap-2"
+            onClick={(e) => e.stopPropagation()}
+          >
             <Button
               type="primary"
               size="small"
@@ -334,7 +336,11 @@ export default function CategoryManagementPage() {
             </header>
 
             <Card title={t("categoryPage.createTitle")}>
-              <Form layout="vertical" requiredMark={false} onFinish={handleCreateCategory}>
+              <Form
+                layout="vertical"
+                requiredMark={false}
+                onFinish={handleCreateCategory}
+              >
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                   <Form.Item
                     label={t("categoryPage.displayName")}
@@ -342,11 +348,16 @@ export default function CategoryManagementPage() {
                   >
                     <Input
                       value={newDisplayName}
-                      onChange={(event) => setNewDisplayName(event.target.value)}
+                      onChange={(event) =>
+                        setNewDisplayName(event.target.value)
+                      }
                     />
                   </Form.Item>
 
-                  <Form.Item label={t("categoryPage.order")} style={{ marginBottom: 0 }}>
+                  <Form.Item
+                    label={t("categoryPage.order")}
+                    style={{ marginBottom: 0 }}
+                  >
                     <InputNumber
                       value={newOrder}
                       onChange={(value) => setNewOrder(Number(value ?? 0))}
@@ -375,28 +386,27 @@ export default function CategoryManagementPage() {
               {error || localError ? (
                 <Alert
                   className="mb-3"
-                  message={error?.message || localError || t("categoryPage.loadFailed")}
+                  message={
+                    error?.message || localError || t("categoryPage.loadFailed")
+                  }
                   type="error"
                   showIcon
                 />
               ) : null}
 
-              {isLoading ? (
-                <CategoryManagementPageSkeleton />
-              ) : (
-                <Table
-                  rowKey="id"
-                  columns={columns}
-                  dataSource={categories}
-                  locale={{ emptyText: t("categoryPage.noCategories") }}
-                  scroll={{ x: 720 }}
-                  onRow={(record) => ({
-                    onClick: () => startEdit(record),
-                    style: { cursor: isAdmin ? "pointer" : "default" },
-                  })}
-                  pagination={false}
-                />
-              )}
+              <Table
+                rowKey="id"
+                columns={columns}
+                dataSource={categories}
+                loading={isLoading}
+                locale={{ emptyText: t("categoryPage.noCategories") }}
+                scroll={{ x: 720 }}
+                onRow={(record) => ({
+                  onClick: () => startEdit(record),
+                  style: { cursor: isAdmin ? "pointer" : "default" },
+                })}
+                pagination={false}
+              />
             </Card>
           </div>
         </Layout.Content>
@@ -404,5 +414,3 @@ export default function CategoryManagementPage() {
     </Layout>
   );
 }
-
-

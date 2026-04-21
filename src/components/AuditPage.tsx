@@ -18,7 +18,6 @@ import { useAuditEvents } from "../hooks/queries";
 import type { AuditEventRecord } from "../types";
 import DashboardSectionHeader from "./dashboard/DashboardSectionHeader";
 import DashboardSummaryCards from "./dashboard/DashboardSummaryCards";
-import AuditPageSkeleton from "./AuditPageSkeleton";
 import RankingSidebar from "./ranking/RankingSidebar";
 import type { RankingView } from "./ranking/types";
 
@@ -486,27 +485,24 @@ export default function AuditPage() {
                 />
               </div>
 
-              {isLoading ? (
-                <AuditPageSkeleton />
-              ) : (
-                <Table
-                  rowKey="id"
-                  columns={columns}
-                  dataSource={filteredEvents}
-                  scroll={{ x: 980 }}
-                  pagination={{
-                    defaultPageSize: 10,
-                    pageSizeOptions: ["5", "10", "20", "50"],
-                    showSizeChanger: true,
-                    showQuickJumper: true,
-                    hideOnSinglePage: false,
-                    position: ["bottomCenter"],
-                    showTotal: (total, range) =>
-                      `${range[0]}-${range[1]} / ${total}`,
-                  }}
-                  locale={{ emptyText: t("auditPage.noLogs") }}
-                />
-              )}
+              <Table
+                rowKey="id"
+                columns={columns}
+                dataSource={filteredEvents}
+                loading={isLoading}
+                scroll={{ x: 980 }}
+                pagination={{
+                  defaultPageSize: 10,
+                  pageSizeOptions: ["5", "10", "20", "50"],
+                  showSizeChanger: true,
+                  showQuickJumper: true,
+                  hideOnSinglePage: false,
+                  position: ["bottomCenter"],
+                  showTotal: (total, range) =>
+                    `${range[0]}-${range[1]} / ${total}`,
+                }}
+                locale={{ emptyText: t("auditPage.noLogs") }}
+              />
             </Card>
           </div>
         </Layout.Content>

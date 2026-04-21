@@ -35,6 +35,7 @@ function MembersPanel() {
   const { isAdmin } = useAuth();
   const {
     isEditing,
+    isLoading,
     memberFormName: name,
     memberFormLevel: level,
     members,
@@ -283,6 +284,7 @@ function MembersPanel() {
           rowKey="id"
           columns={columns}
           dataSource={sortedMembers}
+          loading={isLoading}
           pagination={{
             defaultPageSize: 5,
             pageSizeOptions: ["5", "10", "20", "50"],

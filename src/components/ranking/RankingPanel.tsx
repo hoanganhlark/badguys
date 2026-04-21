@@ -66,6 +66,7 @@ function RankingPanel() {
   const { isAdmin, currentUser } = useAuth();
   const currentUserId = currentUser?.userId || "";
   const {
+    isLoading: isMatchesLoading,
     rankings,
     pagedHistoryMatches: historyMatches,
     historyMatchesForDisplay,
@@ -97,7 +98,9 @@ function RankingPanel() {
   const hasRankings = rankings.length > 0;
   const hasHistory = historyPagination.total > 0;
   const rankingTableScroll = screens.md ? undefined : { y: 320 };
-  const historyTableScroll = screens.md ? { x: 860, y: 360 } : { x: 860, y: 300 };
+  const historyTableScroll = screens.md
+    ? { x: 860, y: 360 }
+    : { x: 860, y: 300 };
 
   const sortedCategories = useMemo(
     () =>
@@ -331,18 +334,19 @@ function RankingPanel() {
           ))}
         </div>
 
-        {!hasRankings ? (
+        {!isMatchesLoading && !hasRankings ? (
           <div className="rounded-xl border border-slate-200 bg-white p-4 text-center text-sm text-slate-500">
             {t("rankingPanel.noRankings")}
           </div>
         ) : null}
 
-        {hasRankings && rankingRows.length > 0 ? (
+        {isMatchesLoading || (hasRankings && rankingRows.length > 0) ? (
           <div className="overflow-hidden rounded-lg border border-slate-100 bg-white">
             <div className="min-h-[240px] md:min-h-[280px]">
               <Table
                 columns={rankingColumns}
                 dataSource={rankingRows}
+                loading={isMatchesLoading}
                 size="small"
                 showSorterTooltip={false}
                 pagination={false}
@@ -357,7 +361,7 @@ function RankingPanel() {
           </div>
         ) : null}
 
-        {hasRankings && rankingRows.length === 0 ? (
+        {!isMatchesLoading && hasRankings && rankingRows.length === 0 ? (
           <div className="rounded-xl border border-slate-200 bg-white p-4 text-center text-sm text-slate-500">
             {t("rankingPanel.noRankings")}
           </div>
@@ -408,7 +412,7 @@ function RankingPanel() {
               columns={historyColumns}
               dataSource={historyMatches}
               size="small"
-              loading={isHistoryLoading}
+              loading={isMatchesLoading || isHistoryLoading}
               pagination={{
                 current: historyPagination.current,
                 pageSize: historyPagination.pageSize,
@@ -418,9 +422,10 @@ function RankingPanel() {
                 onChange: onHistoryPaginationChange,
               }}
               locale={{
-                emptyText: isHistoryLoading
-                  ? t("rankingPanel.loadingHistory")
-                  : t("rankingPanel.noHistory"),
+                emptyText:
+                  isMatchesLoading || isHistoryLoading
+                    ? t("rankingPanel.loadingHistory")
+                    : t("rankingPanel.noHistory"),
               }}
               scroll={historyTableScroll}
               className="ranking-ui-table"

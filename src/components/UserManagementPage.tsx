@@ -21,7 +21,6 @@ import { hashPassword } from "../lib/api";
 import type { UserRecord, UserRole } from "../types";
 import DashboardSectionHeader from "./dashboard/DashboardSectionHeader";
 import DashboardSummaryCards from "./dashboard/DashboardSummaryCards";
-import UserManagementPageSkeleton from "./UserManagementPageSkeleton";
 import RankingSidebar from "./ranking/RankingSidebar";
 import type { RankingView } from "./ranking/types";
 
@@ -518,26 +517,23 @@ export default function UserManagementPage() {
                 </p>
               ) : null}
 
-              {isLoading ? (
-                <UserManagementPageSkeleton />
-              ) : (
-                <Table
-                  rowKey="id"
-                  columns={userColumns}
-                  dataSource={sortedUsers}
-                  scroll={{ x: 900 }}
-                  pagination={{
-                    defaultPageSize: 10,
-                    pageSizeOptions: ["5", "10", "20", "50"],
-                    showSizeChanger: true,
-                    showQuickJumper: true,
-                    hideOnSinglePage: false,
-                    position: ["bottomCenter"],
-                    showTotal: (total, range) =>
-                      `${range[0]}-${range[1]} / ${total}`,
-                  }}
-                />
-              )}
+              <Table
+                rowKey="id"
+                columns={userColumns}
+                dataSource={sortedUsers}
+                loading={isLoading}
+                scroll={{ x: 900 }}
+                pagination={{
+                  defaultPageSize: 10,
+                  pageSizeOptions: ["5", "10", "20", "50"],
+                  showSizeChanger: true,
+                  showQuickJumper: true,
+                  hideOnSinglePage: false,
+                  position: ["bottomCenter"],
+                  showTotal: (total, range) =>
+                    `${range[0]}-${range[1]} / ${total}`,
+                }}
+              />
             </Card>
           </div>
         </Layout.Content>

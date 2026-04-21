@@ -32,7 +32,7 @@ import type { MatchSetInput } from "./types";
 function MatchFormPanel() {
   const { t } = useTranslation();
   const { message: messageApi } = AntApp.useApp();
-  const { members } = useRankingMembersContext();
+  const { members, isLoading: isMembersLoading } = useRankingMembersContext();
   const { sortedCategories: categories } = useRankingMembersContext();
   const {
     matchType,
@@ -100,7 +100,7 @@ function MatchFormPanel() {
     if (!Number.isNaN(minutes) && minutes < 0) return false;
     return true;
   });
-  const canSaveMatch = hasValidTeams && hasValidSet;
+  const canSaveMatch = !isMembersLoading && hasValidTeams && hasValidSet;
 
   const getSelectableMembers = (team: "team1" | "team2", index: number) => {
     const currentSelection = matchData[team][index];
@@ -237,6 +237,8 @@ function MatchFormPanel() {
                       placeholder={t("matchForm.choosePlayer")}
                       value={matchData.team1[i] || undefined}
                       allowClear
+                      loading={isMembersLoading}
+                      disabled={isMembersLoading}
                       options={getSelectableMembers("team1", i).map(
                         (member) => ({
                           value: member.name,
@@ -266,6 +268,8 @@ function MatchFormPanel() {
                       placeholder={t("matchForm.choosePlayer")}
                       value={matchData.team2[i] || undefined}
                       allowClear
+                      loading={isMembersLoading}
+                      disabled={isMembersLoading}
                       options={getSelectableMembers("team2", i).map(
                         (member) => ({
                           value: member.name,

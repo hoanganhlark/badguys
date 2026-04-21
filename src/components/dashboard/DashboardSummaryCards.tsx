@@ -1,3 +1,5 @@
+import { Skeleton } from "antd";
+
 type DashboardSummaryItem = {
   key: string;
   label: string;
@@ -8,11 +10,13 @@ type DashboardSummaryItem = {
 type DashboardSummaryCardsProps = {
   items: DashboardSummaryItem[];
   className?: string;
+  loading?: boolean;
 };
 
 export default function DashboardSummaryCards({
   items,
   className = "",
+  loading = false,
 }: DashboardSummaryCardsProps) {
   return (
     <section
@@ -27,7 +31,15 @@ export default function DashboardSummaryCards({
           <p
             className={`text-center text-lg font-bold text-slate-900 ${item.valueClassName || ""}`.trim()}
           >
-            {item.value}
+            {loading ? (
+              <Skeleton.Input
+                active
+                size="small"
+                style={{ width: 56, minWidth: 56 }}
+              />
+            ) : (
+              item.value
+            )}
           </p>
         </div>
       ))}
