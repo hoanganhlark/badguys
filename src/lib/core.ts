@@ -6,13 +6,10 @@ import type {
   SessionRecord,
 } from "../types";
 
-
-
 export function formatK(value: number): string {
   const rounded = Math.round(value * 10) / 10;
   return Number.isInteger(rounded) ? `${rounded}K` : `${rounded.toFixed(1)}K`;
 }
-
 
 export function normalizeKLabels(text: string): string {
   return String(text).replace(/(\d+(?:\.\d+)?)\s*k\b/gi, "$1K");
@@ -126,8 +123,16 @@ export function calculateResult(
   shuttleCount: number,
   config: AppConfig,
 ): CalcResult {
+  const normalizeShareFee = (value: number): number => {
+    return config.roundResult ? Math.round(value) : Number(value.toFixed(1));
+  };
+
+  const normalizeTotal = (value: number): number => {
+    return config.roundResult ? value : Number(value.toFixed(1));
+  };
+
   const shuttle = (shuttleCount * config.tubePrice) / config.shuttlesPerTube;
-  const total = courtFee + shuttle;
+  const total = normalizeTotal(courtFee + shuttle);
 
   const setPlayers = players.filter((p) => p.sets > 0);
   const nonSetPlayers = players.filter((p) => p.sets === 0);
@@ -155,15 +160,13 @@ export function calculateResult(
   if (sharedPlayers.length > 0) {
     const avg = remainingTotal / sharedPlayers.length;
     if (avg <= config.femaleMax || sharedMales.length === 0) {
-      fFee = config.roundResult ? Math.round(avg) : avg;
+      fFee = normalizeShareFee(avg);
       mFee = fFee;
     } else {
       fFee = config.femaleMax;
-      mFee = config.roundResult
-        ? Math.round(
-            (remainingTotal - fFee * sharedFemales.length) / sharedMales.length,
-          )
-        : (remainingTotal - fFee * sharedFemales.length) / sharedMales.length;
+      mFee = normalizeShareFee(
+        (remainingTotal - fFee * sharedFemales.length) / sharedMales.length,
+      );
     }
   }
 
@@ -227,9 +230,7 @@ export function buildSummaryText(
   const totalSpecial = totalCustomFee + totalSetMoney;
   const specialCount = customFeePlayers.length + setPlayers.length;
   if (specialCount > 0) {
-    summaryParts.push(
-      `${specialCount} người đánh ít ${formatK(totalSpecial)}`,
-    );
+    summaryParts.push(`${specialCount} người đánh ít ${formatK(totalSpecial)}`);
   }
 
   text += summaryParts.join(" + ") + "\n";
