@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, lazy, Suspense } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   App as AntApp,
   Button,
@@ -23,10 +23,9 @@ import ChangePasswordModal from "./components/ChangePasswordModal";
 import LoginModal from "./components/LoginModal";
 import RankingPage from "./components/RankingPage";
 import SessionsModal from "./components/SessionsModal";
-import DashboardPageLoadingFallback from "./components/DashboardPageLoadingFallback";
-const AuditPage = lazy(() => import("./components/AuditPage"));
-const CategoryManagementPage = lazy(() => import("./components/CategoryManagementPage"));
-const UserManagementPage = lazy(() => import("./components/UserManagementPage"));
+import AuditPage from "./components/AuditPage";
+import CategoryManagementPage from "./components/CategoryManagementPage";
+import UserManagementPage from "./components/UserManagementPage";
 import AdminRoute from "./components/auth/AdminRoute";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
@@ -395,9 +394,7 @@ export default function App() {
   if (location.pathname === "/dashboard/users") {
     return (
       <AdminRoute>
-        <Suspense fallback={<DashboardPageLoadingFallback />}>
-          <UserManagementPage />
-        </Suspense>
+        <UserManagementPage />
       </AdminRoute>
     );
   }
@@ -405,9 +402,7 @@ export default function App() {
   if (location.pathname === "/dashboard/audit") {
     return (
       <AdminRoute>
-        <Suspense fallback={<DashboardPageLoadingFallback />}>
-          <AuditPage />
-        </Suspense>
+        <AuditPage />
       </AdminRoute>
     );
   }
@@ -415,9 +410,7 @@ export default function App() {
   if (location.pathname === "/dashboard/categories") {
     return (
       <AdminRoute>
-        <Suspense fallback={<DashboardPageLoadingFallback />}>
-          <CategoryManagementPage />
-        </Suspense>
+        <CategoryManagementPage />
       </AdminRoute>
     );
   }
