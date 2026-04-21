@@ -1,44 +1,26 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { MenuOutlined } from "@ant-design/icons";
+import { useMemo, useState } from "react";
 import { Shield, Users } from "react-feather";
 import {
   Button,
   Card,
   Form,
   Input,
-  Layout,
   Popconfirm,
   Select,
   Table,
-  Typography,
   type TableColumnsType,
 } from "antd";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useUsers } from "../hooks/queries";
 import { hashPassword } from "../lib/api";
 import type { UserRecord, UserRole } from "../types";
+import DashboardPageLayout from "./dashboard/DashboardPageLayout";
+import { DashboardPageProvider } from "./dashboard/DashboardPageContext";
 import DashboardSectionHeader from "./dashboard/DashboardSectionHeader";
 import DashboardSummaryCards from "./dashboard/DashboardSummaryCards";
-import RankingSidebar from "./ranking/RankingSidebar";
-import type { RankingView } from "./ranking/types";
-
-const DASHBOARD_APPBAR_STYLE = {
-  position: "sticky" as const,
-  top: 0,
-  zIndex: 55,
-  height: 56,
-  lineHeight: "56px",
-  padding: "0 16px",
-  borderBottom: "1px solid #e2e8f0",
-  background: "rgba(250, 250, 250, 0.92)",
-  backdropFilter: "blur(8px)",
-  boxShadow: "0 2px 12px rgba(15, 23, 42, 0.08)",
-};
 
 export default function UserManagementPage() {
-  const navigate = useNavigate();
   const { t } = useTranslation();
   const { currentUser } = useAuth();
 
@@ -59,8 +41,6 @@ export default function UserManagementPage() {
     role: "member" as UserRole,
   });
   const [localError, setLocalError] = useState("");
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const mainContentRef = useRef<HTMLElement | null>(null);
 
   const isAdmin = currentUser?.role === "admin";
 
@@ -201,69 +181,6 @@ export default function UserManagementPage() {
     },
   ];
 
-  useEffect(() => {
-    const container = mainContentRef.current;
-    if (!container) return;
-
-    const handleFocusIn = (event: FocusEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (!target) return;
-      if (
-        !(
-          target instanceof HTMLInputElement ||
-          target instanceof HTMLSelectElement ||
-          target instanceof HTMLTextAreaElement
-        )
-      ) {
-        return;
-      }
-
-      window.setTimeout(() => {
-        target.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-          inline: "nearest",
-        });
-      }, 220);
-    };
-
-    container.addEventListener("focusin", handleFocusIn);
-    return () => container.removeEventListener("focusin", handleFocusIn);
-  }, []);
-
-  useEffect(() => {
-    const viewport = window.visualViewport;
-    if (!viewport) return;
-
-    const updateKeyboardInset = () => {
-      const keyboardInset = Math.max(
-        0,
-        window.innerHeight - viewport.height - viewport.offsetTop,
-      );
-      document.documentElement.style.setProperty(
-        "--mobile-keyboard-inset",
-        `${keyboardInset}px`,
-      );
-    };
-
-    viewport.addEventListener("resize", updateKeyboardInset);
-    viewport.addEventListener("scroll", updateKeyboardInset);
-    updateKeyboardInset();
-
-    return () => {
-      viewport.removeEventListener("resize", updateKeyboardInset);
-      viewport.removeEventListener("scroll", updateKeyboardInset);
-      document.documentElement.style.setProperty(
-        "--mobile-keyboard-inset",
-        "0px",
-      );
-    };
-  }, []);
-
-  const handleSetDashboardView = (view: RankingView) => {
-    navigate(`/dashboard/${view}`);
-  };
-
   async function handleCreateUser() {
     if (!isAdmin) return;
 
@@ -348,196 +265,156 @@ export default function UserManagementPage() {
   }
 
   return (
-    <Layout style={{ minHeight: "100vh", background: "transparent" }}>
-      <Layout.Header style={DASHBOARD_APPBAR_STYLE}>
-        <div className="flex h-14 items-center justify-between">
-          <div>
-            {!mobileSidebarOpen ? (
-              <Button
-                type="default"
-                shape="circle"
-                icon={<MenuOutlined />}
-                onClick={() => setMobileSidebarOpen(true)}
-                className="md:hidden"
-                aria-label={t("userManagement.menu")}
-              />
-            ) : null}
-          </div>
-          <Typography.Text className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            {t("userManagement.title")}
-          </Typography.Text>
-        </div>
-      </Layout.Header>
+    <DashboardPageProvider
+      value={{
+        pageTitle: t("userManagement.title"),
+        menuAriaLabel: t("userManagement.menu"),
+        usersActive: true,
+      }}
+    >
+      <DashboardPageLayout>
+        <div className="mx-auto max-w-7xl space-y-5 md:space-y-6">
+          <DashboardSectionHeader
+            icon={<Shield className="h-6 w-6 text-sky-600 md:h-8 md:w-8" />}
+            title={t("userManagement.title")}
+            subtitle={t("userManagement.subtitle")}
+          />
 
-      <Layout
-        className="flex min-h-0 flex-col md:flex-row"
-        style={{ background: "transparent" }}
-      >
-        <RankingSidebar
-          currentView="ranking"
-          onSetView={handleSetDashboardView}
-          onGoHome={() => navigate("/")}
-          isAdmin={isAdmin}
-          onGoUsers={() => navigate("/dashboard/users")}
-          onGoAudit={() => navigate("/dashboard/audit")}
-          showMatchForm={true}
-          mobileOpen={mobileSidebarOpen}
-          onMobileClose={() => setMobileSidebarOpen(false)}
-          usersActive={true}
-          auditActive={false}
-          activeView={null}
-        />
+          <DashboardSummaryCards
+            items={[
+              {
+                key: "total-users",
+                label: t("userManagement.totalUsers"),
+                value: sortedUsers.length,
+              },
+              {
+                key: "admin-count",
+                label: t("userManagement.admin"),
+                value: adminCount,
+              },
+              {
+                key: "member-count",
+                label: t("userManagement.member"),
+                value: Math.max(0, sortedUsers.length - adminCount),
+              },
+            ]}
+          />
 
-        <Layout.Content
-          ref={mainContentRef}
-          className="flex-1 overflow-auto px-4 py-4 md:p-8"
-          style={{
-            paddingBottom: "calc(6rem + var(--mobile-keyboard-inset, 0px))",
-          }}
-        >
-          <div className="mx-auto max-w-7xl space-y-5 md:space-y-6">
-            <DashboardSectionHeader
-              icon={<Shield className="h-6 w-6 text-sky-600 md:h-8 md:w-8" />}
-              title={t("userManagement.title")}
-              subtitle={t("userManagement.subtitle")}
-            />
-
-            <DashboardSummaryCards
-              items={[
-                {
-                  key: "total-users",
-                  label: t("userManagement.totalUsers"),
-                  value: sortedUsers.length,
-                },
-                {
-                  key: "admin-count",
-                  label: t("userManagement.admin"),
-                  value: adminCount,
-                },
-                {
-                  key: "member-count",
-                  label: t("userManagement.member"),
-                  value: Math.max(0, sortedUsers.length - adminCount),
-                },
-              ]}
-            />
-
-            <Card title={t("userManagement.createTitle")}>
-              <Form
-                layout="vertical"
-                requiredMark={false}
-                onFinish={handleCreateUser}
-              >
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-                  <Form.Item
-                    label={t("userManagement.username")}
-                    style={{ marginBottom: 0 }}
-                  >
-                    <Input
-                      value={form.username}
-                      onChange={(event) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          username: event.target.value,
-                        }))
-                      }
-                    />
-                  </Form.Item>
-
-                  <Form.Item
-                    label={t("userManagement.password")}
-                    style={{ marginBottom: 0 }}
-                  >
-                    <Input.Password
-                      value={form.password}
-                      onChange={(event) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          password: event.target.value,
-                        }))
-                      }
-                    />
-                  </Form.Item>
-
-                  <Form.Item
-                    label={t("userManagement.role")}
-                    style={{ marginBottom: 0 }}
-                  >
-                    <Select
-                      value={form.role}
-                      onChange={(value) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          role: value === "admin" ? "admin" : "member",
-                        }))
-                      }
-                      options={[
-                        {
-                          value: "member",
-                          label: t("userManagement.memberOption"),
-                        },
-                        {
-                          value: "admin",
-                          label: t("userManagement.adminOption"),
-                        },
-                      ]}
-                    />
-                  </Form.Item>
-
-                  <Form.Item label=" " style={{ marginBottom: 0 }}>
-                    <Button
-                      type="primary"
-                      htmlType="submit"
-                      loading={isCreating}
-                      disabled={!canCreateUser}
-                      block
-                    >
-                      {isCreating
-                        ? t("userManagement.creating")
-                        : t("userManagement.createButton")}
-                    </Button>
-                  </Form.Item>
-                </div>
-              </Form>
-              <p className="mt-2 text-xs text-slate-500">
-                {t("userManagement.passwordStoredMd5")}
-              </p>
-            </Card>
-
-            <Card
-              title={
-                <span className="inline-flex items-center gap-2">
-                  <Users className="h-4 w-4" /> {t("userManagement.usersList")}
-                </span>
-              }
+          <Card title={t("userManagement.createTitle")}>
+            <Form
+              layout="vertical"
+              requiredMark={false}
+              onFinish={handleCreateUser}
             >
-              {error?.message || localError ? (
-                <p className="mb-3 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
-                  {error?.message || localError}
-                </p>
-              ) : null}
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+                <Form.Item
+                  label={t("userManagement.username")}
+                  style={{ marginBottom: 0 }}
+                >
+                  <Input
+                    value={form.username}
+                    onChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        username: event.target.value,
+                      }))
+                    }
+                  />
+                </Form.Item>
 
-              <Table
-                rowKey="id"
-                columns={userColumns}
-                dataSource={sortedUsers}
-                loading={isLoading}
-                scroll={{ x: 900 }}
-                pagination={{
-                  defaultPageSize: 10,
-                  pageSizeOptions: ["5", "10", "20", "50"],
-                  showSizeChanger: true,
-                  showQuickJumper: true,
-                  hideOnSinglePage: false,
-                  position: ["bottomCenter"],
-                  showTotal: (total, range) =>
-                    `${range[0]}-${range[1]} / ${total}`,
-                }}
-              />
-            </Card>
-          </div>
-        </Layout.Content>
-      </Layout>
-    </Layout>
+                <Form.Item
+                  label={t("userManagement.password")}
+                  style={{ marginBottom: 0 }}
+                >
+                  <Input.Password
+                    value={form.password}
+                    onChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        password: event.target.value,
+                      }))
+                    }
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  label={t("userManagement.role")}
+                  style={{ marginBottom: 0 }}
+                >
+                  <Select
+                    value={form.role}
+                    onChange={(value) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        role: value === "admin" ? "admin" : "member",
+                      }))
+                    }
+                    options={[
+                      {
+                        value: "member",
+                        label: t("userManagement.memberOption"),
+                      },
+                      {
+                        value: "admin",
+                        label: t("userManagement.adminOption"),
+                      },
+                    ]}
+                  />
+                </Form.Item>
+
+                <Form.Item label=" " style={{ marginBottom: 0 }}>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={isCreating}
+                    disabled={!canCreateUser}
+                    block
+                  >
+                    {isCreating
+                      ? t("userManagement.creating")
+                      : t("userManagement.createButton")}
+                  </Button>
+                </Form.Item>
+              </div>
+            </Form>
+            <p className="mt-2 text-xs text-slate-500">
+              {t("userManagement.passwordStoredMd5")}
+            </p>
+          </Card>
+
+          <Card
+            title={
+              <span className="inline-flex items-center gap-2">
+                <Users className="h-4 w-4" /> {t("userManagement.usersList")}
+              </span>
+            }
+          >
+            {error?.message || localError ? (
+              <p className="mb-3 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {error?.message || localError}
+              </p>
+            ) : null}
+
+            <Table
+              rowKey="id"
+              columns={userColumns}
+              dataSource={sortedUsers}
+              loading={isLoading}
+              scroll={{ x: 900 }}
+              pagination={{
+                defaultPageSize: 10,
+                pageSizeOptions: ["5", "10", "20", "50"],
+                showSizeChanger: true,
+                showQuickJumper: true,
+                hideOnSinglePage: false,
+                position: ["bottomCenter"],
+                showTotal: (total, range) =>
+                  `${range[0]}-${range[1]} / ${total}`,
+              }}
+            />
+          </Card>
+        </div>
+      </DashboardPageLayout>
+    </DashboardPageProvider>
   );
 }
