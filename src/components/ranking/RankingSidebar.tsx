@@ -21,7 +21,7 @@ import type { RankingView } from "./types";
 
 interface RankingSidebarProps {
   currentView: RankingView;
-  onSetView: (view: RankingView) => void;
+  onSetView: (view: "member" | "match-form" | "ranking") => void;
   onGoHome: () => void;
   isAdmin: boolean;
   onGoUsers: () => void;
@@ -61,7 +61,7 @@ export default function RankingSidebar({
       ? "audit"
       : categoriesActive
         ? "categories"
-      : (highlightedView ?? "ranking");
+        : (highlightedView ?? "ranking");
 
   const menuItems: MenuProps["items"] = [
     {
@@ -123,7 +123,13 @@ export default function RankingSidebar({
   ];
 
   const handleSelectView = (nextView: RankingView) => {
-    onSetView(nextView);
+    if (
+      nextView === "member" ||
+      nextView === "match-form" ||
+      nextView === "ranking"
+    ) {
+      onSetView(nextView);
+    }
     onMobileClose();
   };
 

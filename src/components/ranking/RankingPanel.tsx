@@ -9,6 +9,7 @@ import {
 import {
   Button,
   Grid,
+  Skeleton,
   Table,
   Tooltip,
   Typography,
@@ -299,9 +300,12 @@ function RankingPanel({
         {isMatchesLoading ? (
           <div className="mb-3 flex flex-wrap items-center gap-1.5">
             {Array.from({ length: 3 }).map((_, index) => (
-              <div
+              <Skeleton.Button
                 key={`category-skeleton-${index}`}
-                className="h-6 w-12 animate-pulse rounded-sm bg-slate-100"
+                active
+                shape="square"
+                size="small"
+                style={{ width: 48, height: 24, borderRadius: 2 }}
               />
             ))}
           </div>
