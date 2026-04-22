@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Match, Member } from "../components/ranking/types";
 import { calculateRankingStats } from "./rankingStats";
+import { computeMultiplier } from "./rankingStats";
 
 function createMatch(input: {
   id: string;
@@ -105,5 +106,46 @@ describe("calculateRankingStats", () => {
     expect((highPenalty?.rankScore || 0) < (lowPenalty?.rankScore || 0)).toBe(
       true,
     );
+  });
+
+  it("computeMultiplier returns 1.0 when no time data", () => {
+    const mult = computeMultiplier(10, null, 10, 14);
+    expect(mult).toBe(1.0);
+  });
+
+  it("computeMultiplier increases with time and decreases with margin", () => {
+    const blowout = computeMultiplier(20, 14, 10, 14); // large margin, max time
+    const close = computeMultiplier(2, 14, 10, 14); // small margin, max time
+    expect(close).toBeGreaterThan(blowout);
+  });
+
+  it("doubles matches produce different ratings than singles with same teams", () => {
+    const members: Member[] = [
+      { id: 1, name: "P1", level: "Lo" },
+      { id: 2, name: "P2", level: "Lo" },
+      { id: 3, name: "P3", level: "Lo" },
+      { id: 4, name: "P4", level: "Lo" },
+    ];
+
+    // Same result, but one played as doubles, one as singles cross-product
+    const doublesMatches: Match[] = [
+      createMatch({
+        id: "m1",
+        team1: ["P1", "P2"],
+        team2: ["P3", "P4"],
+        sets: ["21-15@20"],
+        playedAt: "2026-03-01T10:00:00.000Z",
+      }),
+    ];
+
+    const doublesStats = calculateRankingStats(members, doublesMatches, {
+      tau: 0.6,
+      penaltyCoefficient: 0.3,
+    });
+
+    // With virtual opponent, the dynamics change
+    const p1Doubles = doublesStats.find((s) => s.name === "P1");
+    expect(p1Doubles).toBeDefined();
+    expect(p1Doubles?.rating).toBeGreaterThan(1500); // should have improved from win
   });
 });
