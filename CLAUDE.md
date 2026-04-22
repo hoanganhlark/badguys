@@ -15,7 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
-**BadGuys** is a single-page React + TypeScript app for splitting badminton session costs. Includes a ranking tracker modal for tournament results and player rankings (client-side, localStorage-backed). Features user authentication, role-based access control (admin/user), Supabase (PostgreSQL) for session history and user management, audit event logging, and Telegram Bot API for notifications.
+**Badguys** is a single-page React + TypeScript app for splitting badminton session costs. Includes a ranking tracker modal for tournament results and player rankings (client-side, localStorage-backed). Features user authentication, role-based access control (admin/user), Supabase (PostgreSQL) for session history and user management, audit event logging, and Telegram Bot API for notifications.
 
 ### Key files
 
@@ -42,6 +42,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Cost calculation model
 
 Players fall into four categories handled by `calculateResult()` in `src/lib/core.ts`:
+
 1. **Set players** — fixed rate per set, excluded from shared pool
 2. **Custom-fee players** — fixed amount, excluded from shared pool
 3. **Female players** — share remaining cost but capped at a configurable max (default 60k)
@@ -50,6 +51,7 @@ Players fall into four categories handled by `calculateResult()` in `src/lib/cor
 ### Player input syntax (parsed by `parsePlayersBulk()`)
 
 Single textarea; each line is one player. Supported modifiers:
+
 - `n` suffix → female (e.g. `Alice n`)
 - `2s` suffix → 2-set player (e.g. `Bob 2s`)
 - `30k` suffix → custom fixed fee
@@ -61,6 +63,7 @@ Single textarea; each line is one player. Supported modifiers:
 User authentication via `AuthContext` (login with username/password, MD5-hashed passwords stored in Firestore).
 
 **Routes:**
+
 - `/` — Main cost calculator (guest accessible)
 - `/login` — Login form
 - `/dashboard/ranking` — Ranking dashboard (authenticated users only)
@@ -70,6 +73,7 @@ User authentication via `AuthContext` (login with username/password, MD5-hashed 
 - `/users` — User management page (admin only)
 
 **Roles:**
+
 - `admin` — Can manage users, edit all members/matches, delete any content
 - `user` — Can record matches, manage own matches, view rankings
 
@@ -91,30 +95,34 @@ Player ratings use the **Glicko2** algorithm (a Bayesian rating system accountin
 
 Tests run via Vitest with jsdom environment (allows DOM testing in Node). Test setup imports `@testing-library/jest-dom` for DOM matchers. Add tests in `src/` with `.test.ts` or `.test.tsx` suffix.
 
-
 ## Environment variables
 
 Copy `.env.example` to `.env.local` for local development.
 
 **Required for Supabase access:**
+
 - `VITE_SUPABASE_URL` — Supabase project URL (e.g., `https://your-project.supabase.co`)
 - `VITE_SUPABASE_ANON_KEY` — Supabase anonymous key for client-side access
 
 **Required for Telegram notifications:**
+
 - `VITE_TELEGRAM_BOT_TOKEN`, `VITE_TELEGRAM_GROUP_CHAT_ID` — Bot token and target group
 
 **Cost calculation configuration (optional defaults provided):**
+
 - `VITE_BADGUY_FEMALE_MAX` — Female player cost cap in thousands (default: 60)
 - `VITE_BADGUY_TUBE_PRICE` — Tube price in thousands (default: 290)
 - `VITE_BADGUY_SET_PRICE` — Price per set in thousands (default: 12)
 - `VITE_BADGUY_SHUTTLES_PER_TUBE` — Shuttles per tube for calculations (default: 12)
 
 **Feature toggles:**
+
 - `VITE_BADGUY_ROUND_RESULT` — Round cost results to nearest 1k (default: true)
 - `VITE_BADGUY_ENABLE_COURT_COUNT` — Show court count input field (default: true)
 - `VITE_BADGUY_ENABLE_TELEGRAM_NOTIFICATION` — Enable Telegram notifications (default: true)
 
 **Other:**
+
 - `VITE_APP_VERSION` — Version string displayed in UI (auto-generated in CI)
 
 ## Workflow

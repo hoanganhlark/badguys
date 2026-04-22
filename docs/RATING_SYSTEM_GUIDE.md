@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide explains the complete rating system powering the BadGuys badminton ranking tracker. The system uses **Glicko-2**, a Bayesian rating algorithm that measures player skill while accounting for rating uncertainty and volatility.
+This guide explains the complete rating system powering the Badguys badminton ranking tracker. The system uses **Glicko-2**, a Bayesian rating algorithm that measures player skill while accounting for rating uncertainty and volatility.
 
 ### Key Concepts
 
@@ -62,6 +62,7 @@ Display results with delta indicators
 ### Input Format
 
 Matches are recorded with:
+
 - **Team 1 & Team 2** — Player names (1–2 players each)
 - **Sets** — Format: `SCORE1-SCORE2[@MINUTES]`
   - Example: `21-15@12m` (team 1 scored 21, team 2 scored 15, duration 12 minutes)
@@ -78,6 +79,7 @@ parseSet("21-15")
 ```
 
 **Edge cases handled:**
+
 - Empty/malformed scores → skip
 - Draws (21-21) → skip
 - No minutes provided → use default time estimate
@@ -106,11 +108,11 @@ Multiplier = 1 + BETA × T
 
 ### Interpretation
 
-| Margin | Time | Example | Multiplier | Meaning |
-|--------|------|---------|------------|---------|
-| 21-20  | 15m  | Very close, long | 1.30 | High intensity → bigger rating swing |
-| 21-15  | 12m  | Moderate gap, normal | 1.15 | Normal intensity |
-| 21-10  | 10m  | Blowout, fast | 1.00 | No bonus → baseline rating change |
+| Margin | Time | Example              | Multiplier | Meaning                              |
+| ------ | ---- | -------------------- | ---------- | ------------------------------------ |
+| 21-20  | 15m  | Very close, long     | 1.30       | High intensity → bigger rating swing |
+| 21-15  | 12m  | Moderate gap, normal | 1.15       | Normal intensity                     |
+| 21-10  | 10m  | Blowout, fast        | 1.00       | No bonus → baseline rating change    |
 
 **Key insight:** Close, competitive matches give larger rating adjustments because they're statistically more informative about skill differences.
 
@@ -167,6 +169,7 @@ Entries created:
 ```
 
 Each player's rating updates individually, but they share the same virtual opponent. This ensures:
+
 - Both winners gain equal rating
 - Both losers lose equal rating
 - The uncertainty combines (quadrature) for the aggregate
@@ -192,6 +195,7 @@ calculateRankingStats(members, matches)
 ```
 
 **Why batch daily?**
+
 - Glicko-2 recommends 10–15 outcomes per rating period
 - Daily batches align with tournament conventions
 - RD decreases faster with more outcomes per period
@@ -212,6 +216,7 @@ simulateRatings(currentStats, todaysMatches)
 ```
 
 **Use cases:**
+
 - Show players their predicted rating change after each set
 - Live leaderboard updates during tournaments
 - Avoid race conditions (simulation doesn't persist)
@@ -236,11 +241,11 @@ RD represents how certain we are about a player's true skill.
 
 **Example trajectory for a new player:**
 
-| Time | Matches | RD | Interpretation |
-|------|---------|-----|---|
-| Day 0 | 0 | 350 | Very uncertain |
-| Day 5 | 40 sets | 200 | Moderately confident |
-| Day 30 | 200 sets | 80 | Highly confident |
+| Time   | Matches  | RD  | Interpretation       |
+| ------ | -------- | --- | -------------------- |
+| Day 0  | 0        | 350 | Very uncertain       |
+| Day 5  | 40 sets  | 200 | Moderately confident |
+| Day 30 | 200 sets | 80  | Highly confident     |
 
 Lower RD means the rating is more "lock-in" for ranking purposes. Two players with the same rating but different RDs have different levels of certainty.
 
@@ -269,20 +274,20 @@ All parameters are in `DEFAULT_RANKING_CONFIG`:
 ```typescript
 const DEFAULT_RANKING_CONFIG: RankingConfig = {
   // Glicko-2 core parameters
-  tau: 0.6,          // Volatility change rate (0.3–1.2 recommended)
-  rating: 1500,      // New player starting rating
-  rd: 350,           // New player starting RD
-  vol: 0.06,         // New player starting volatility
-  
+  tau: 0.6, // Volatility change rate (0.3–1.2 recommended)
+  rating: 1500, // New player starting rating
+  rd: 350, // New player starting RD
+  vol: 0.06, // New player starting volatility
+
   // Multiplier intensity
-  beta: 0.3,         // Multiplier range (1.0 to 1+beta)
-  maxPoints: 21,     // Max points in a set
-  pMinDefault: 10,   // Fast baseline (minutes)
-  pMaxDefault: 14,   // Slow baseline (minutes)
-  
+  beta: 0.3, // Multiplier range (1.0 to 1+beta)
+  maxPoints: 21, // Max points in a set
+  pMinDefault: 10, // Fast baseline (minutes)
+  pMaxDefault: 14, // Slow baseline (minutes)
+
   // Time percentile sampling
-  minSetsForPercentile: 30,   // Min sets before using percentiles
-  maxSetsInWindow: 50,        // Max sets in rolling window
+  minSetsForPercentile: 30, // Min sets before using percentiles
+  maxSetsInWindow: 50, // Max sets in rolling window
 };
 ```
 
@@ -303,6 +308,7 @@ Higher τ allows volatility to grow more, making the rating system more adaptive
 ### Step 1: Match Recording
 
 Admin/user records:
+
 ```
 Date: 2026-04-23
 Team 1: Alice, Bob
@@ -350,7 +356,7 @@ Entries:
 #### Option A: Daily Official Update
 
 ```typescript
-calculateRankingStats(members, allMatches)
+calculateRankingStats(members, allMatches);
 
 // At end of day, process all 2 sets in one batch:
 ranking.updateRatings([
@@ -358,11 +364,11 @@ ranking.updateRatings([
   [Bob, vOpp, 1, 1.147],
   [Charlie, vOpp, 0, 1.147],
   [Diana, vOpp, 0, 1.147],
-  [Alice, vOpp, 0, 1.200],  // Set 2: Alice loses
-  [Bob, vOpp, 0, 1.200],
-  [Charlie, vOpp, 1, 1.200],
-  [Diana, vOpp, 1, 1.200],
-])
+  [Alice, vOpp, 0, 1.2], // Set 2: Alice loses
+  [Bob, vOpp, 0, 1.2],
+  [Charlie, vOpp, 1, 1.2],
+  [Diana, vOpp, 1, 1.2],
+]);
 
 // Glicko-2 computes:
 // - New rating for each player
@@ -371,6 +377,7 @@ ranking.updateRatings([
 ```
 
 **Result:**
+
 ```
 Alice:   1550 (↑50)
 Bob:     1545 (↑45)
@@ -397,6 +404,7 @@ simulateRatings(currentStats, [set1Match, set2Match])
 ### Step 5: Display & Persist
 
 **Official update persists to Supabase:**
+
 ```sql
 UPDATE ranking_members
 SET rating = 1550, rd = 310, vol = 0.065
@@ -404,6 +412,7 @@ WHERE id = alice_id;
 ```
 
 **Real-time simulation shown in UI (not saved):**
+
 ```
 Realtime Mode: ON
 Official Rating: 1500
@@ -418,10 +427,10 @@ Simulated Rating: 1510 (+10)  ← Shows delta
 
 ```typescript
 // In RankingPanel.tsx
-const displayRankings = 
+const displayRankings =
   realtimeMode && todaysMatches.length > 0
-    ? simulatedRankings  // Live preview
-    : officialRankings;  // Official end-of-day
+    ? simulatedRankings // Live preview
+    : officialRankings; // Official end-of-day
 ```
 
 ### Trend Indicators
@@ -436,6 +445,7 @@ Rank | Athlete        | Points
 ```
 
 **Legend:**
+
 - `+25` — Up 25 positions since last official update
 - `↓50` — Down 50 positions
 - `NEW` — Joined today or hasn't played yet
@@ -515,8 +525,8 @@ Next match: Eve plays
 ```typescript
 // Test: Multiplier calculation
 test("multiplier increases with close matches", () => {
-  const closeMatch = computeMultiplier(1, 14, 10, 14);   // 21-20, slow
-  const blowout = computeMultiplier(10, 10, 10, 14);     // 21-10, fast
+  const closeMatch = computeMultiplier(1, 14, 10, 14); // 21-20, slow
+  const blowout = computeMultiplier(10, 10, 10, 14); // 21-10, fast
   expect(closeMatch).toBeGreaterThan(blowout);
 });
 
@@ -541,16 +551,16 @@ test("parseSet extracts score and minutes", () => {
 // Test: Full daily update
 test("calculateRankingStats updates all player ratings", () => {
   const stats = calculateRankingStats(members, matches);
-  
+
   // All players should have updated ratings
   expect(stats.length).toBe(members.length);
-  
+
   // Winner's rating should increase
-  const winner = stats.find(s => s.name === "Alice");
+  const winner = stats.find((s) => s.name === "Alice");
   expect(winner.rating).toBeGreaterThan(1500);
-  
+
   // Loser's rating should decrease
-  const loser = stats.find(s => s.name === "Charlie");
+  const loser = stats.find((s) => s.name === "Charlie");
   expect(loser.rating).toBeLessThan(1500);
 });
 ```
@@ -562,6 +572,7 @@ test("calculateRankingStats updates all player ratings", () => {
 ### "My rating isn't updating"
 
 **Possible causes:**
+
 1. Match has no valid sets (parsed as null)
 2. Player name doesn't match exactly (trim spaces, check capitalization)
 3. Daily update hasn't run yet (check Supabase timestamp)
@@ -572,6 +583,7 @@ test("calculateRankingStats updates all player ratings", () => {
 ### "Real-time simulation is different from daily update"
 
 **Expected!** Reasons:
+
 1. Simulation uses today's matches only; daily update uses all matches
 2. Time percentiles (P_MIN, P_MAX) may differ
 3. Simulation clones ratings, doesn't account for matches still in progress
@@ -581,6 +593,7 @@ test("calculateRankingStats updates all player ratings", () => {
 ### "RD keeps increasing"
 
 **Possible causes:**
+
 1. Player hasn't played in a long time (RD drifts up when inactive)
 2. Too few matches per period (RD increases if outcomes < 5 per period)
 

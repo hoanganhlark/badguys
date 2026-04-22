@@ -83,7 +83,7 @@ export function MainLayout({
         <div className="max-w-md mx-auto">
           <header className="mb-12 text-center">
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-              {isAdmin ? "@BadGuys" : "BadGuys"}
+              {isAdmin ? "@Badguys" : "Badguys"}
               <span className="text-slate-400">.</span>
             </h1>
             {isAuthenticated ? (

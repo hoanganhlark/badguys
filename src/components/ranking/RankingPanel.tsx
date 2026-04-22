@@ -2,9 +2,12 @@ import { memo, useEffect, useMemo, useState } from "react";
 import {
   CaretDownOutlined,
   CaretUpOutlined,
+  DotChartOutlined,
+  LoadingOutlined,
   MinusOutlined,
   PlusOutlined,
   PoweroffOutlined,
+  SyncOutlined,
 } from "@ant-design/icons";
 import {
   Button,
@@ -339,7 +342,7 @@ function RankingPanel({
               <Button
                 type={realtimeMode ? "primary" : "default"}
                 size="small"
-                icon={<PoweroffOutlined />}
+                icon={<DotChartOutlined />}
                 onClick={() => {
                   if (todaysMatches.length > 0) {
                     setRealtimeMode(!realtimeMode);

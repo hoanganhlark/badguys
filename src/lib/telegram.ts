@@ -48,7 +48,7 @@ export async function notifyCopyClicked(summaryContent: string): Promise<void> {
 }
 
 export async function notifyGuestVisited(timestamp: string): Promise<void> {
-  const text = `A guest visited BadGuys app at ${timestamp}`;
+  const text = `A guest visited Badguys app at ${timestamp}`;
   try {
     await sendTelegramMessage(text);
   } catch (error) {

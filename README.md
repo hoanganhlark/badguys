@@ -1,4 +1,4 @@
-# BadGuys
+# Badguys
 
 A badminton session cost-sharing calculator. Splits court fees and shuttle costs among players with configurable rules for female caps, per-set pricing, and custom fees.
 
@@ -19,12 +19,12 @@ A badminton session cost-sharing calculator. Splits court fees and shuttle costs
 
 Each line in the player text area represents one player. Modifiers are appended to the name:
 
-| Modifier | Meaning | Example |
-|----------|---------|---------|
-| `n` | Female player (capped fee) | `Lan n` |
-| `2s` | Plays by set (2 sets) | `Hung 2s` |
-| `30k` | Custom fixed fee | `Nam 30k` |
-| `+10k` | Surcharge on top of base fee | `Minh +10k` |
+| Modifier | Meaning                      | Example     |
+| -------- | ---------------------------- | ----------- |
+| `n`      | Female player (capped fee)   | `Lan n`     |
+| `2s`     | Plays by set (2 sets)        | `Hung 2s`   |
+| `30k`    | Custom fixed fee             | `Nam 30k`   |
+| `+10k`   | Surcharge on top of base fee | `Minh +10k` |
 
 Numbered list format is also accepted: `1. Lan n`, `2/ Hung 2s`.
 
@@ -90,12 +90,12 @@ The workflow in `.github/workflows/deploy-pages.yml` auto-deploys on push to `ma
 
 **Required repository secrets:**
 
-| Secret | Description |
-|--------|-------------|
-| `VITE_TELEGRAM_BOT_TOKEN` | Telegram bot token |
+| Secret                        | Description            |
+| ----------------------------- | ---------------------- |
+| `VITE_TELEGRAM_BOT_TOKEN`     | Telegram bot token     |
 | `VITE_TELEGRAM_GROUP_CHAT_ID` | Telegram group chat ID |
-| `VITE_FIREBASE_API_KEY` | Firebase API key |
-| `VITE_FIREBASE_PROJECT_ID` | Firebase project ID |
+| `VITE_FIREBASE_API_KEY`       | Firebase API key       |
+| `VITE_FIREBASE_PROJECT_ID`    | Firebase project ID    |
 
 **Optional repository variables** (fall back to defaults if not set):
 

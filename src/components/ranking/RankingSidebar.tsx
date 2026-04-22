@@ -143,7 +143,7 @@ export default function RankingSidebar({
         title={
           <Space>
             <TrophyOutlined />
-            <Typography.Text strong>BadGuys</Typography.Text>
+            <Typography.Text strong>Badguys</Typography.Text>
           </Space>
         }
         className="md:hidden"
@@ -179,7 +179,7 @@ export default function RankingSidebar({
           >
             <Space>
               <TrophyOutlined />
-              <Typography.Text strong>BadGuys</Typography.Text>
+              <Typography.Text strong>Badguys</Typography.Text>
             </Space>
           </Button>
           <Menu
