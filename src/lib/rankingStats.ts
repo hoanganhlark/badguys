@@ -1,23 +1,42 @@
 import { Glicko2 } from "glicko2";
 import type { AdvancedStats, Match, Member } from "../components/ranking/types";
 
-// Glicko-2 parameters
-const DEFAULT_TAU = 0.6;
-const DEFAULT_RATING = 1500;
-const DEFAULT_RD = 350;
-const DEFAULT_VOL = 0.06;
-const SCALE = 173.7178;
+// ─────────────────────────────────────────────────────────────────
+// Configuration interface for ranking system
+// ─────────────────────────────────────────────────────────────────
 
-// Penalty and motivation scaling
-const DEFAULT_PENALTY_COEFFICIENT = 0.3;
+export interface RankingConfig {
+  // Glicko-2 system parameters
+  tau: number;
+  rating: number;
+  rd: number;
+  vol: number;
+  scale: number;
+  // Multiplier intensity parameters
+  beta: number;
+  maxPoints: number;
+  pMinDefault: number;
+  pMaxDefault: number;
+  minSetsForPercentile: number;
+  maxSetsInWindow: number;
+  // Ranking computation parameters
+  penaltyCoefficient: number;
+}
 
-// Multiplier parameters (per spec section 5)
-const BETA = 0.3; // multiplier amplitude (1.0 → 1+BETA)
-const MAX_POINTS = 21; // max points per set
-const P_MIN_DEFAULT = 10; // P20 fallback (minutes)
-const P_MAX_DEFAULT = 14; // P80 fallback (minutes)
-const MIN_SETS_FOR_PERCENTILE = 30; // min recent sets to compute percentiles
-const MAX_SETS_IN_WINDOW = 50; // max recent sets in percentile window
+const DEFAULT_RANKING_CONFIG: RankingConfig = {
+  tau: 0.6,
+  rating: 1500,
+  rd: 350,
+  vol: 0.06,
+  scale: 173.7178,
+  beta: 0.3,
+  maxPoints: 21,
+  pMinDefault: 10,
+  pMaxDefault: 14,
+  minSetsForPercentile: 30,
+  maxSetsInWindow: 50,
+  penaltyCoefficient: 0.3,
+};
 
 type ParsedSet = {
   score1: number;
@@ -117,9 +136,11 @@ function computePercentile(sortedValues: number[], p: number): number {
 
 function collectRecentSetMinutes(
   allSets: ParsedSet[][],
+  config: RankingConfig,
 ): number[] {
   const minutes: number[] = [];
-  for (let i = Math.max(0, allSets.length - MAX_SETS_IN_WINDOW); i < allSets.length; i++) {
+  const startIdx = Math.max(0, allSets.length - config.maxSetsInWindow);
+  for (let i = startIdx; i < allSets.length; i++) {
     for (const set of allSets[i]) {
       if (set.minutes && set.minutes > 0) {
         minutes.push(set.minutes);
@@ -129,9 +150,12 @@ function collectRecentSetMinutes(
   return minutes.sort((a, b) => a - b);
 }
 
-function computeTimePercentiles(recentMinutes: number[]): { P_MIN: number; P_MAX: number } {
-  if (recentMinutes.length < MIN_SETS_FOR_PERCENTILE) {
-    return { P_MIN: P_MIN_DEFAULT, P_MAX: P_MAX_DEFAULT };
+function computeTimePercentiles(
+  recentMinutes: number[],
+  config: RankingConfig,
+): { P_MIN: number; P_MAX: number } {
+  if (recentMinutes.length < config.minSetsForPercentile) {
+    return { P_MIN: config.pMinDefault, P_MAX: config.pMaxDefault };
   }
   return {
     P_MIN: computePercentile(recentMinutes, 20),
@@ -144,12 +168,13 @@ export function computeMultiplier(
   timeMinutes: number | null,
   P_MIN: number,
   P_MAX: number,
+  config: RankingConfig = DEFAULT_RANKING_CONFIG,
 ): number {
   if (!timeMinutes || timeMinutes <= 0) return 1.0;
-  const m = margin / MAX_POINTS;
+  const m = margin / config.maxPoints;
   const t = clamp((timeMinutes - P_MIN) / (P_MAX - P_MIN), 0, 1);
   const T = t * (1 - m);
-  return 1 + BETA * T;
+  return 1 + config.beta * T;
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -158,12 +183,17 @@ export function computeMultiplier(
 
 type GlickoPlayer = ReturnType<Glicko2["makePlayer"]>;
 
-function createVirtualOpponent(p1: GlickoPlayer, p2: GlickoPlayer, ranking: Glicko2): GlickoPlayer {
+function createVirtualOpponent(
+  p1: GlickoPlayer,
+  p2: GlickoPlayer,
+  ranking: Glicko2,
+  config: RankingConfig = DEFAULT_RANKING_CONFIG,
+): GlickoPlayer {
   const avgRating = (Number(p1.getRating()) + Number(p2.getRating())) / 2;
   const rd1 = Number(p1.getRd());
   const rd2 = Number(p2.getRd());
   const combinedRd = Math.sqrt(rd1 * rd1 + rd2 * rd2);
-  return ranking.makePlayer(avgRating, combinedRd, DEFAULT_VOL);
+  return ranking.makePlayer(avgRating, combinedRd, config.vol);
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -177,10 +207,11 @@ function buildRatingEntriesForSet(
   P_MIN: number,
   P_MAX: number,
   ranking: Glicko2,
+  config: RankingConfig = DEFAULT_RANKING_CONFIG,
 ): Array<[GlickoPlayer, GlickoPlayer, number, number]> {
   const entries: Array<[GlickoPlayer, GlickoPlayer, number, number]> = [];
   const margin = Math.abs(set.score1 - set.score2);
-  const multiplier = computeMultiplier(margin, set.minutes, P_MIN, P_MAX);
+  const multiplier = computeMultiplier(margin, set.minutes, P_MIN, P_MAX, config);
 
   if (set.score1 === set.score2) {
     return []; // no-score draws are skipped
@@ -192,7 +223,7 @@ function buildRatingEntriesForSet(
 
   // For doubles: each player vs virtual opponent
   if (team2.length > 1) {
-    const vOpp2 = createVirtualOpponent(team2[0], team2[1], ranking);
+    const vOpp2 = createVirtualOpponent(team2[0], team2[1], ranking, config);
     for (const p1 of team1) {
       entries.push([p1, vOpp2, score1, multiplier]);
     }
@@ -205,7 +236,7 @@ function buildRatingEntriesForSet(
 
   // Symmetric: team2 vs virtual opponent of team1
   if (team1.length > 1) {
-    const vOpp1 = createVirtualOpponent(team1[0], team1[1], ranking);
+    const vOpp1 = createVirtualOpponent(team1[0], team1[1], ranking, config);
     for (const p2 of team2) {
       entries.push([p2, vOpp1, score2, multiplier]);
     }
@@ -242,18 +273,22 @@ export function calculateRankingStats(
   matches: Match[],
   settings?: RankingComputationSettings,
 ): AdvancedStats[] {
-  const tau = Number.isFinite(settings?.tau)
-    ? clamp(Number(settings?.tau), 0.3, 1.2)
-    : DEFAULT_TAU;
-  const penaltyCoefficient = Number.isFinite(settings?.penaltyCoefficient)
-    ? clamp(Number(settings?.penaltyCoefficient), 0, 2)
-    : DEFAULT_PENALTY_COEFFICIENT;
+  // Merge settings with defaults to create the working config
+  const config: RankingConfig = {
+    ...DEFAULT_RANKING_CONFIG,
+    tau: Number.isFinite(settings?.tau)
+      ? clamp(Number(settings?.tau), 0.3, 1.2)
+      : DEFAULT_RANKING_CONFIG.tau,
+    penaltyCoefficient: Number.isFinite(settings?.penaltyCoefficient)
+      ? clamp(Number(settings?.penaltyCoefficient), 0, 2)
+      : DEFAULT_RANKING_CONFIG.penaltyCoefficient,
+  };
 
   const ranking = new Glicko2({
-    tau,
-    rating: DEFAULT_RATING,
-    rd: DEFAULT_RD,
-    vol: DEFAULT_VOL,
+    tau: config.tau,
+    rating: config.rating,
+    rd: config.rd,
+    vol: config.vol,
   });
 
   const playersByName = new Map<string, ReturnType<Glicko2["makePlayer"]>>();
@@ -265,7 +300,7 @@ export function calculateRankingStats(
 
     playersByName.set(
       normalizedName,
-      ranking.makePlayer(DEFAULT_RATING, DEFAULT_RD, DEFAULT_VOL),
+      ranking.makePlayer(config.rating, config.rd, config.vol),
     );
     accumulatorByName.set(normalizedName, {
       id: member.id,
@@ -307,8 +342,8 @@ export function calculateRankingStats(
     const matchesInPeriod = periodMatches.get(periodKey) || [];
 
     // Compute time percentiles once per period from all recent sets
-    const recentMinutes = collectRecentSetMinutes(allParsedSets);
-    const { P_MIN, P_MAX } = computeTimePercentiles(recentMinutes);
+    const recentMinutes = collectRecentSetMinutes(allParsedSets, config);
+    const { P_MIN, P_MAX } = computeTimePercentiles(recentMinutes, config);
 
     const ratingMatches: Array<
       [
@@ -383,6 +418,7 @@ export function calculateRankingStats(
           P_MIN,
           P_MAX,
           ranking,
+          config,
         );
         ratingMatches.push(...entries);
       }
@@ -414,10 +450,10 @@ export function calculateRankingStats(
     const recentActivity = acc.recentMatchCount;
     const motivation =
       avgMonthlyActivity > 0 ? recentActivity / avgMonthlyActivity : 0;
-    const skillNorm = (rating - 1500) / SCALE;
-    const uncertaintyNorm = rd / SCALE;
+    const skillNorm = (rating - config.rating) / config.scale;
+    const uncertaintyNorm = rd / config.scale;
     const rankScore =
-      skillNorm - uncertaintyNorm * vol * penaltyCoefficient * motivation;
+      skillNorm - uncertaintyNorm * vol * config.penaltyCoefficient * motivation;
 
     results.push({
       id: member.id,
