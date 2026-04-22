@@ -5,21 +5,14 @@ import {
   getLatestRankingSnapshot,
   saveRankingSnapshot,
 } from "../../../lib/api";
-import { calculateRankingStats } from "../../../lib/rankingStats";
+import {
+  calculateRankingStats,
+  DEFAULT_RANKING_CONFIG,
+} from "../../../lib/rankingStats";
 import MatchFormPanel from "../../../components/ranking/MatchFormPanel";
 import RankingPanel from "../../../components/ranking/RankingPanel";
 import type { Member } from "../../../components/ranking/types";
 import type { RankingCategory, RankingSnapshot } from "../../../types";
-
-const DEFAULT_RANKING_CONFIG = {
-  tau: 0.6,
-  metricVisibility: {
-    skill: true,
-    consistency: true,
-    confidence: true,
-    winRate: true,
-  },
-} as const;
 
 function normalizeMemberNameKey(name: string): string {
   return String(name || "")
@@ -154,9 +147,7 @@ export function RankingMatchesContainer({
 
   // Calculate official rankings (exclude today's matches)
   const officialRankings = useMemo(() => {
-    const yesterdaysMatches = matches.filter(
-      (m) => !todaysMatches.includes(m),
-    );
+    const yesterdaysMatches = matches.filter((m) => !todaysMatches.includes(m));
     return calculateRankingStats(members, yesterdaysMatches, {
       tau: DEFAULT_RANKING_CONFIG.tau,
     });

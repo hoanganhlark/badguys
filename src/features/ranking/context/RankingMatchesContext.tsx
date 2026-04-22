@@ -8,20 +8,21 @@ import {
   ReactNode,
 } from "react";
 import { useRankingMatches, useMatchForm } from "../hooks";
-import { getLatestRankingSnapshot, saveRankingSnapshot } from "../../../lib/api";
-import { calculateRankingStats } from "../../../lib/rankingStats";
-import type { AdvancedStats, Match, MatchSetInput, Member } from "../../../components/ranking/types";
+import {
+  getLatestRankingSnapshot,
+  saveRankingSnapshot,
+} from "../../../lib/api";
+import {
+  calculateRankingStats,
+  DEFAULT_RANKING_CONFIG,
+} from "../../../lib/rankingStats";
+import type {
+  AdvancedStats,
+  Match,
+  MatchSetInput,
+  Member,
+} from "../../../components/ranking/types";
 import type { RankingSnapshot } from "../../../types";
-
-const DEFAULT_RANKING_CONFIG = {
-  tau: 0.6,
-  metricVisibility: {
-    skill: true,
-    consistency: true,
-    confidence: true,
-    winRate: true,
-  },
-} as const;
 
 function normalizeMemberNameKey(name: string): string {
   return String(name || "")
@@ -357,7 +358,13 @@ export function RankingMatchesProvider({
       console.error("Failed to clear matches", error);
       throw error;
     }
-  }, [isAdmin, matches.length, rankings, clearAllMatches, resetHistoryPagination]);
+  }, [
+    isAdmin,
+    matches.length,
+    rankings,
+    clearAllMatches,
+    resetHistoryPagination,
+  ]);
 
   const value = useMemo<RankingMatchesContextValue>(
     () => ({

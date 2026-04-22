@@ -21,7 +21,7 @@ export interface RankingConfig {
   maxSetsInWindow: number;
 }
 
-const DEFAULT_RANKING_CONFIG: RankingConfig = {
+export const DEFAULT_RANKING_CONFIG: RankingConfig = {
   tau: 0.6,
   rating: 1500,
   rd: 350,
@@ -169,9 +169,8 @@ export function computeMultiplier(
   config: RankingConfig = DEFAULT_RANKING_CONFIG,
 ): number {
   // Use default time if not provided (average of P_MIN and P_MAX)
-  const effectiveTime = timeMinutes && timeMinutes > 0
-    ? timeMinutes
-    : (P_MIN + P_MAX) / 2;
+  const effectiveTime =
+    timeMinutes && timeMinutes > 0 ? timeMinutes : (P_MIN + P_MAX) / 2;
 
   const m = margin / config.maxPoints;
   const t = clamp((effectiveTime - P_MIN) / (P_MAX - P_MIN), 0, 1);
@@ -493,11 +492,7 @@ export function simulateRatings(
   const originalRatings = new Map<number, number>();
 
   for (const stat of currentStats) {
-    const clonedPlayer = tempRanking.makePlayer(
-      stat.rating,
-      stat.rd,
-      stat.vol,
-    );
+    const clonedPlayer = tempRanking.makePlayer(stat.rating, stat.rd, stat.vol);
     clones.set(stat.id, clonedPlayer);
     originalRatings.set(stat.id, stat.rating);
   }
