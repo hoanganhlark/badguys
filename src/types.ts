@@ -146,9 +146,6 @@ export type AuditEventRecord = {
 
 export type EnvConfig = {
   gaMeasurementId: string;
-  telegramBotToken: string;
-  telegramGroupChatId: string;
-  enableTelegramNotification: boolean;
   supabaseUrl: string;
   supabaseAnonKey: string;
   appVersion: string;

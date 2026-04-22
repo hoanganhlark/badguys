@@ -30,12 +30,6 @@ const defaultConfig: AppConfig = {
 
 export const envConfig: EnvConfig = {
   gaMeasurementId: import.meta.env.VITE_GA_MEASUREMENT_ID || "",
-  telegramBotToken: import.meta.env.VITE_TELEGRAM_BOT_TOKEN || "",
-  telegramGroupChatId: import.meta.env.VITE_TELEGRAM_GROUP_CHAT_ID || "",
-  enableTelegramNotification: getEnvBoolean(
-    import.meta.env.VITE_BADGUY_ENABLE_TELEGRAM_NOTIFICATION,
-    true,
-  ),
   supabaseUrl: import.meta.env.VITE_SUPABASE_URL || "",
   supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY || "",
   appVersion: import.meta.env.VITE_APP_VERSION || "v0.0.0",

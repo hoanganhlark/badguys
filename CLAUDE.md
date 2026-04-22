@@ -15,7 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
-**Badguys** is a single-page React + TypeScript app for splitting badminton session costs. Includes a ranking tracker modal for tournament results and player rankings (client-side, localStorage-backed). Features user authentication, role-based access control (admin/user), Supabase (PostgreSQL) for session history and user management, audit event logging, and Telegram Bot API for notifications.
+**Badguys** is a single-page React + TypeScript app for splitting badminton session costs. Includes a ranking tracker modal for tournament results and player rankings (client-side, localStorage-backed). Features user authentication, role-based access control (admin/user), Supabase (PostgreSQL) for session history and user management, and audit event logging.
 
 ### Key files
 
@@ -29,7 +29,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `src/env.ts` — Parses `VITE_*` env vars with fallback defaults
 - `src/lib/api.ts` — Database abstraction layer; re-exports Supabase functions for all CRUD operations (users, sessions, ranking, matches, audit)
 - `src/lib/supabase.ts` — Supabase PostgreSQL init, session CRUD, user management (auth, password), ranking members/matches, audit event logging, and subscriptions
-- `src/lib/telegram.ts` — Async Telegram notification (silent failure on error)
 - `src/lib/analytics.ts` — Audit event logging to Supabase; provides `initAnalytics()`, `trackPageView()`, `trackEvent()`, `trackRouteChange()`, and `setUserProperties()`
 - `src/lib/platform.ts` — localStorage (with user-scoped storage support), clipboard, URL params, device detection
 - `src/lib/rankingStats.ts` — Glicko2-based rating calculations for tournament rankings; computes skill rating, rating deviation, volatility, and activity metrics
@@ -104,10 +103,6 @@ Copy `.env.example` to `.env.local` for local development.
 - `VITE_SUPABASE_URL` — Supabase project URL (e.g., `https://your-project.supabase.co`)
 - `VITE_SUPABASE_ANON_KEY` — Supabase anonymous key for client-side access
 
-**Required for Telegram notifications:**
-
-- `VITE_TELEGRAM_BOT_TOKEN`, `VITE_TELEGRAM_GROUP_CHAT_ID` — Bot token and target group
-
 **Cost calculation configuration (optional defaults provided):**
 
 - `VITE_BADGUY_FEMALE_MAX` — Female player cost cap in thousands (default: 60)
@@ -119,7 +114,6 @@ Copy `.env.example` to `.env.local` for local development.
 
 - `VITE_BADGUY_ROUND_RESULT` — Round cost results to nearest 1k (default: true)
 - `VITE_BADGUY_ENABLE_COURT_COUNT` — Show court count input field (default: true)
-- `VITE_BADGUY_ENABLE_TELEGRAM_NOTIFICATION` — Enable Telegram notifications (default: true)
 
 **Other:**
 

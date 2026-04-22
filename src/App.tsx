@@ -8,7 +8,6 @@ import { SessionProvider } from "./context/SessionContext";
 import { ChangePasswordProvider } from "./context/ChangePasswordContext";
 import { useHistoryModal } from "./hooks/useHistoryModal";
 import { useAnalyticsTracking } from "./hooks/useAnalyticsTracking";
-import { useGuestVisitNotification } from "./hooks/useGuestVisitNotification";
 import { useAppConfig } from "./hooks/useAppConfig";
 import {
   AppRoute,
@@ -40,9 +39,6 @@ export default function App() {
 
   // Track analytics and page views
   useAnalyticsTracking();
-
-  // Send guest visit notification once per day
-  useGuestVisitNotification();
 
   function showToast(message: string) {
     messageApi.info(message);

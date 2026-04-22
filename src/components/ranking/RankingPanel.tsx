@@ -1,13 +1,9 @@
-import { memo, useEffect, useMemo, useState } from "react";
 import {
   CaretDownOutlined,
   CaretUpOutlined,
   DotChartOutlined,
-  LoadingOutlined,
   MinusOutlined,
   PlusOutlined,
-  PoweroffOutlined,
-  SyncOutlined,
 } from "@ant-design/icons";
 import {
   Button,
@@ -18,12 +14,13 @@ import {
   Typography,
   type TableColumnsType,
 } from "antd";
+import { memo, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useRankingUIContext } from "../../features/ranking/context";
-import type { AdvancedStats, Match } from "./types";
 import type { RankingCategory } from "../../types";
 import DashboardTableSkeleton from "../dashboard/DashboardTableSkeleton";
 import RankingHistorySection from "./RankingHistorySection";
+import type { AdvancedStats, Match } from "./types";
 
 type StoredSimulationConfig = {
   realtimeMode: boolean;

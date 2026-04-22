@@ -4,7 +4,6 @@ export enum AnalyticsEventName {
   CalculateSession = "calculate_session",
   SaveSession = "save_session",
   RecordMatch = "record_match",
-  SendTelegramNotification = "send_telegram_notification",
   RouteChange = "route_change",
 }
 
@@ -32,10 +31,6 @@ export enum AnalyticsStatus {
   Failed = "failed",
 }
 
-export enum AnalyticsNotificationType {
-  GuestVisit = "guest_visit",
-  CopyClicked = "copy_clicked",
-}
 
 export enum AnalyticsUserPropertyKey {
   Username = "username",

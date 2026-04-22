@@ -19,12 +19,10 @@ import {
 } from "../../lib/platform";
 import {
   AnalyticsEventName,
-  AnalyticsNotificationType,
   AnalyticsParamKey,
   AnalyticsStatus,
   trackEvent,
 } from "../../lib/analytics";
-import { notifyCopyClicked } from "../../lib/telegram";
 import type { AppConfig } from "../../types";
 import ExpensesSection from "./ExpensesSection";
 import PlayersSection from "./PlayersSection";
@@ -132,11 +130,6 @@ export default function Calculator({
     }
 
     if (!isAdmin) {
-      trackEvent(AnalyticsEventName.SendTelegramNotification, {
-        [AnalyticsParamKey.NotificationType]:
-          AnalyticsNotificationType.CopyClicked,
-      });
-      void notifyCopyClicked(summaryText);
       void saveDailySummary(payload)
         .then(() => {
           trackEvent(AnalyticsEventName.SaveSession, {
