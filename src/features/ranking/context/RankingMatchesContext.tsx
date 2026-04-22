@@ -19,7 +19,6 @@ const DEFAULT_RANKING_CONFIG = {
     skill: true,
     stability: true,
     uncertainty: true,
-    motivation: true,
     winRate: true,
   },
 } as const;
@@ -251,7 +250,7 @@ export function RankingMatchesProvider({
               memberId: player.id,
               memberName: player.name,
               rank: index + 1,
-              rankScore: player.rankScore,
+              rankScore: player.rating,
             })),
           );
           const snapshot = await getLatestRankingSnapshot();
@@ -334,7 +333,7 @@ export function RankingMatchesProvider({
               memberId: player.id,
               memberName: player.name,
               rank: index + 1,
-              rankScore: player.rankScore,
+              rankScore: player.rating,
             })),
           );
         } catch (snapshotError) {

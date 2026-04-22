@@ -9,11 +9,7 @@ export interface AdvancedStats {
   rating: number;
   rd: number;
   vol: number;
-  skillNorm: number;
-  uncertaintyNorm: number;
   winRate: number;
-  motivation: number;
-  rankScore: number;
   wins: number;
   totalMatches: number;
 }

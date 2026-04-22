@@ -72,7 +72,6 @@ export type RankingMetricVisibility = {
   skill: boolean;
   stability: boolean;
   uncertainty: boolean;
-  motivation: boolean;
   winRate: boolean;
 };
 

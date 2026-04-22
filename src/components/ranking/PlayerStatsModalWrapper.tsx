@@ -6,7 +6,6 @@ const DEFAULT_RANKING_CONFIG = {
     skill: true,
     stability: true,
     uncertainty: true,
-    motivation: true,
     winRate: true,
   },
 } as const;

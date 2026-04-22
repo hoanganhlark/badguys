@@ -50,8 +50,6 @@ type PlayerStatsAccumulator = {
   name: string;
   wins: number;
   totalMatches: number;
-  recentMatchCount: number;
-  monthlyActivity: Map<string, number>;
 };
 
 function clamp(value: number, min: number, max: number): number {
@@ -300,8 +298,6 @@ export function calculateRankingStats(
       name: normalizedName,
       wins: 0,
       totalMatches: 0,
-      recentMatchCount: 0,
-      monthlyActivity: new Map<string, number>(),
     });
   }
 
@@ -318,9 +314,6 @@ export function calculateRankingStats(
     periodMatches.set(key, current);
   }
 
-  const now = new Date();
-  const recentThreshold = new Date(now);
-  recentThreshold.setDate(recentThreshold.getDate() - 30);
 
   // Collect all parsed sets across entire history for percentile computation
   const allParsedSets: ParsedSet[][] = [];
@@ -376,18 +369,11 @@ export function calculateRankingStats(
       for (const set of parsedSets) {
         if (set.score1 === 0 && set.score2 === 0) continue;
 
-        const activityValue = set.minutes && set.minutes > 0 ? set.minutes : 1;
-
-        // Update activity for all players in the match
+        // Update match count for all players in the match
         for (const playerName of [...team1Names, ...team2Names]) {
           const acc = accumulatorByName.get(playerName);
           if (!acc) continue;
           acc.totalMatches += 1;
-          if (playedAt.getTime() >= recentThreshold.getTime()) {
-            acc.recentMatchCount += 1;
-          }
-          const currentDaily = acc.monthlyActivity.get(periodKey) || 0;
-          acc.monthlyActivity.set(periodKey, currentDaily + activityValue);
         }
 
         // Update wins based on set result
@@ -420,7 +406,6 @@ export function calculateRankingStats(
     ranking.updateRatings(ratingMatches as never);
   }
 
-  const periodCount = Math.max(1, periodKeys.length);
   const results: AdvancedStats[] = [];
 
   for (const member of members) {
@@ -435,17 +420,6 @@ export function calculateRankingStats(
     const rd = Number(player.getRd());
     const vol = Number(player.getVol());
     const winRate = acc.totalMatches > 0 ? acc.wins / acc.totalMatches : 0;
-    const totalActivity = [...acc.monthlyActivity.values()].reduce(
-      (sum, value) => sum + value,
-      0,
-    );
-    const avgMonthlyActivity = totalActivity / periodCount;
-    const recentActivity = acc.recentMatchCount;
-    const motivation =
-      avgMonthlyActivity > 0 ? recentActivity / avgMonthlyActivity : 0;
-    const skillNorm = (rating - config.rating) / config.scale;
-    const uncertaintyNorm = rd / config.scale;
-    const rankScore = skillNorm - uncertaintyNorm * vol * motivation;
 
     results.push({
       id: member.id,
@@ -453,11 +427,7 @@ export function calculateRankingStats(
       rating: Number(rating.toFixed(2)),
       rd: Number(rd.toFixed(2)),
       vol: Number(vol.toFixed(4)),
-      skillNorm: Number(skillNorm.toFixed(4)),
-      uncertaintyNorm: Number(uncertaintyNorm.toFixed(4)),
-      rankScore: Number(rankScore.toFixed(4)),
       winRate: Number(winRate.toFixed(4)),
-      motivation: Number(motivation.toFixed(4)),
       wins: acc.wins,
       totalMatches: acc.totalMatches,
     });
