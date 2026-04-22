@@ -289,7 +289,10 @@ export const resources = {
         ratingScore: "Điểm kĩ năng",
         beginner: "Mới bắt đầu",
         intermediate: "Trung cấp",
-        advanced: "Cao cấp",
+        learning: "Đang học",
+        growing: "Đang tiến bộ",
+        stable: "Ổn định",
+        advanced: "Vững vàng",
         expert: "Chuyên gia",
         veryStable: "Rất ổn định",
         normal: "Bình thường",
@@ -316,6 +319,8 @@ export const resources = {
         formulaText:
           "Điểm xếp hạng = Kỹ năng - (Độ tin cậy x Độ nhất quán x Hệ số điều chỉnh ({{penalty}}) x Động lực)",
         simpleExplanation: "Hiểu đơn giản",
+        showExplanation: "Hiện",
+        hideExplanation: "Ẩn",
         simpleText:
           "Điểm tăng khi kỹ năng cao, giảm khi dữ liệu chưa ổn định (RD/Vol cao). Tần suất thi đấu gần đây cũng ảnh hưởng đến kết quả đánh giá.",
         descriptionSkill:
