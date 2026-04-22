@@ -122,13 +122,13 @@ export default function RankingSidebar({
     },
   ];
 
-  const handleSelectView = (nextView: RankingView) => {
+  const handleSelectView = (nextView: string) => {
     if (
       nextView === "member" ||
       nextView === "match-form" ||
       nextView === "ranking"
     ) {
-      onSetView(nextView);
+      onSetView(nextView as "member" | "match-form" | "ranking");
     }
     onMobileClose();
   };

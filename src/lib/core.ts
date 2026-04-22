@@ -128,7 +128,7 @@ export function calculateResult(
   };
 
   const normalizeTotal = (value: number): number => {
-    return config.roundResult ? value : Number(value.toFixed(1));
+    return config.roundResult ? Math.round(value) : Number(value.toFixed(1));
   };
 
   const shuttle = (shuttleCount * config.tubePrice) / config.shuttlesPerTube;
