@@ -15,8 +15,8 @@ const DEFAULT_RANKING_CONFIG = {
   tau: 0.6,
   metricVisibility: {
     skill: true,
-    stability: true,
-    uncertainty: true,
+    consistency: true,
+    confidence: true,
     winRate: true,
   },
 } as const;

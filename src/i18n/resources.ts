@@ -212,8 +212,8 @@ export const resources = {
         penaltyCoefficient: "Hệ số điều chỉnh",
         showMetricsInModal: "Hiển thị chỉ số trong modal",
         skill: "Kỹ năng",
-        stability: "Độ ổn định",
-        uncertainty: "Độ bất định",
+        consistency: "Độ nhất quán",
+        confidence: "Độ tin cậy",
         motivation: "Động lực",
         winRate: "Tỉ lệ thắng",
         onlyDeleteOwnMatch: "Bạn chỉ có thể xóa trận do chính bạn tạo.",
@@ -253,8 +253,8 @@ export const resources = {
         historyActions: "",
         createdBy: "Tạo bởi",
         deleteThisMatch: "Xóa trận này",
-        realtimeMode: "Mô phỏng",
-        realtimeModeOn: "Mô phỏng bật",
+        realtimeMode: "Realtime",
+        realtimeModeOn: "Realtime On",
         realtimeDisabled: "Thêm trận đấu hôm nay để bật chế độ mô phỏng",
         realtimeActive: "Hiển thị điểm mô phỏng từ trận đấu hôm nay",
         realtimeInactive: "Hiển thị điểm mô phỏng từ trận đấu hôm nay",
@@ -301,8 +301,8 @@ export const resources = {
         clearlyBetter: "Hơn rõ",
         differentClass: "Khác đẳng cấp",
         skill: "Kỹ năng",
-        stability: "Độ ổn định",
-        uncertainty: "Độ bất định",
+        consistency: "Độ nhất quán",
+        confidence: "Độ tin cậy",
         motivation: "Động lực",
         winRate: "Tỉ lệ thắng",
         rankScore: "Điểm xếp hạng",
@@ -310,16 +310,16 @@ export const resources = {
         progressShown: "Progress hiển thị: {{value}}%",
         formulaTitle: "Công thức điểm xếp hạng:",
         formulaText:
-          "Điểm xếp hạng = Kỹ năng - (Độ bất định x Phong độ ổn định x Hệ số điều chỉnh ({{penalty}}) x Động lực)",
+          "Điểm xếp hạng = Kỹ năng - (Độ tin cậy x Độ nhất quán x Hệ số điều chỉnh ({{penalty}}) x Động lực)",
         simpleExplanation: "Hiểu đơn giản",
         simpleText:
           "Điểm tăng khi kỹ năng cao, giảm khi dữ liệu chưa ổn định (RD/Vol cao). Tần suất thi đấu gần đây cũng ảnh hưởng đến kết quả đánh giá.",
         descriptionSkill:
           "Điểm kỹ năng theo Glicko-2. Thắng đối thủ mạnh giúp tăng điểm nhanh hơn.",
-        descriptionStability:
-          "Đo độ ổn định phong độ qua Volatility (sigma). Sigma thấp nghĩa là phong độ ổn định hơn.",
-        descriptionUncertainty:
-          "Đo độ chắc chắn của dữ liệu qua RD. Ít trận hoặc nghỉ lâu sẽ làm RD tăng.",
+        descriptionConsistency:
+          "Đo mức độ ổn định phong độ dựa trên Volatility (sigma). Sigma thấp có nghĩa là phong độ ổn định hơn.",
+        descriptionConfidence:
+          "Đo độ tin cậy của xếp hạng dựa trên Rating Deviation (RD). RD thấp có nghĩa là xếp hạng đáng tin cậy hơn.",
         descriptionMotivation:
           "So sánh tần suất thi đấu gần đây với mức trung bình cá nhân. > 1 là đang thi đấu tích cực hơn.",
         descriptionWinRate: "Tỉ lệ thắng trên tổng số trận đã đấu.",

@@ -25,8 +25,8 @@ export default function PlayerStatsModal({
   const { t } = useTranslation();
 
   const skillProgress = clamp((stats.rating - 1000) / 1000, 0, 1);
-  const stabilityProgress = clamp(1 - stats.vol / 0.2, 0, 1);
-  const uncertaintyProgress = clamp(1 - stats.rd / 350, 0, 1);
+  const consistencyProgress = clamp(1 - stats.vol / 0.2, 0, 1);
+  const confidenceProgress = clamp(1 - stats.rd / 350, 0, 1);
 
   const metricItems = [
     {
@@ -38,22 +38,6 @@ export default function PlayerStatsModal({
       description: t("playerStats.descriptionSkill"),
     },
     {
-      id: "stability",
-      label: t("playerStats.stability"),
-      progress: toPercent(stabilityProgress),
-      value: `sigma=${stats.vol.toFixed(3)}`,
-      tone: "#10b981",
-      description: t("playerStats.descriptionStability"),
-    },
-    {
-      id: "uncertainty",
-      label: t("playerStats.uncertainty"),
-      progress: toPercent(uncertaintyProgress),
-      value: `RD=${stats.rd.toFixed(1)}`,
-      tone: "#f59e0b",
-      description: t("playerStats.descriptionUncertainty"),
-    },
-    {
       id: "winRate",
       label: t("playerStats.winRate"),
       progress: toPercent(stats.winRate),
@@ -63,6 +47,22 @@ export default function PlayerStatsModal({
           : "0% (0/0)",
       tone: "#06b6d4",
       description: t("playerStats.descriptionWinRate"),
+    },
+    {
+      id: "confidence",
+      label: t("playerStats.confidence"),
+      progress: toPercent(confidenceProgress),
+      value: `RD=${stats.rd.toFixed(1)}`,
+      tone: "#f59e0b",
+      description: t("playerStats.descriptionConfidence"),
+    },
+    {
+      id: "consistency",
+      label: t("playerStats.consistency"),
+      progress: toPercent(consistencyProgress),
+      value: `sigma=${stats.vol.toFixed(3)}`,
+      tone: "#10b981",
+      description: t("playerStats.descriptionConsistency"),
     },
   ].filter(
     (item) => metricVisibility[item.id as keyof RankingMetricVisibility],

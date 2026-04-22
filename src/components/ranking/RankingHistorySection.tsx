@@ -42,7 +42,7 @@ function formatMatchDateTime(dateText: string): string {
 
 function formatSet(setText: string): string {
   const [score, minutes] = String(setText || "").split("@");
-  const normalizedMinutes = Number.parseInt(String(minutes || ""), 10);
+  const normalizedMinutes = Number.parseInt(String(minutes || ""), 5);
   if (!Number.isFinite(normalizedMinutes) || normalizedMinutes <= 0) {
     return score;
   }
@@ -69,15 +69,15 @@ function getTeamToneByMatch(sets: string[]): {
 
   if (team1SetWins > team2SetWins) {
     return {
-      team1ClassName: "text-emerald-500 font-medium",
-      team2ClassName: "text-red-500 font-medium",
+      team1ClassName: "text-emerald-600 font-semibold",
+      team2ClassName: "text-red-600 font-semibold",
     };
   }
 
   if (team2SetWins > team1SetWins) {
     return {
-      team1ClassName: "text-red-500 font-medium",
-      team2ClassName: "text-emerald-500 font-medium",
+      team1ClassName: "text-red-600 font-semibold",
+      team2ClassName: "text-emerald-600 font-semibold",
     };
   }
 
@@ -154,17 +154,6 @@ export default function RankingHistorySection({
       ),
     },
     {
-      title: t("rankingPanel.historyCreator"),
-      key: "creator",
-      width: 130,
-      ellipsis: true,
-      render: (_, row) => (
-        <Typography.Text ellipsis className="text-xs text-slate-500">
-          {row.createdByUsername || row.createdBy || "-"}
-        </Typography.Text>
-      ),
-    },
-    {
       title: t("rankingPanel.historyTime"),
       dataIndex: "date",
       key: "date",
@@ -172,6 +161,17 @@ export default function RankingHistorySection({
       render: (value: string) => (
         <Typography.Text className="text-xs text-slate-500">
           {formatMatchDateTime(value)}
+        </Typography.Text>
+      ),
+    },
+    {
+      title: t("rankingPanel.historyCreator"),
+      key: "creator",
+      width: 130,
+      ellipsis: true,
+      render: (_, row) => (
+        <Typography.Text ellipsis className="text-xs text-slate-500">
+          {row.createdByUsername || row.createdBy || "-"}
         </Typography.Text>
       ),
     },
@@ -266,6 +266,8 @@ export default function RankingHistorySection({
               current: historyPage,
               pageSize: historyPageSize,
               total: totalHistoryCount,
+              position: ["bottomRight"],
+              responsive: false,
               showSizeChanger: true,
               pageSizeOptions: [5, 10, 20],
               onChange: onHistoryPaginationChange,

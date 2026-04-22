@@ -70,8 +70,8 @@ export type RankingMatch = {
 
 export type RankingMetricVisibility = {
   skill: boolean;
-  stability: boolean;
-  uncertainty: boolean;
+  consistency: boolean;
+  confidence: boolean;
   winRate: boolean;
 };
 

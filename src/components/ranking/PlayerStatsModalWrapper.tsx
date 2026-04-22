@@ -4,8 +4,8 @@ import PlayerStatsModal from "./PlayerStatsModal";
 const DEFAULT_RANKING_CONFIG = {
   metricVisibility: {
     skill: true,
-    stability: true,
-    uncertainty: true,
+    consistency: true,
+    confidence: true,
     winRate: true,
   },
 } as const;
