@@ -287,6 +287,10 @@ export const resources = {
       },
       playerStats: {
         ratingScore: "Điểm kĩ năng",
+        beginner: "Mới bắt đầu",
+        intermediate: "Trung cấp",
+        advanced: "Cao cấp",
+        expert: "Chuyên gia",
         veryStable: "Rất ổn định",
         normal: "Bình thường",
         volatile: "Thất thường",

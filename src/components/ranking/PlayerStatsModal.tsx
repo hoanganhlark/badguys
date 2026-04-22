@@ -1,4 +1,4 @@
-import { Collapse, Modal, Progress, Space, Typography } from "antd";
+import { Collapse, Modal, Space, Tag, Tooltip, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import type { RankingMetricVisibility } from "../../types";
 import { DEFAULT_RANKING_CONFIG } from "../../lib/rankingStats";
@@ -10,17 +10,67 @@ interface PlayerStatsModalProps {
   onClose: () => void;
 }
 
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
+// Helper: Categorize rating into skill levels
+function getRatingCategory(rating: number): "beginner" | "intermediate" | "advanced" | "expert" {
+  if (rating < 1300) return "beginner";
+  if (rating < 1500) return "intermediate";
+  if (rating < 1700) return "advanced";
+  return "expert";
 }
 
-function toPercent(value: number): number {
-  return clamp(value, 0, 1) * 100;
+// Helper: Determine if rating is above/below average
+function getRatingComparison(rating: number): "below" | "average" | "above" {
+  const diff = rating - DEFAULT_RANKING_CONFIG.rating;
+  if (diff < -100) return "below";
+  if (diff > 100) return "above";
+  return "average";
 }
 
-const SKILL_BASELINE_RATING = DEFAULT_RANKING_CONFIG.rating - 300;
-const SKILL_RATING_SPAN = 800;
-const CONSISTENCY_VOL_CAP = DEFAULT_RANKING_CONFIG.vol * (10 / 3);
+// Helper: Categorize RD (confidence level)
+function getConfidenceLevel(rd: number): "veryLittleData" | "roughEstimate" | "becomingReliable" | "fairlyCertain" | "veryCertain" {
+  if (rd > 280) return "veryLittleData";
+  if (rd > 200) return "roughEstimate";
+  if (rd > 120) return "becomingReliable";
+  if (rd > 60) return "fairlyCertain";
+  return "veryCertain";
+}
+
+// Helper: Categorize volatility (consistency level)
+function getConsistencyLevel(vol: number): "hardToPredict" | "volatile" | "normal" | "veryStable" {
+  if (vol > 0.16) return "hardToPredict";
+  if (vol > 0.1) return "volatile";
+  if (vol > 0.06) return "normal";
+  return "veryStable";
+}
+
+// Color mapping for badges
+function getCategoryColor(category: "beginner" | "intermediate" | "advanced" | "expert"): string {
+  switch (category) {
+    case "beginner": return "#ff7a45";
+    case "intermediate": return "#faad14";
+    case "advanced": return "#52c41a";
+    case "expert": return "#1890ff";
+  }
+}
+
+function getConfidenceColor(level: "veryLittleData" | "roughEstimate" | "becomingReliable" | "fairlyCertain" | "veryCertain"): string {
+  switch (level) {
+    case "veryLittleData": return "#ff4d4f";
+    case "roughEstimate": return "#ff7a45";
+    case "becomingReliable": return "#faad14";
+    case "fairlyCertain": return "#52c41a";
+    case "veryCertain": return "#1890ff";
+  }
+}
+
+function getConsistencyColor(level: "hardToPredict" | "volatile" | "normal" | "veryStable"): string {
+  switch (level) {
+    case "hardToPredict": return "#ff4d4f";
+    case "volatile": return "#ff7a45";
+    case "normal": return "#faad14";
+    case "veryStable": return "#1890ff";
+  }
+}
 
 export default function PlayerStatsModal({
   stats,
@@ -29,75 +79,97 @@ export default function PlayerStatsModal({
 }: PlayerStatsModalProps) {
   const { t } = useTranslation();
 
-  const skillProgress = clamp(
-    (stats.rating - SKILL_BASELINE_RATING) / SKILL_RATING_SPAN,
-    0,
-    1,
-  );
-  const consistencyProgress = clamp(1 - stats.vol / CONSISTENCY_VOL_CAP, 0, 1);
-  const confidenceProgress = clamp(
-    1 - stats.rd / DEFAULT_RANKING_CONFIG.rd,
-    0,
-    1,
-  );
+  const ratingCategory = getRatingCategory(stats.rating);
+  const ratingComparison = getRatingComparison(stats.rating);
+  const confidenceLevel = getConfidenceLevel(stats.rd);
+  const consistencyLevel = getConsistencyLevel(stats.vol);
 
+  // Build metric items with badges instead of progress bars
   const metricItems = [
-    {
+    metricVisibility.skill && {
       id: "skill",
       label: t("playerStats.skill"),
-      progress: toPercent(skillProgress),
+      badge: (
+        <Tooltip title={t("playerStats.descriptionSkill")}>
+          <Tag color={getCategoryColor(ratingCategory)} style={{ cursor: "help" }}>
+            {t(`playerStats.${ratingCategory}`)}
+          </Tag>
+        </Tooltip>
+      ),
       value: `${Math.round(stats.rating)}`,
-      tone: "#3b82f6",
+      comparison:
+        ratingComparison === "above"
+          ? t("playerStats.slightlyBetter")
+          : ratingComparison === "below"
+            ? t("playerStats.notDistinguishable")
+            : "—",
       description: t("playerStats.descriptionSkill"),
     },
-    {
+    metricVisibility.winRate && {
       id: "winRate",
       label: t("playerStats.winRate"),
-      progress: toPercent(stats.winRate),
+      badge: (
+        <Tag color="#06b6d4">
+          {(stats.winRate * 100).toFixed(1)}%
+        </Tag>
+      ),
       value:
         stats.totalMatches > 0
-          ? `${(stats.winRate * 100).toFixed(1)}% (${stats.wins}/${stats.totalMatches})`
-          : "0% (0/0)",
-      tone: "#06b6d4",
+          ? `${stats.wins}/${stats.totalMatches}`
+          : "0/0",
+      comparison: "—",
       description: t("playerStats.descriptionWinRate"),
     },
-    {
+    metricVisibility.confidence && {
       id: "confidence",
       label: t("playerStats.confidence"),
-      progress: toPercent(confidenceProgress),
-      value: `RD=${stats.rd.toFixed(1)}`,
-      tone: "#f59e0b",
+      badge: (
+        <Tooltip title={t("playerStats.descriptionConfidence")}>
+          <Tag color={getConfidenceColor(confidenceLevel)} style={{ cursor: "help" }}>
+            {t(`playerStats.${confidenceLevel}`)}
+          </Tag>
+        </Tooltip>
+      ),
+      value: `RD: ${stats.rd.toFixed(1)}`,
+      comparison: "—",
       description: t("playerStats.descriptionConfidence"),
     },
-    {
+    metricVisibility.consistency && {
       id: "consistency",
       label: t("playerStats.consistency"),
-      progress: toPercent(consistencyProgress),
-      value: `sigma=${stats.vol.toFixed(3)}`,
-      tone: "#10b981",
+      badge: (
+        <Tooltip title={t("playerStats.descriptionConsistency")}>
+          <Tag color={getConsistencyColor(consistencyLevel)} style={{ cursor: "help" }}>
+            {t(`playerStats.${consistencyLevel}`)}
+          </Tag>
+        </Tooltip>
+      ),
+      value: `σ: ${stats.vol.toFixed(4)}`,
+      comparison: "—",
       description: t("playerStats.descriptionConsistency"),
     },
-  ].filter(
-    (item) => metricVisibility[item.id as keyof RankingMetricVisibility],
-  );
+  ].filter(Boolean);
 
   const metricPanels = metricItems.map((item) => ({
     key: item.id,
     label: (
       <Space direction="vertical" size={6} style={{ width: "100%" }}>
-        <Typography.Text strong>{item.label}</Typography.Text>
-        <Progress
-          percent={Number(item.progress.toFixed(1))}
-          strokeColor={item.tone}
-          size="small"
-        />
+        <Space>
+          <Typography.Text strong>{item.label}</Typography.Text>
+          {item.badge}
+        </Space>
       </Space>
     ),
     children: (
       <Space direction="vertical" size={8} style={{ width: "100%" }}>
-        <Typography.Text>
-          {t("playerStats.currentValue", { value: item.value })}
-        </Typography.Text>
+        <div>
+          <Typography.Text type="secondary">{t("playerStats.currentValue", { value: item.value })}</Typography.Text>
+          {item.comparison !== "—" && (
+            <Typography.Text type="secondary" style={{ marginLeft: "16px" }}>
+              {item.comparison}
+            </Typography.Text>
+          )}
+        </div>
         <Typography.Text type="secondary">{item.description}</Typography.Text>
       </Space>
     ),
@@ -112,11 +184,16 @@ export default function PlayerStatsModal({
       okText={t("common.close")}
       cancelButtonProps={{ style: { display: "none" } }}
       title={
-        <Space direction="vertical" size={0}>
-          <Typography.Text strong style={{ fontSize: 20 }}>
-            {stats.name}
-          </Typography.Text>
-          <Typography.Text type="secondary">
+        <Space direction="vertical" size={4}>
+          <Space align="center">
+            <Typography.Text strong style={{ fontSize: 20 }}>
+              {stats.name}
+            </Typography.Text>
+            <Tag color={getCategoryColor(ratingCategory)}>
+              {t(`playerStats.${ratingCategory}`)}
+            </Tag>
+          </Space>
+          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
             {t("playerStats.ratingScore")}: {Math.round(stats.rating)}
           </Typography.Text>
         </Space>
