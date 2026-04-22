@@ -68,6 +68,8 @@ function formatSet(setText: string): string {
 function getTeamToneByMatch(sets: string[]): {
   team1ClassName: string;
   team2ClassName: string;
+  team1Won: boolean;
+  team2Won: boolean;
 } {
   let team1SetWins = 0;
   let team2SetWins = 0;
@@ -87,6 +89,8 @@ function getTeamToneByMatch(sets: string[]): {
     return {
       team1ClassName: "font-semibold",
       team2ClassName: "",
+      team1Won: true,
+      team2Won: false,
     };
   }
 
@@ -94,12 +98,16 @@ function getTeamToneByMatch(sets: string[]): {
     return {
       team1ClassName: "",
       team2ClassName: "font-semibold",
+      team1Won: false,
+      team2Won: true,
     };
   }
 
   return {
     team1ClassName: "",
     team2ClassName: "",
+    team1Won: false,
+    team2Won: false,
   };
 }
 
@@ -175,7 +183,7 @@ export default function RankingHistorySection({
       key: "sets",
       width: 170,
       render: (_, row) => (
-        <Typography.Text className="text-sm font-semibold text-slate-800 tabular-nums">
+        <Typography.Text className="text-sm  text-slate-800 tabular-nums">
           {row.sets.map(formatSet).join(", ")}
         </Typography.Text>
       ),
