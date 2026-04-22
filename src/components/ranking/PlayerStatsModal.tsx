@@ -9,7 +9,7 @@ import {
   Tooltip,
   Typography,
 } from "antd";
-import { DownOutlined, LeftOutlined, RightOutlined } from "@ant-design/icons";
+import { DownOutlined, RightOutlined } from "@ant-design/icons";
 
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -166,24 +166,11 @@ export default function PlayerStatsModal({
       open
       onCancel={onClose}
       onOk={onClose}
-      width={isMobile ? "100vw" : 800}
-      centered={!isMobile}
-      style={
-        isMobile
-          ? {
-              top: 0,
-              margin: 0,
-              paddingBottom: 0,
-              height: "100dvh",
-              maxWidth: "100vw",
-            }
-          : undefined
-      }
+      width={isMobile ? "calc(100vw - 24px)" : 800}
+      centered
       styles={{
         body: {
           overflowX: "hidden",
-          overflowY: "auto",
-          maxHeight: isMobile ? "calc(100dvh - 132px)" : "70vh",
         },
       }}
       okText={t("common.close")}

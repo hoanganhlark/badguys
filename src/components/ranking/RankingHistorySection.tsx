@@ -40,6 +40,22 @@ function formatMatchDateTime(dateText: string): string {
   return dateText;
 }
 
+function formatMatchWeekday(dateText: string): string {
+  if (!dateText) return "-";
+
+  const normalized = String(dateText).trim();
+  let parsedDate = new Date(normalized);
+
+  if (Number.isNaN(parsedDate.getTime()) && normalized.includes(" ")) {
+    parsedDate = new Date(normalized.replace(" ", "T"));
+  }
+
+  if (Number.isNaN(parsedDate.getTime())) return "-";
+
+  const weekdayMap = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+  return weekdayMap[parsedDate.getDay()] ?? "-";
+}
+
 function formatSet(setText: string): string {
   const [score, minutes] = String(setText || "").split("@");
   const normalizedMinutes = Number.parseInt(String(minutes || ""), 5);
@@ -69,21 +85,21 @@ function getTeamToneByMatch(sets: string[]): {
 
   if (team1SetWins > team2SetWins) {
     return {
-      team1ClassName: "text-emerald-600 font-semibold",
-      team2ClassName: "text-red-600 font-semibold",
+      team1ClassName: "font-semibold",
+      team2ClassName: "",
     };
   }
 
   if (team2SetWins > team1SetWins) {
     return {
-      team1ClassName: "text-red-600 font-semibold",
-      team2ClassName: "text-emerald-600 font-semibold",
+      team1ClassName: "",
+      team2ClassName: "font-semibold",
     };
   }
 
   return {
-    team1ClassName: "text-slate-700",
-    team2ClassName: "text-slate-700",
+    team1ClassName: "",
+    team2ClassName: "",
   };
 }
 
@@ -106,10 +122,21 @@ export default function RankingHistorySection({
   const screens = Grid.useBreakpoint();
   const hasHistory = totalHistoryCount > 0;
   const historyTableScroll = screens.md
-    ? { x: 860, y: 360 }
-    : { x: 860, y: 300 };
+    ? { x: 930, y: 360 }
+    : { x: 930, y: 300 };
 
   const historyColumns: TableColumnsType<Match> = [
+    {
+      title: "#",
+      key: "weekday",
+      width: 64,
+      align: "center",
+      render: (_, row) => (
+        <Typography.Text className="text-xs text-slate-500">
+          {formatMatchWeekday(row.playedAt || row.date)}
+        </Typography.Text>
+      ),
+    },
     {
       title: t("rankingPanel.historyTeams"),
       key: "teams",
@@ -148,7 +175,7 @@ export default function RankingHistorySection({
       key: "sets",
       width: 170,
       render: (_, row) => (
-        <Typography.Text className="text-xs text-slate-700">
+        <Typography.Text className="text-sm font-semibold text-slate-800 tabular-nums">
           {row.sets.map(formatSet).join(", ")}
         </Typography.Text>
       ),
