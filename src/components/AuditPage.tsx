@@ -336,7 +336,7 @@ export default function AuditPage() {
 
             {isLoading ? (
               <>
-                <DashboardTableSkeleton columns={3} rows={5} className="mt-1" />
+                <DashboardTableSkeleton className="mt-1" />
               </>
             ) : (
               <Table

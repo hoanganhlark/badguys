@@ -6,7 +6,14 @@ import {
   User,
   Users,
 } from "react-feather";
-import { Button, Grid, Table, Typography, type TableColumnsType } from "antd";
+import {
+  Button,
+  Grid,
+  Popconfirm,
+  Table,
+  Typography,
+  type TableColumnsType,
+} from "antd";
 import { useTranslation } from "react-i18next";
 import type { Match } from "./types";
 import { useAuth } from "../../context/AuthContext";
@@ -42,6 +49,44 @@ function formatSet(setText: string): string {
   return `${score} (${normalizedMinutes}p)`;
 }
 
+function getTeamToneByMatch(sets: string[]): {
+  team1ClassName: string;
+  team2ClassName: string;
+} {
+  let team1SetWins = 0;
+  let team2SetWins = 0;
+
+  for (const set of sets) {
+    const [scorePart] = String(set || "").split("@");
+    const [raw1, raw2] = String(scorePart || "").split("-");
+    const score1 = Number.parseInt(String(raw1 || ""), 10);
+    const score2 = Number.parseInt(String(raw2 || ""), 10);
+
+    if (!Number.isFinite(score1) || !Number.isFinite(score2)) continue;
+    if (score1 > score2) team1SetWins += 1;
+    if (score2 > score1) team2SetWins += 1;
+  }
+
+  if (team1SetWins > team2SetWins) {
+    return {
+      team1ClassName: "text-emerald-500 font-medium",
+      team2ClassName: "text-red-500 font-medium",
+    };
+  }
+
+  if (team2SetWins > team1SetWins) {
+    return {
+      team1ClassName: "text-red-500 font-medium",
+      team2ClassName: "text-emerald-500 font-medium",
+    };
+  }
+
+  return {
+    team1ClassName: "text-slate-700",
+    team2ClassName: "text-slate-700",
+  };
+}
+
 export default function RankingHistorySection({
   historyMatches,
   totalHistoryCount,
@@ -70,26 +115,33 @@ export default function RankingHistorySection({
       key: "teams",
       width: 300,
       ellipsis: true,
-      render: (_, row) => (
-        <Typography.Text
-          ellipsis={{
-            tooltip: `${row.team1.join(" & ")} vs ${row.team2.join(" & ")}`,
-          }}
-        >
-          <span className="inline-flex items-center gap-1.5">
-            {row.type === "singles" ? (
-              <User className="h-3.5 w-3.5 text-slate-500" />
-            ) : (
-              <Users className="h-3.5 w-3.5 text-slate-500" />
-            )}
-            <span>
-              {row.team1.join(" & ")}{" "}
-              <span className="mx-1 text-slate-400">vs</span>{" "}
-              {row.team2.join(" & ")}
+      render: (_, row) => {
+        const tones = getTeamToneByMatch(row.sets);
+        return (
+          <Typography.Text
+            ellipsis={{
+              tooltip: `${row.team1.join(" & ")} vs ${row.team2.join(" & ")}`,
+            }}
+          >
+            <span className="inline-flex items-center gap-1.5">
+              {row.type === "singles" ? (
+                <User className="h-3.5 w-3.5 text-slate-500" />
+              ) : (
+                <Users className="h-3.5 w-3.5 text-slate-500" />
+              )}
+              <span>
+                <span className={tones.team1ClassName}>
+                  {row.team1.join(" & ")}
+                </span>{" "}
+                <span className="mx-1 text-slate-400">vs</span>{" "}
+                <span className={tones.team2ClassName}>
+                  {row.team2.join(" & ")}
+                </span>
+              </span>
             </span>
-          </span>
-        </Typography.Text>
-      ),
+          </Typography.Text>
+        );
+      },
     },
     {
       title: t("rankingPanel.historyResult"),
@@ -130,15 +182,21 @@ export default function RankingHistorySection({
       align: "center",
       render: (_, row) =>
         isAdmin || row.createdBy === currentUserId ? (
-          <button
-            type="button"
-            onClick={() => onDeleteMatch(row.id)}
-            className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-red-600 hover:bg-red-50"
-            aria-label={t("rankingPanel.deleteThisMatch")}
-            title={t("rankingPanel.deleteThisMatch")}
+          <Popconfirm
+            title={t("common.confirmDelete")}
+            okText={t("rankingPanel.deleteThisMatch")}
+            cancelText={t("common.cancel")}
+            onConfirm={() => onDeleteMatch(row.id)}
           >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-red-600 hover:bg-red-50"
+              aria-label={t("rankingPanel.deleteThisMatch")}
+              title={t("rankingPanel.deleteThisMatch")}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </Popconfirm>
         ) : null,
     },
   ];
@@ -167,15 +225,22 @@ export default function RankingHistorySection({
         </h3>
         <div className="flex flex-wrap items-center gap-2">
           {isAdmin && envConfig.isDevelopment ? (
-            <button
-              type="button"
-              onClick={onClearHistory}
+            <Popconfirm
+              title={t("common.confirmDelete")}
+              okText={t("rankingPanel.clearHistory")}
+              cancelText={t("common.cancel")}
+              onConfirm={onClearHistory}
               disabled={!hasHistory}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 text-xs font-semibold hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <Trash2 className="h-3.5 w-3.5" />
-              {t("rankingPanel.clearHistory")}
-            </button>
+              <button
+                type="button"
+                disabled={!hasHistory}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 text-xs font-semibold hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {t("rankingPanel.clearHistory")}
+              </button>
+            </Popconfirm>
           ) : null}
           <Button
             type="default"
@@ -190,7 +255,7 @@ export default function RankingHistorySection({
 
       <div className="p-2.5 md:p-3">
         {isHistoryLoading ? (
-          <DashboardTableSkeleton columns={3} rows={1} className="mt-1" />
+          <DashboardTableSkeleton className="mt-1" />
         ) : (
           <Table
             rowKey={(row) => String(row.id)}

@@ -311,7 +311,7 @@ export default function CategoryManagementPage() {
             ) : null}
 
             {isLoading ? (
-              <DashboardTableSkeleton columns={4} rows={6} className="mt-1" />
+              <DashboardTableSkeleton className="mt-1" />
             ) : (
               <Table
                 rowKey="id"

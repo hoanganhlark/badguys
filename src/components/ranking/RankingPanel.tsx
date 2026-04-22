@@ -21,6 +21,33 @@ import type { RankingCategory } from "../../types";
 import DashboardTableSkeleton from "../dashboard/DashboardTableSkeleton";
 import RankingHistorySection from "./RankingHistorySection";
 
+type StoredSimulationConfig = {
+  realtimeMode: boolean;
+};
+
+const RANKING_SIMULATION_CONFIG_STORAGE_KEY = "rankingSimulationConfig";
+
+function getSimulationConfigStorageKey(scopeKey?: string): string {
+  const normalizedScope = String(scopeKey || "").trim() || "guest";
+  return `${RANKING_SIMULATION_CONFIG_STORAGE_KEY}:${normalizedScope}`;
+}
+
+function loadStoredSimulationConfig(scopeKey?: string): StoredSimulationConfig {
+  try {
+    const key = getSimulationConfigStorageKey(scopeKey);
+    const raw = localStorage.getItem(key);
+    if (!raw) return { realtimeMode: false };
+
+    const parsed = JSON.parse(raw) as Partial<StoredSimulationConfig>;
+    return {
+      realtimeMode:
+        typeof parsed.realtimeMode === "boolean" ? parsed.realtimeMode : false,
+    };
+  } catch {
+    return { realtimeMode: false };
+  }
+}
+
 interface RankingPanelProps {
   officialRankings: AdvancedStats[];
   simulatedRankings: AdvancedStats[];
@@ -91,7 +118,9 @@ function RankingPanel({
 }: RankingPanelProps) {
   const { t } = useTranslation();
   const screens = Grid.useBreakpoint();
-  const [realtimeMode, setRealtimeMode] = useState(false);
+  const [realtimeMode, setRealtimeMode] = useState(
+    () => loadStoredSimulationConfig(currentUserId).realtimeMode,
+  );
 
   const {
     selectedCategoryId,
@@ -135,14 +164,19 @@ function RankingPanel({
     }
   }, [onSelectCategory, selectedCategoryId, sortedCategories]);
 
-  // Select rankings and trends based on realtime mode
-  const displayRankings = realtimeMode && todaysMatches.length > 0
-    ? simulatedRankings
-    : officialRankings;
+  useEffect(() => {
+    const key = getSimulationConfigStorageKey(currentUserId);
+    localStorage.setItem(key, JSON.stringify({ realtimeMode }));
+  }, [currentUserId, realtimeMode]);
 
-  const displayTrends = realtimeMode && todaysMatches.length > 0
-    ? simulatedTrends
-    : officialTrends;
+  // Select rankings and trends based on realtime mode
+  const displayRankings =
+    realtimeMode && todaysMatches.length > 0
+      ? simulatedRankings
+      : officialRankings;
+
+  const displayTrends =
+    realtimeMode && todaysMatches.length > 0 ? simulatedTrends : officialTrends;
 
   const filteredRankings = useMemo(() => {
     if (!selectedCategory) return [];
@@ -310,7 +344,9 @@ function RankingPanel({
                 disabled={todaysMatches.length === 0}
                 className="whitespace-nowrap"
               >
-                {realtimeMode ? t("rankingPanel.realtimeModeOn") : t("rankingPanel.realtimeMode")}
+                {realtimeMode
+                  ? t("rankingPanel.realtimeModeOn")
+                  : t("rankingPanel.realtimeMode")}
               </Button>
             </Tooltip>
           </div>
@@ -326,7 +362,7 @@ function RankingPanel({
           <div className="overflow-hidden rounded-lg border border-slate-100 bg-white">
             <div className="min-h-[240px] md:min-h-[280px]">
               {isMatchesLoading ? (
-                <DashboardTableSkeleton columns={3} rows={5} className="mt-1" />
+                <DashboardTableSkeleton rows={3} className="mt-1" />
               ) : (
                 <Table
                   columns={rankingColumns}

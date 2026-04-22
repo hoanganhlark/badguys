@@ -378,7 +378,7 @@ export default function UserManagementPage() {
             ) : null}
 
             {isLoading ? (
-              <DashboardTableSkeleton columns={5} rows={8} className="mt-1" />
+              <DashboardTableSkeleton className="mt-1" />
             ) : (
               <Table
                 rowKey="id"

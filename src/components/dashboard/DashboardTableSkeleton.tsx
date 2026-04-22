@@ -1,14 +1,14 @@
 import { Skeleton } from "antd";
 
 type DashboardTableSkeletonProps = {
-  columns: number;
+  columns?: number;
   rows?: number;
   className?: string;
 };
 
 export default function DashboardTableSkeleton({
-  columns,
-  rows = 8,
+  columns = 3,
+  rows = 4,
   className = "",
 }: DashboardTableSkeletonProps) {
   const safeColumns = Math.max(1, columns);
