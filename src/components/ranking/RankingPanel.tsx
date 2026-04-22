@@ -292,10 +292,10 @@ function RankingPanel({
             <Tooltip
               title={
                 todaysMatches.length === 0
-                  ? "Add today's matches to enable realtime simulation"
+                  ? t("rankingPanel.realtimeDisabled")
                   : realtimeMode
-                    ? "Showing simulated ratings from today's matches"
-                    : "Show simulated ratings from today's matches"
+                    ? t("rankingPanel.realtimeActive")
+                    : t("rankingPanel.realtimeInactive")
               }
             >
               <Button
@@ -310,7 +310,7 @@ function RankingPanel({
                 disabled={todaysMatches.length === 0}
                 className="whitespace-nowrap"
               >
-                {realtimeMode ? "Realtime ON" : "Realtime"}
+                {realtimeMode ? t("rankingPanel.realtimeModeOn") : t("rankingPanel.realtimeMode")}
               </Button>
             </Tooltip>
           </div>

@@ -253,6 +253,11 @@ export const resources = {
         historyActions: "",
         createdBy: "Tạo bởi",
         deleteThisMatch: "Xóa trận này",
+        realtimeMode: "Mô phỏng",
+        realtimeModeOn: "Mô phỏng bật",
+        realtimeDisabled: "Thêm trận đấu hôm nay để bật chế độ mô phỏng",
+        realtimeActive: "Hiển thị điểm mô phỏng từ trận đấu hôm nay",
+        realtimeInactive: "Hiển thị điểm mô phỏng từ trận đấu hôm nay",
       },
       matchForm: {
         doubles: "Đánh đôi",
