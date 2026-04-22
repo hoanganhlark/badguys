@@ -1,6 +1,7 @@
 import { Collapse, Modal, Progress, Space, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import type { RankingMetricVisibility } from "../../types";
+import { DEFAULT_RANKING_CONFIG } from "../../lib/rankingStats";
 import type { AdvancedStats } from "./types";
 
 interface PlayerStatsModalProps {
@@ -17,6 +18,10 @@ function toPercent(value: number): number {
   return clamp(value, 0, 1) * 100;
 }
 
+const SKILL_BASELINE_RATING = DEFAULT_RANKING_CONFIG.rating - 500;
+const SKILL_RATING_SPAN = 1000;
+const CONSISTENCY_VOL_CAP = DEFAULT_RANKING_CONFIG.vol * (10 / 3);
+
 export default function PlayerStatsModal({
   stats,
   metricVisibility,
@@ -24,9 +29,17 @@ export default function PlayerStatsModal({
 }: PlayerStatsModalProps) {
   const { t } = useTranslation();
 
-  const skillProgress = clamp((stats.rating - 1000) / 1000, 0, 1);
-  const consistencyProgress = clamp(1 - stats.vol / 0.2, 0, 1);
-  const confidenceProgress = clamp(1 - stats.rd / 350, 0, 1);
+  const skillProgress = clamp(
+    (stats.rating - SKILL_BASELINE_RATING) / SKILL_RATING_SPAN,
+    0,
+    1,
+  );
+  const consistencyProgress = clamp(1 - stats.vol / CONSISTENCY_VOL_CAP, 0, 1);
+  const confidenceProgress = clamp(
+    1 - stats.rd / DEFAULT_RANKING_CONFIG.rd,
+    0,
+    1,
+  );
 
   const metricItems = [
     {
