@@ -24,7 +24,7 @@ export function useAnalyticsTracking() {
     trackPageView(`${location.pathname}${location.search}${location.hash}`);
   }, [location.pathname, location.search, location.hash]);
 
-  // Track route changes (only for authenticated users)
+  // Track route changes for all users (authenticated and guests)
   useEffect(() => {
     const nextPath = `${location.pathname}${location.search}${location.hash}`;
     const previousPath = previousPathRef.current;
@@ -34,12 +34,12 @@ export function useAnalyticsTracking() {
       return;
     }
 
-    if (isAuthenticated && previousPath !== nextPath) {
+    if (previousPath !== nextPath) {
       trackRouteChange(previousPath, nextPath);
     }
 
     previousPathRef.current = nextPath;
-  }, [isAuthenticated, location.pathname, location.search, location.hash]);
+  }, [location.pathname, location.search, location.hash]);
 
   // Update user properties when auth state changes
   useEffect(() => {
