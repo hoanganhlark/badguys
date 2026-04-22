@@ -5,7 +5,10 @@ import {
   getLatestRankingSnapshot,
   saveRankingSnapshot,
 } from "../../../lib/api";
-import { calculateRankingStats } from "../../../lib/rankingStats";
+import {
+  calculateRankingStats,
+  simulateRatings,
+} from "../../../lib/rankingStats";
 import MatchFormPanel from "../../../components/ranking/MatchFormPanel";
 import RankingPanel from "../../../components/ranking/RankingPanel";
 import type { Member } from "../../../components/ranking/types";
@@ -314,7 +317,7 @@ export function RankingMatchesContainer({
               memberId: player.id,
               memberName: player.name,
               rank: index + 1,
-              rankScore: player.rankScore,
+              rankScore: player.rating,
             })),
           );
         } catch (snapshotError) {
@@ -376,6 +379,7 @@ export function RankingMatchesContainer({
   return (
     <RankingPanel
       rankings={rankings}
+      matches={matches}
       categories={sortedCategories}
       isLoading={isRankingLoading}
       historyMatches={pagedHistoryMatches}
@@ -388,6 +392,7 @@ export function RankingMatchesContainer({
       showRankTrend={showRankTrend}
       memberLevelById={memberLevelById}
       currentUserId={currentUserId}
+      onSimulateRatings={simulateRatings}
       onToggleHistory={handleToggleHistory}
       onHistoryPaginationChange={handleHistoryPaginationChange}
       onDeleteMatch={handleDeleteMatch}

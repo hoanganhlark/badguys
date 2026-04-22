@@ -1,20 +1,30 @@
-import { memo, useEffect, useMemo } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import {
   CaretDownOutlined,
   CaretUpOutlined,
   MinusOutlined,
   PlusOutlined,
+  PoweroffOutlined,
 } from "@ant-design/icons";
-import { Grid, Table, Typography, type TableColumnsType } from "antd";
+import {
+  Button,
+  Grid,
+  Table,
+  Tooltip,
+  Typography,
+  type TableColumnsType,
+} from "antd";
 import { useTranslation } from "react-i18next";
 import { useRankingUIContext } from "../../features/ranking/context";
 import type { AdvancedStats, Match } from "./types";
 import type { RankingCategory } from "../../types";
+import type { SimulatedRating } from "../../lib/rankingStats";
 import DashboardTableSkeleton from "../dashboard/DashboardTableSkeleton";
 import RankingHistorySection from "./RankingHistorySection";
 
 interface RankingPanelProps {
   rankings: AdvancedStats[];
+  matches: Match[];
   categories: RankingCategory[];
   isLoading: boolean;
   historyMatches: Match[];
@@ -27,6 +37,10 @@ interface RankingPanelProps {
   showRankTrend: boolean;
   memberLevelById: Record<number, string>;
   currentUserId: string;
+  onSimulateRatings: (
+    rankings: AdvancedStats[],
+    matches: Match[]
+  ) => Record<number, SimulatedRating>;
   onToggleHistory: (expanded: boolean) => Promise<void>;
   onHistoryPaginationChange: (page: number, pageSize: number) => void;
   onDeleteMatch: (matchId: number | string) => Promise<void>;
@@ -58,6 +72,7 @@ function formatDisplayName(name: string): {
 
 function RankingPanel({
   rankings,
+  matches,
   categories,
   isLoading,
   historyMatches,
@@ -70,6 +85,7 @@ function RankingPanel({
   showRankTrend,
   memberLevelById,
   currentUserId,
+  onSimulateRatings,
   onToggleHistory,
   onHistoryPaginationChange,
   onDeleteMatch,
@@ -77,6 +93,8 @@ function RankingPanel({
 }: RankingPanelProps) {
   const { t } = useTranslation();
   const screens = Grid.useBreakpoint();
+  const [realtimeMode, setRealtimeMode] = useState(false);
+
   const {
     selectedCategoryId,
     setSelectedCategoryId: onSelectCategory,
@@ -119,12 +137,48 @@ function RankingPanel({
     }
   }, [onSelectCategory, selectedCategoryId, sortedCategories]);
 
+  // Extract today's matches
+  const todaysMatches = useMemo(() => {
+    if (matches.length === 0) return [];
+    const today = new Date();
+    const todayStart = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
+    const tomorrowStart = new Date(todayStart);
+    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+
+    return matches.filter((match) => {
+      const matchDate = new Date(match.playedAt || match.date || "");
+      return (
+        matchDate >= todayStart && matchDate < tomorrowStart
+      );
+    });
+  }, [matches]);
+
+  // Calculate simulated ratings if realtime mode is on
+  const displayRankings = useMemo(() => {
+    if (!realtimeMode || todaysMatches.length === 0) {
+      return rankings;
+    }
+
+    const simulatedData = onSimulateRatings(rankings, todaysMatches);
+    return rankings.map((stat) => ({
+      ...stat,
+      rating: simulatedData[stat.id]?.rating ?? stat.rating,
+      rd: simulatedData[stat.id]?.rd ?? stat.rd,
+      _simulated: true,
+      _delta: simulatedData[stat.id]?.delta ?? 0,
+    }));
+  }, [rankings, realtimeMode, todaysMatches, onSimulateRatings]);
+
   const filteredRankings = useMemo(() => {
     if (!selectedCategory) return [];
-    return rankings.filter(
+    return displayRankings.filter(
       (player) => memberLevelById[player.id] === selectedCategory.name,
     );
-  }, [memberLevelById, rankings, selectedCategory]);
+  }, [memberLevelById, displayRankings, selectedCategory]);
 
   const rankingRows = useMemo(
     () =>
@@ -247,21 +301,42 @@ function RankingPanel({
             ))}
           </div>
         ) : (
-          <div className="mb-3 flex flex-wrap items-center gap-1.5">
-            {sortedCategories.map((category) => (
-              <button
-                key={category.id}
-                type="button"
-                onClick={() => onSelectCategory(category.id)}
-                className={`rounded-sm border px-5 py-2 text-xs font-semibold transition-colors ${
-                  selectedCategory?.id === category.id
-                    ? "border-red-500 bg-red-500 text-white"
-                    : "border-transparent bg-transparent text-slate-700 hover:bg-slate-100"
-                }`}
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {sortedCategories.map((category) => (
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => onSelectCategory(category.id)}
+                  className={`rounded-sm border px-5 py-2 text-xs font-semibold transition-colors ${
+                    selectedCategory?.id === category.id
+                      ? "border-red-500 bg-red-500 text-white"
+                      : "border-transparent bg-transparent text-slate-700 hover:bg-slate-100"
+                  }`}
+                >
+                  {category.displayName}
+                </button>
+              ))}
+            </div>
+            {todaysMatches.length > 0 && (
+              <Tooltip
+                title={
+                  realtimeMode
+                    ? "Showing simulated ratings from today's matches"
+                    : "Show simulated ratings from today's matches"
+                }
               >
-                {category.displayName}
-              </button>
-            ))}
+                <Button
+                  type={realtimeMode ? "primary" : "default"}
+                  size="small"
+                  icon={<PoweroffOutlined />}
+                  onClick={() => setRealtimeMode(!realtimeMode)}
+                  className="whitespace-nowrap"
+                >
+                  {realtimeMode ? "Realtime ON" : "Realtime"}
+                </Button>
+              </Tooltip>
+            )}
           </div>
         )}
 

@@ -45,6 +45,10 @@ export type RankingComputationSettings = {
   tau?: number;
 };
 
+export type SimulationSettings = {
+  tau?: number;
+};
+
 type PlayerStatsAccumulator = {
   id: number;
   name: string;
@@ -205,7 +209,13 @@ function buildRatingEntriesForSet(
 ): Array<[GlickoPlayer, GlickoPlayer, number, number]> {
   const entries: Array<[GlickoPlayer, GlickoPlayer, number, number]> = [];
   const margin = Math.abs(set.score1 - set.score2);
-  const multiplier = computeMultiplier(margin, set.minutes, P_MIN, P_MAX, config);
+  const multiplier = computeMultiplier(
+    margin,
+    set.minutes,
+    P_MIN,
+    P_MAX,
+    config,
+  );
 
   if (set.score1 === set.score2) {
     return []; // no-score draws are skipped
@@ -314,7 +324,6 @@ export function calculateRankingStats(
     periodMatches.set(key, current);
   }
 
-
   // Collect all parsed sets across entire history for percentile computation
   const allParsedSets: ParsedSet[][] = [];
   for (const match of sortedMatches) {
@@ -362,8 +371,6 @@ export function calculateRankingStats(
         .filter((p): p is GlickoPlayer => !!p);
 
       if (team1Players.length === 0 || team2Players.length === 0) continue;
-
-      const playedAt = parsePlayedAt(match);
 
       // Process each set individually
       for (const set of parsedSets) {
@@ -434,4 +441,164 @@ export function calculateRankingStats(
   }
 
   return results.sort((a, b) => b.rating - a.rating);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Simulation: Preview rating changes for today's matches
+// ─────────────────────────────────────────────────────────────────
+
+export type SimulatedRating = {
+  rating: number;
+  rd: number;
+  delta: number; // new rating - original rating
+};
+
+/**
+ * Simulate intra-day rating changes without persisting them.
+ *
+ * Use case: Show players what their rating will be if updated NOW,
+ * before the official end-of-day update.
+ *
+ * @param currentStats - Official ratings from calculateRankingStats
+ * @param todaysMatches - Matches played today
+ * @param settings - Partial ranking settings (tau, etc.)
+ * @returns Map of playerId → { rating, rd, delta }
+ */
+export function simulateRatings(
+  currentStats: AdvancedStats[],
+  todaysMatches: Match[],
+  settings?: SimulationSettings,
+): Record<number, SimulatedRating> {
+  const config: RankingConfig = {
+    ...DEFAULT_RANKING_CONFIG,
+    tau: Number.isFinite(settings?.tau)
+      ? clamp(Number(settings?.tau), 0.3, 1.2)
+      : DEFAULT_RANKING_CONFIG.tau,
+  };
+
+  // Create temp Glicko2 engine
+  const tempRanking = new Glicko2({
+    tau: config.tau,
+    rating: config.rating,
+    rd: config.rd,
+    vol: config.vol,
+  });
+
+  // Clone players from current state
+  const clones = new Map<number, ReturnType<Glicko2["makePlayer"]>>();
+  const originalRatings = new Map<number, number>();
+
+  for (const stat of currentStats) {
+    const clonedPlayer = tempRanking.makePlayer(
+      stat.rating,
+      stat.rd,
+      stat.vol,
+    );
+    clones.set(stat.id, clonedPlayer);
+    originalRatings.set(stat.id, stat.rating);
+  }
+
+  if (todaysMatches.length === 0) {
+    // No matches today, return current ratings with zero delta
+    const result: Record<number, SimulatedRating> = {};
+    for (const stat of currentStats) {
+      result[stat.id] = {
+        rating: stat.rating,
+        rd: stat.rd,
+        delta: 0,
+      };
+    }
+    return result;
+  }
+
+  // Collect recent set times from all matches for percentile
+  const allParsedSets: ParsedSet[][] = [];
+  for (const match of todaysMatches) {
+    const parsedSets = match.sets
+      .map(parseSet)
+      .filter((item): item is ParsedSet => !!item);
+    allParsedSets.push(parsedSets);
+  }
+
+  const recentMinutes = collectRecentSetMinutes(allParsedSets, config);
+  const { P_MIN, P_MAX } = computeTimePercentiles(recentMinutes, config);
+
+  // Build rating entries from today's matches
+  const ratingMatches: Array<
+    [
+      ReturnType<Glicko2["makePlayer"]>,
+      ReturnType<Glicko2["makePlayer"]>,
+      number,
+      number,
+    ]
+  > = [];
+
+  const playersByName = new Map<string, ReturnType<Glicko2["makePlayer"]>>();
+  for (const stat of currentStats) {
+    playersByName.set(String(stat.name || "").trim(), clones.get(stat.id)!);
+  }
+
+  for (const match of todaysMatches) {
+    const parsedSets = match.sets
+      .map(parseSet)
+      .filter((item): item is ParsedSet => !!item);
+
+    if (parsedSets.length === 0) continue;
+
+    const team1Names = match.team1
+      .map((name) => String(name || "").trim())
+      .filter(Boolean);
+    const team2Names = match.team2
+      .map((name) => String(name || "").trim())
+      .filter(Boolean);
+
+    const team1Players = team1Names
+      .map((name) => playersByName.get(name))
+      .filter((p): p is ReturnType<Glicko2["makePlayer"]> => !!p);
+    const team2Players = team2Names
+      .map((name) => playersByName.get(name))
+      .filter((p): p is ReturnType<Glicko2["makePlayer"]> => !!p);
+
+    if (team1Players.length === 0 || team2Players.length === 0) continue;
+
+    // Process each set
+    for (const set of parsedSets) {
+      if (set.score1 === 0 && set.score2 === 0) continue;
+
+      const entries = buildRatingEntriesForSet(
+        set,
+        team1Players,
+        team2Players,
+        P_MIN,
+        P_MAX,
+        tempRanking,
+        config,
+      );
+      ratingMatches.push(...entries);
+    }
+  }
+
+  // Update simulated ratings
+  if (ratingMatches.length > 0) {
+    tempRanking.updateRatings(ratingMatches as never);
+  }
+
+  // Build result with deltas
+  const result: Record<number, SimulatedRating> = {};
+  for (const stat of currentStats) {
+    const clonedPlayer = clones.get(stat.id);
+    if (!clonedPlayer) continue;
+
+    const simulatedRating = Number(clonedPlayer.getRating());
+    const simulatedRd = Number(clonedPlayer.getRd());
+    const originalRating = originalRatings.get(stat.id) || stat.rating;
+
+    result[stat.id] = {
+      rating: Number(simulatedRating.toFixed(2)),
+      rd: Number(simulatedRd.toFixed(2)),
+      delta: Number((simulatedRating - originalRating).toFixed(2)),
+    };
+  }
+
+  return result;
 }
