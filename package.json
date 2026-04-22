@@ -28,7 +28,9 @@
     "react-dom": "^18.3.1",
     "react-feather": "^2.0.10",
     "react-i18next": "^17.0.4",
-    "react-router-dom": "^7.14.1"
+    "react-markdown": "^10.1.0",
+    "react-router-dom": "^7.14.1",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@tanstack/react-query-devtools": "^5.99.2",
