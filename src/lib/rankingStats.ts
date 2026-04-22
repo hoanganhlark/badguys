@@ -129,25 +129,25 @@ function collectRecentSetMinutes(
   return minutes.sort((a, b) => a - b);
 }
 
-function computeTimePercentiles(recentMinutes: number[]): { P20: number; P80: number } {
+function computeTimePercentiles(recentMinutes: number[]): { P_MIN: number; P_MAX: number } {
   if (recentMinutes.length < MIN_SETS_FOR_PERCENTILE) {
-    return { P20: P_MIN_DEFAULT, P80: P_MAX_DEFAULT };
+    return { P_MIN: P_MIN_DEFAULT, P_MAX: P_MAX_DEFAULT };
   }
   return {
-    P20: computePercentile(recentMinutes, 20),
-    P80: computePercentile(recentMinutes, 80),
+    P_MIN: computePercentile(recentMinutes, 20),
+    P_MAX: computePercentile(recentMinutes, 80),
   };
 }
 
 export function computeMultiplier(
   margin: number,
   timeMinutes: number | null,
-  P20: number,
-  P80: number,
+  P_MIN: number,
+  P_MAX: number,
 ): number {
   if (!timeMinutes || timeMinutes <= 0) return 1.0;
   const m = margin / MAX_POINTS;
-  const t = clamp((timeMinutes - P20) / (P80 - P20), 0, 1);
+  const t = clamp((timeMinutes - P_MIN) / (P_MAX - P_MIN), 0, 1);
   const T = t * (1 - m);
   return 1 + BETA * T;
 }
@@ -174,13 +174,13 @@ function buildRatingEntriesForSet(
   set: ParsedSet,
   team1: GlickoPlayer[],
   team2: GlickoPlayer[],
-  P20: number,
-  P80: number,
+  P_MIN: number,
+  P_MAX: number,
   ranking: Glicko2,
 ): Array<[GlickoPlayer, GlickoPlayer, number, number]> {
   const entries: Array<[GlickoPlayer, GlickoPlayer, number, number]> = [];
   const margin = Math.abs(set.score1 - set.score2);
-  const multiplier = computeMultiplier(margin, set.minutes, P20, P80);
+  const multiplier = computeMultiplier(margin, set.minutes, P_MIN, P_MAX);
 
   if (set.score1 === set.score2) {
     return []; // no-score draws are skipped
@@ -308,7 +308,7 @@ export function calculateRankingStats(
 
     // Compute time percentiles once per period from all recent sets
     const recentMinutes = collectRecentSetMinutes(allParsedSets);
-    const { P20, P80 } = computeTimePercentiles(recentMinutes);
+    const { P_MIN, P_MAX } = computeTimePercentiles(recentMinutes);
 
     const ratingMatches: Array<
       [
@@ -380,8 +380,8 @@ export function calculateRankingStats(
           set,
           team1Players,
           team2Players,
-          P20,
-          P80,
+          P_MIN,
+          P_MAX,
           ranking,
         );
         ratingMatches.push(...entries);
