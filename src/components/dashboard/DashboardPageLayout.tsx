@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MenuOutlined } from "@ant-design/icons";
 import { Button, Layout, Typography } from "antd";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import RankingSidebar from "../ranking/RankingSidebar";
 import { useDashboardPageConfig } from "./DashboardPageContext";
@@ -26,24 +25,11 @@ const DASHBOARD_APPBAR_STYLE = {
 export default function DashboardPageLayout({
   children,
 }: DashboardPageLayoutProps) {
-  const navigate = useNavigate();
   const { isAdmin } = useAuth();
-  const {
-    pageTitle,
-    menuAriaLabel,
-    usersActive = false,
-    auditActive = false,
-    categoriesActive = false,
-    showCategoriesLink = false,
-  } = useDashboardPageConfig();
+  const { pageTitle, menuAriaLabel } = useDashboardPageConfig();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const mainContentRef = useRef<HTMLElement | null>(null);
 
-  const handleSetDashboardView = (
-    view: "member" | "match-form" | "ranking",
-  ) => {
-    navigate(`/dashboard/${view}`);
-  };
 
   useEffect(() => {
     const container = mainContentRef.current;
@@ -128,24 +114,10 @@ export default function DashboardPageLayout({
 
       <Layout className="flex min-h-[calc(100dvh-56px)] flex-col bg-[#fafafa] md:flex-row">
         <RankingSidebar
-          currentView="ranking"
-          onSetView={handleSetDashboardView}
-          onGoHome={() => navigate("/")}
           isAdmin={isAdmin}
-          onGoUsers={() => navigate("/dashboard/users")}
-          onGoAudit={() => navigate("/dashboard/audit")}
-          onGoCategories={
-            showCategoriesLink
-              ? () => navigate("/dashboard/categories")
-              : undefined
-          }
           showMatchForm={true}
           mobileOpen={mobileSidebarOpen}
           onMobileClose={() => setMobileSidebarOpen(false)}
-          usersActive={usersActive}
-          auditActive={auditActive}
-          categoriesActive={categoriesActive}
-          activeView={null}
         />
 
         <Layout.Content

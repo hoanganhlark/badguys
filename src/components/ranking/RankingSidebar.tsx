@@ -17,51 +17,42 @@ import {
   type MenuProps,
 } from "antd";
 import { useTranslation } from "react-i18next";
-import type { RankingView } from "./types";
+import { useNavigate, useLocation } from "react-router-dom";
 
 interface RankingSidebarProps {
-  currentView: RankingView;
-  onSetView: (view: "member" | "match-form" | "ranking") => void;
-  onGoHome: () => void;
   isAdmin: boolean;
-  onGoUsers: () => void;
-  onGoAudit?: () => void;
-  onGoCategories?: () => void;
   showMatchForm?: boolean;
   mobileOpen: boolean;
   onMobileClose: () => void;
-  usersActive?: boolean;
-  auditActive?: boolean;
-  categoriesActive?: boolean;
-  activeView?: RankingView | null;
 }
 
 export default function RankingSidebar({
-  currentView,
-  onSetView,
-  onGoHome,
   isAdmin,
-  onGoUsers,
-  onGoAudit,
-  onGoCategories,
   showMatchForm = true,
   mobileOpen,
   onMobileClose,
-  usersActive = false,
-  auditActive = false,
-  categoriesActive = false,
-  activeView,
 }: RankingSidebarProps) {
   const { t } = useTranslation();
-  const highlightedView = activeView === undefined ? currentView : activeView;
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const selectedKey = usersActive
-    ? "users"
-    : auditActive
-      ? "audit"
-      : categoriesActive
-        ? "categories"
-        : (highlightedView ?? "ranking");
+  // Determine selected key from current route
+  const pathname = location.pathname;
+  let selectedKey = "ranking"; // default
+
+  if (pathname.includes("/users")) {
+    selectedKey = "users";
+  } else if (pathname.includes("/audit")) {
+    selectedKey = "audit";
+  } else if (pathname.includes("/categories")) {
+    selectedKey = "categories";
+  } else if (pathname.includes("/member")) {
+    selectedKey = "member";
+  } else if (pathname.includes("/match-form")) {
+    selectedKey = "match-form";
+  } else if (pathname.includes("/how-it-works")) {
+    selectedKey = "how-it-works";
+  }
 
   const menuItems: MenuProps["items"] = [
     {
@@ -95,24 +86,16 @@ export default function RankingSidebar({
             icon: <SettingOutlined />,
             label: t("rankingSidebar.userManagement"),
           },
-          ...(onGoAudit
-            ? [
-                {
-                  key: "audit",
-                  icon: <SettingOutlined />,
-                  label: t("rankingSidebar.auditLogs"),
-                },
-              ]
-            : []),
-          ...(onGoCategories
-            ? [
-                {
-                  key: "categories",
-                  icon: <AppstoreOutlined />,
-                  label: t("rankingSidebar.categories"),
-                },
-              ]
-            : []),
+          {
+            key: "audit",
+            icon: <SettingOutlined />,
+            label: t("rankingSidebar.auditLogs"),
+          },
+          {
+            key: "categories",
+            icon: <AppstoreOutlined />,
+            label: t("rankingSidebar.categories"),
+          },
         ]
       : []),
     {
@@ -122,50 +105,32 @@ export default function RankingSidebar({
     },
   ];
 
-  const handleSelectView = (nextView: string) => {
-    if (
-      nextView === "member" ||
-      nextView === "match-form" ||
-      nextView === "ranking"
-    ) {
-      onSetView(nextView as "member" | "match-form" | "ranking");
-    }
-    onMobileClose();
-  };
-
   const handleMenuSelect: MenuProps["onClick"] = ({ key }) => {
-    if (key === "home") {
-      onGoHome();
-      onMobileClose();
-      return;
+    const isPublicRankingRoute = pathname.startsWith("/ranking");
+    const baseRoute = isPublicRankingRoute ? "/ranking" : "/dashboard";
+
+    switch (key) {
+      case "home":
+        navigate("/");
+        break;
+      case "member":
+      case "match-form":
+      case "ranking":
+      case "how-it-works":
+        navigate(`${baseRoute}/${key}`);
+        break;
+      case "users":
+        navigate("/dashboard/users");
+        break;
+      case "audit":
+        navigate("/dashboard/audit");
+        break;
+      case "categories":
+        navigate("/dashboard/categories");
+        break;
     }
 
-    if (key === "users") {
-      onGoUsers();
-      onMobileClose();
-      return;
-    }
-
-    if (key === "audit") {
-      onGoAudit?.();
-      onMobileClose();
-      return;
-    }
-
-    if (key === "categories") {
-      onGoCategories?.();
-      onMobileClose();
-      return;
-    }
-
-    if (
-      key === "member" ||
-      key === "match-form" ||
-      key === "ranking" ||
-      key === "how-it-works"
-    ) {
-      handleSelectView(key);
-    }
+    onMobileClose();
   };
 
   return (
@@ -207,7 +172,11 @@ export default function RankingSidebar({
         }}
       >
         <Space direction="vertical" size={16} style={{ width: "100%" }}>
-          <Button type="text" onClick={onGoHome} style={{ textAlign: "left" }}>
+          <Button
+            type="text"
+            onClick={() => navigate("/")}
+            style={{ textAlign: "left" }}
+          >
             <Space>
               <TrophyOutlined />
               <Typography.Text strong>BadGuys</Typography.Text>

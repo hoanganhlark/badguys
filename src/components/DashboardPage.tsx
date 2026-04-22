@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Layout } from "antd";
 import { isSupabaseReady } from "../lib/api";
 import { useUsers } from "../hooks/queries";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   RankingUIProvider,
@@ -56,7 +56,7 @@ export default function DashboardPage({ isOpen, onClose }: DashboardPageProps) {
           currentUsername={currentUser?.username || ""}
           usernamesById={usernamesById}
         >
-          <RankingPageInner onClose={onClose} />
+          <RankingPageInner />
         </RankingMatchesBridge>
       </RankingMembersProvider>
     </RankingUIProvider>
@@ -90,14 +90,12 @@ function RankingMatchesBridge({
   );
 }
 
-function RankingPageInner({ onClose }: { onClose: () => void }) {
+function RankingPageInner() {
   const { isAdmin } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
   const isPublicRankingRoute = location.pathname.startsWith("/ranking");
-  const { view, setViewWithRoute, mobileSidebarOpen, setMobileSidebarOpen } =
+  const { mobileSidebarOpen, setMobileSidebarOpen } =
     useRankingUIContext();
-  const categoriesActive = location.pathname === "/dashboard/categories";
 
   return (
     <div className="min-h-[100dvh] bg-[#fafafa]">
@@ -109,17 +107,10 @@ function RankingPageInner({ onClose }: { onClose: () => void }) {
           style={{ minHeight: "calc(100dvh - 56px)", background: "#fafafa" }}
         >
           <RankingSidebar
-            currentView={view}
-            onSetView={setViewWithRoute}
-            onGoHome={onClose}
             isAdmin={isAdmin}
-            onGoUsers={() => navigate("/dashboard/users")}
-            onGoAudit={() => navigate("/dashboard/audit")}
-            onGoCategories={() => navigate("/dashboard/categories")}
             showMatchForm={!isPublicRankingRoute}
             mobileOpen={mobileSidebarOpen}
             onMobileClose={() => setMobileSidebarOpen(false)}
-            categoriesActive={categoriesActive}
           />
 
           <Layout.Content style={{ background: "#fafafa" }}>
