@@ -18,8 +18,8 @@ function toPercent(value: number): number {
   return clamp(value, 0, 1) * 100;
 }
 
-const SKILL_BASELINE_RATING = DEFAULT_RANKING_CONFIG.rating - 500;
-const SKILL_RATING_SPAN = 1000;
+const SKILL_BASELINE_RATING = DEFAULT_RANKING_CONFIG.rating - 300;
+const SKILL_RATING_SPAN = 800;
 const CONSISTENCY_VOL_CAP = DEFAULT_RANKING_CONFIG.vol * (10 / 3);
 
 export default function PlayerStatsModal({
