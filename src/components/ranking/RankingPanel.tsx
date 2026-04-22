@@ -18,13 +18,13 @@ import { useTranslation } from "react-i18next";
 import { useRankingUIContext } from "../../features/ranking/context";
 import type { AdvancedStats, Match } from "./types";
 import type { RankingCategory } from "../../types";
-import type { SimulatedRating } from "../../lib/rankingStats";
 import DashboardTableSkeleton from "../dashboard/DashboardTableSkeleton";
 import RankingHistorySection from "./RankingHistorySection";
 
 interface RankingPanelProps {
-  rankings: AdvancedStats[];
-  matches: Match[];
+  officialRankings: AdvancedStats[];
+  simulatedRankings: AdvancedStats[];
+  todaysMatches: Match[];
   categories: RankingCategory[];
   isLoading: boolean;
   historyMatches: Match[];
@@ -33,14 +33,11 @@ interface RankingPanelProps {
   isHistoryExpanded: boolean;
   historyPage: number;
   historyPageSize: number;
-  rankTrends: Record<number, number | "NEW">;
+  officialTrends: Record<number, number | "NEW">;
+  simulatedTrends: Record<number, number | "NEW">;
   showRankTrend: boolean;
   memberLevelById: Record<number, string>;
   currentUserId: string;
-  onSimulateRatings: (
-    rankings: AdvancedStats[],
-    matches: Match[]
-  ) => Record<number, SimulatedRating>;
   onToggleHistory: (expanded: boolean) => Promise<void>;
   onHistoryPaginationChange: (page: number, pageSize: number) => void;
   onDeleteMatch: (matchId: number | string) => Promise<void>;
@@ -71,8 +68,9 @@ function formatDisplayName(name: string): {
 }
 
 function RankingPanel({
-  rankings,
-  matches,
+  officialRankings,
+  simulatedRankings,
+  todaysMatches,
   categories,
   isLoading,
   historyMatches,
@@ -81,11 +79,11 @@ function RankingPanel({
   isHistoryExpanded,
   historyPage,
   historyPageSize,
-  rankTrends,
+  officialTrends,
+  simulatedTrends,
   showRankTrend,
   memberLevelById,
   currentUserId,
-  onSimulateRatings,
   onToggleHistory,
   onHistoryPaginationChange,
   onDeleteMatch,
@@ -108,7 +106,7 @@ function RankingPanel({
     total: historyMatchesForDisplay.length,
   };
 
-  const hasRankings = rankings.length > 0;
+  const hasRankings = officialRankings.length > 0;
   const rankingTableScroll = screens.md ? undefined : { y: 320 };
 
   const sortedCategories = useMemo(
@@ -137,41 +135,14 @@ function RankingPanel({
     }
   }, [onSelectCategory, selectedCategoryId, sortedCategories]);
 
-  // Extract today's matches
-  const todaysMatches = useMemo(() => {
-    if (matches.length === 0) return [];
-    const today = new Date();
-    const todayStart = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate(),
-    );
-    const tomorrowStart = new Date(todayStart);
-    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+  // Select rankings and trends based on realtime mode
+  const displayRankings = realtimeMode && todaysMatches.length > 0
+    ? simulatedRankings
+    : officialRankings;
 
-    return matches.filter((match) => {
-      const matchDate = new Date(match.playedAt || match.date || "");
-      return (
-        matchDate >= todayStart && matchDate < tomorrowStart
-      );
-    });
-  }, [matches]);
-
-  // Calculate simulated ratings if realtime mode is on
-  const displayRankings = useMemo(() => {
-    if (!realtimeMode || todaysMatches.length === 0) {
-      return rankings;
-    }
-
-    const simulatedData = onSimulateRatings(rankings, todaysMatches);
-    return rankings.map((stat) => ({
-      ...stat,
-      rating: simulatedData[stat.id]?.rating ?? stat.rating,
-      rd: simulatedData[stat.id]?.rd ?? stat.rd,
-      _simulated: true,
-      _delta: simulatedData[stat.id]?.delta ?? 0,
-    }));
-  }, [rankings, realtimeMode, todaysMatches, onSimulateRatings]);
+  const displayTrends = realtimeMode && todaysMatches.length > 0
+    ? simulatedTrends
+    : officialTrends;
 
   const filteredRankings = useMemo(() => {
     if (!selectedCategory) return [];
@@ -205,7 +176,7 @@ function RankingPanel({
       key: "rank",
       width: 60,
       render: (rank: number, row) => {
-        const trend = showRankTrend ? rankTrends[row.player.id] : undefined;
+        const trend = showRankTrend ? displayTrends[row.player.id] : undefined;
         let trendClassName = "text-slate-400";
         let trendDisplay = <MinusOutlined className="text-[11px]" />;
 
@@ -318,25 +289,30 @@ function RankingPanel({
                 </button>
               ))}
             </div>
-            {todaysMatches.length > 0 && (
-              <Tooltip
-                title={
-                  realtimeMode
+            <Tooltip
+              title={
+                todaysMatches.length === 0
+                  ? "Add today's matches to enable realtime simulation"
+                  : realtimeMode
                     ? "Showing simulated ratings from today's matches"
                     : "Show simulated ratings from today's matches"
-                }
+              }
+            >
+              <Button
+                type={realtimeMode ? "primary" : "default"}
+                size="small"
+                icon={<PoweroffOutlined />}
+                onClick={() => {
+                  if (todaysMatches.length > 0) {
+                    setRealtimeMode(!realtimeMode);
+                  }
+                }}
+                disabled={todaysMatches.length === 0}
+                className="whitespace-nowrap"
               >
-                <Button
-                  type={realtimeMode ? "primary" : "default"}
-                  size="small"
-                  icon={<PoweroffOutlined />}
-                  onClick={() => setRealtimeMode(!realtimeMode)}
-                  className="whitespace-nowrap"
-                >
-                  {realtimeMode ? "Realtime ON" : "Realtime"}
-                </Button>
-              </Tooltip>
-            )}
+                {realtimeMode ? "Realtime ON" : "Realtime"}
+              </Button>
+            </Tooltip>
           </div>
         )}
 

@@ -33,6 +33,7 @@ export default function PlayerStatsModal({
       id: "skill",
       label: t("playerStats.skill"),
       progress: toPercent(skillProgress),
+      value: `${Math.round(stats.rating)}`,
       tone: "#3b82f6",
       description: t("playerStats.descriptionSkill"),
     },
@@ -40,6 +41,7 @@ export default function PlayerStatsModal({
       id: "stability",
       label: t("playerStats.stability"),
       progress: toPercent(stabilityProgress),
+      value: `sigma=${stats.vol.toFixed(3)}`,
       tone: "#10b981",
       description: t("playerStats.descriptionStability"),
     },
@@ -47,6 +49,7 @@ export default function PlayerStatsModal({
       id: "uncertainty",
       label: t("playerStats.uncertainty"),
       progress: toPercent(uncertaintyProgress),
+      value: `RD=${stats.rd.toFixed(1)}`,
       tone: "#f59e0b",
       description: t("playerStats.descriptionUncertainty"),
     },
@@ -54,6 +57,10 @@ export default function PlayerStatsModal({
       id: "winRate",
       label: t("playerStats.winRate"),
       progress: toPercent(stats.winRate),
+      value:
+        stats.totalMatches > 0
+          ? `${(stats.winRate * 100).toFixed(1)}% (${stats.wins}/${stats.totalMatches})`
+          : "0% (0/0)",
       tone: "#06b6d4",
       description: t("playerStats.descriptionWinRate"),
     },
@@ -75,6 +82,9 @@ export default function PlayerStatsModal({
     ),
     children: (
       <Space direction="vertical" size={8} style={{ width: "100%" }}>
+        <Typography.Text>
+          {t("playerStats.currentValue", { value: item.value })}
+        </Typography.Text>
         <Typography.Text type="secondary">{item.description}</Typography.Text>
       </Space>
     ),

@@ -95,9 +95,12 @@ describe("calculateRankingStats", () => {
     expect(result1?.rating).toBe(result2?.rating);
   });
 
-  it("computeMultiplier returns 1.0 when no time data", () => {
+  it("computeMultiplier uses default time when no time data", () => {
+    // Default time = (10 + 14) / 2 = 12
+    // For large margin (10), multiplier should be close to 1.0
     const mult = computeMultiplier(10, null, 10, 14);
-    expect(mult).toBe(1.0);
+    expect(mult).toBeGreaterThan(1.0);
+    expect(mult).toBeLessThan(1.3);
   });
 
   it("computeMultiplier increases with time and decreases with margin", () => {

@@ -168,9 +168,13 @@ export function computeMultiplier(
   P_MAX: number,
   config: RankingConfig = DEFAULT_RANKING_CONFIG,
 ): number {
-  if (!timeMinutes || timeMinutes <= 0) return 1.0;
+  // Use default time if not provided (average of P_MIN and P_MAX)
+  const effectiveTime = timeMinutes && timeMinutes > 0
+    ? timeMinutes
+    : (P_MIN + P_MAX) / 2;
+
   const m = margin / config.maxPoints;
-  const t = clamp((timeMinutes - P_MIN) / (P_MAX - P_MIN), 0, 1);
+  const t = clamp((effectiveTime - P_MIN) / (P_MAX - P_MIN), 0, 1);
   const T = t * (1 - m);
   return 1 + config.beta * T;
 }

@@ -5,10 +5,7 @@ import {
   getLatestRankingSnapshot,
   saveRankingSnapshot,
 } from "../../../lib/api";
-import {
-  calculateRankingStats,
-  simulateRatings,
-} from "../../../lib/rankingStats";
+import { calculateRankingStats } from "../../../lib/rankingStats";
 import MatchFormPanel from "../../../components/ranking/MatchFormPanel";
 import RankingPanel from "../../../components/ranking/RankingPanel";
 import type { Member } from "../../../components/ranking/types";
@@ -130,12 +127,50 @@ export function RankingMatchesContainer({
     };
   }, []);
 
-  // Calculate rankings
-  const rankings = useMemo(() => {
+  // Extract today's matches
+  const todaysMatches = useMemo(() => {
+    if (matches.length === 0) return [];
+    const today = new Date();
+    const todayStart = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+      0,
+      0,
+      0,
+      0,
+    );
+    const tomorrowStart = new Date(todayStart);
+    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+
+    return matches.filter((match) => {
+      const playedAtStr = match.playedAt || match.date;
+      if (!playedAtStr) return false;
+      const matchDate = new Date(playedAtStr);
+      if (Number.isNaN(matchDate.getTime())) return false;
+      return matchDate >= todayStart && matchDate < tomorrowStart;
+    });
+  }, [matches]);
+
+  // Calculate official rankings (exclude today's matches)
+  const officialRankings = useMemo(() => {
+    const yesterdaysMatches = matches.filter(
+      (m) => !todaysMatches.includes(m),
+    );
+    return calculateRankingStats(members, yesterdaysMatches, {
+      tau: DEFAULT_RANKING_CONFIG.tau,
+    });
+  }, [members, matches, todaysMatches]);
+
+  // Calculate simulated rankings (include today's matches)
+  const simulatedRankings = useMemo(() => {
     return calculateRankingStats(members, matches, {
       tau: DEFAULT_RANKING_CONFIG.tau,
     });
   }, [members, matches]);
+
+  // Use official or simulated based on context
+  const rankings = officialRankings;
 
   // Build historyMatchesForDisplay with usernames
   const historyMatchesForDisplay = useMemo(
@@ -154,8 +189,8 @@ export function RankingMatchesContainer({
     return historyMatchesForDisplay.slice(start, start + historyPageSize);
   }, [historyMatchesForDisplay, historyPage, historyPageSize]);
 
-  // Calculate rank trends
-  const rankTrends = useMemo<Record<number, number | "NEW">>(() => {
+  // Helper to calculate trends for a given rankings array
+  const calculateTrends = (rankingsToUse: typeof officialRankings) => {
     if (!latestSnapshot) return {};
 
     const previousRanksByMemberId = new Map<number, number>();
@@ -168,7 +203,7 @@ export function RankingMatchesContainer({
       }
     });
 
-    return rankings.reduce<Record<number, number | "NEW">>(
+    return rankingsToUse.reduce<Record<number, number | "NEW">>(
       (acc, player, idx) => {
         const currentRank = idx + 1;
         const previousRank =
@@ -183,7 +218,18 @@ export function RankingMatchesContainer({
       },
       {},
     );
-  }, [latestSnapshot, rankings]);
+  };
+
+  // Calculate trends for both official and simulated
+  const officialTrends = useMemo(
+    () => calculateTrends(officialRankings),
+    [latestSnapshot, officialRankings],
+  );
+
+  const simulatedTrends = useMemo(
+    () => calculateTrends(simulatedRankings),
+    [latestSnapshot, simulatedRankings],
+  );
 
   const showRankTrend = matches.length > 1;
 
@@ -378,8 +424,9 @@ export function RankingMatchesContainer({
 
   return (
     <RankingPanel
-      rankings={rankings}
-      matches={matches}
+      officialRankings={rankings}
+      simulatedRankings={simulatedRankings}
+      todaysMatches={todaysMatches}
       categories={sortedCategories}
       isLoading={isRankingLoading}
       historyMatches={pagedHistoryMatches}
@@ -388,11 +435,11 @@ export function RankingMatchesContainer({
       isHistoryExpanded={isHistoryExpanded}
       historyPage={historyPage}
       historyPageSize={historyPageSize}
-      rankTrends={rankTrends}
+      officialTrends={officialTrends}
+      simulatedTrends={simulatedTrends}
       showRankTrend={showRankTrend}
       memberLevelById={memberLevelById}
       currentUserId={currentUserId}
-      onSimulateRatings={simulateRatings}
       onToggleHistory={handleToggleHistory}
       onHistoryPaginationChange={handleHistoryPaginationChange}
       onDeleteMatch={handleDeleteMatch}

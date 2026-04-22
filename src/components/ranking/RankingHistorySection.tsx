@@ -10,6 +10,7 @@ import { Button, Grid, Table, Typography, type TableColumnsType } from "antd";
 import { useTranslation } from "react-i18next";
 import type { Match } from "./types";
 import { useAuth } from "../../context/AuthContext";
+import { envConfig } from "../../env";
 import DashboardTableSkeleton from "../dashboard/DashboardTableSkeleton";
 
 interface RankingHistorySectionProps {
@@ -165,7 +166,7 @@ export default function RankingHistorySection({
           {t("rankingPanel.recentHistory")}
         </h3>
         <div className="flex flex-wrap items-center gap-2">
-          {isAdmin ? (
+          {isAdmin && envConfig.isDevelopment ? (
             <button
               type="button"
               onClick={onClearHistory}
