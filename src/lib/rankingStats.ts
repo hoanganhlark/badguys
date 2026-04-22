@@ -19,8 +19,6 @@ export interface RankingConfig {
   pMaxDefault: number;
   minSetsForPercentile: number;
   maxSetsInWindow: number;
-  // Ranking computation parameters
-  penaltyCoefficient: number;
 }
 
 const DEFAULT_RANKING_CONFIG: RankingConfig = {
@@ -35,7 +33,6 @@ const DEFAULT_RANKING_CONFIG: RankingConfig = {
   pMaxDefault: 14,
   minSetsForPercentile: 30,
   maxSetsInWindow: 50,
-  penaltyCoefficient: 0.3,
 };
 
 type ParsedSet = {
@@ -46,7 +43,6 @@ type ParsedSet = {
 
 export type RankingComputationSettings = {
   tau?: number;
-  penaltyCoefficient?: number;
 };
 
 type PlayerStatsAccumulator = {
@@ -279,9 +275,6 @@ export function calculateRankingStats(
     tau: Number.isFinite(settings?.tau)
       ? clamp(Number(settings?.tau), 0.3, 1.2)
       : DEFAULT_RANKING_CONFIG.tau,
-    penaltyCoefficient: Number.isFinite(settings?.penaltyCoefficient)
-      ? clamp(Number(settings?.penaltyCoefficient), 0, 2)
-      : DEFAULT_RANKING_CONFIG.penaltyCoefficient,
   };
 
   const ranking = new Glicko2({
@@ -452,8 +445,7 @@ export function calculateRankingStats(
       avgMonthlyActivity > 0 ? recentActivity / avgMonthlyActivity : 0;
     const skillNorm = (rating - config.rating) / config.scale;
     const uncertaintyNorm = rd / config.scale;
-    const rankScore =
-      skillNorm - uncertaintyNorm * vol * config.penaltyCoefficient * motivation;
+    const rankScore = skillNorm - uncertaintyNorm * vol * motivation;
 
     results.push({
       id: member.id,

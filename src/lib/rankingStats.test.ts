@@ -48,7 +48,6 @@ describe("calculateRankingStats", () => {
 
     const result = calculateRankingStats(members, matches, {
       tau: 0.5,
-      penaltyCoefficient: 0.3,
     });
 
     expect(result).toHaveLength(2);
@@ -57,11 +56,7 @@ describe("calculateRankingStats", () => {
     expect(result[0].winRate).toBeGreaterThan(result[1].winRate);
   });
 
-  it("he so penalty cao hon se lam rankScore giam manh hon", () => {
-    const now = new Date();
-    const recentDate = new Date(now);
-    recentDate.setDate(now.getDate() - 2);
-
+  it("ranking stats compute consistently with same settings", () => {
     const members: Member[] = [
       { id: 1, name: "An", level: "Lo" },
       { id: 2, name: "Binh", level: "Lo" },
@@ -82,30 +77,19 @@ describe("calculateRankingStats", () => {
         sets: ["21-19@10"],
         playedAt: "2026-02-05T10:00:00.000Z",
       }),
-      createMatch({
-        id: "m3",
-        team1: ["An"],
-        team2: ["Binh"],
-        sets: ["21-10@35"],
-        playedAt: recentDate.toISOString(),
-      }),
     ];
 
-    const lowPenalty = calculateRankingStats(members, matches, {
+    const result1 = calculateRankingStats(members, matches, {
       tau: 0.5,
-      penaltyCoefficient: 0.1,
     }).find((item) => item.name === "An");
 
-    const highPenalty = calculateRankingStats(members, matches, {
+    const result2 = calculateRankingStats(members, matches, {
       tau: 0.5,
-      penaltyCoefficient: 0.8,
     }).find((item) => item.name === "An");
 
-    expect(lowPenalty).toBeDefined();
-    expect(highPenalty).toBeDefined();
-    expect((highPenalty?.rankScore || 0) < (lowPenalty?.rankScore || 0)).toBe(
-      true,
-    );
+    expect(result1).toBeDefined();
+    expect(result2).toBeDefined();
+    expect(result1?.rankScore).toBe(result2?.rankScore);
   });
 
   it("computeMultiplier returns 1.0 when no time data", () => {
@@ -140,7 +124,6 @@ describe("calculateRankingStats", () => {
 
     const doublesStats = calculateRankingStats(members, doublesMatches, {
       tau: 0.6,
-      penaltyCoefficient: 0.3,
     });
 
     // With virtual opponent, the dynamics change

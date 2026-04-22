@@ -12,8 +12,7 @@ import type { Member } from "../../../components/ranking/types";
 import type { RankingCategory, RankingSnapshot } from "../../../types";
 
 const DEFAULT_RANKING_CONFIG = {
-  tau: 0.5,
-  penaltyCoefficient: 0.3,
+  tau: 0.6,
   metricVisibility: {
     skill: true,
     stability: true,
@@ -133,7 +132,6 @@ export function RankingMatchesContainer({
   const rankings = useMemo(() => {
     return calculateRankingStats(members, matches, {
       tau: DEFAULT_RANKING_CONFIG.tau,
-      penaltyCoefficient: DEFAULT_RANKING_CONFIG.penaltyCoefficient,
     });
   }, [members, matches]);
 
