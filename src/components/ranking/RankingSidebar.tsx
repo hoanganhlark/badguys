@@ -2,6 +2,7 @@ import {
   AppstoreOutlined,
   HomeOutlined,
   PlusCircleOutlined,
+  QuestionCircleOutlined,
   SettingOutlined,
   TeamOutlined,
   TrophyOutlined,
@@ -82,6 +83,11 @@ export default function RankingSidebar({
       icon: <TrophyOutlined />,
       label: t("rankingSidebar.ranking"),
     },
+    {
+      key: "how-it-works",
+      icon: <QuestionCircleOutlined />,
+      label: t("rankingSidebar.howItWorks"),
+    },
     ...(isAdmin
       ? [
           {
@@ -146,7 +152,12 @@ export default function RankingSidebar({
       return;
     }
 
-    if (key === "member" || key === "match-form" || key === "ranking") {
+    if (
+      key === "member" ||
+      key === "match-form" ||
+      key === "ranking" ||
+      key === "how-it-works"
+    ) {
       handleSelectView(key);
     }
   };

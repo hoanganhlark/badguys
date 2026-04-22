@@ -1,4 +1,4 @@
-import { Award, BarChart2, Settings } from "react-feather";
+import { Award, BarChart2, Settings, HelpCircle } from "react-feather";
 import { useTranslation } from "react-i18next";
 import {
   RankingMatchesContainer,
@@ -11,6 +11,7 @@ import {
   useUsers,
 } from "../../hooks/queries";
 import DashboardSectionHeader from "../dashboard/DashboardSectionHeader";
+import HowItWorksPanel from "./HowItWorksPanel";
 
 export default function RankingViewContent() {
   const { t } = useTranslation();
@@ -24,6 +25,8 @@ export default function RankingViewContent() {
       <Settings className="h-6 w-6 text-sky-600 md:h-8 md:w-8" />
     ) : view === "match-form" ? (
       <BarChart2 className="h-6 w-6 text-sky-600 md:h-8 md:w-8" />
+    ) : view === "how-it-works" ? (
+      <HelpCircle className="h-6 w-6 text-sky-600 md:h-8 md:w-8" />
     ) : (
       <Award className="h-6 w-6 text-sky-600 md:h-8 md:w-8" />
     );
@@ -33,7 +36,9 @@ export default function RankingViewContent() {
       ? t("rankingPage.memberManagement")
       : view === "match-form"
         ? t("rankingPage.recordResult")
-        : t("rankingPage.clubRanking");
+        : view === "how-it-works"
+          ? t("rankingPage.howItWorks")
+          : t("rankingPage.clubRanking");
 
   // Build usernamesById from users
   const usernamesById = users.reduce<Record<string, string>>((acc, user) => {
@@ -56,6 +61,9 @@ export default function RankingViewContent() {
           <RankingMembersContainer />
         </div>
       )}
+
+      {/* View: How It Works */}
+      {view === "how-it-works" && <HowItWorksPanel />}
 
       {/* View: Match Form and Rankings */}
       {(view === "match-form" || view === "ranking") && (

@@ -14,7 +14,7 @@ export interface AdvancedStats {
   totalMatches: number;
 }
 
-export type RankingView = "member" | "match-form" | "ranking";
+export type RankingView = "member" | "match-form" | "ranking" | "how-it-works";
 
 export interface MatchSetInput {
   team1Score: string;

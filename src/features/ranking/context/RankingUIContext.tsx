@@ -37,7 +37,12 @@ interface RankingUIProviderProps {
 }
 
 function isRankingView(value: string | null): value is RankingView {
-  return value === "member" || value === "match-form" || value === "ranking";
+  return (
+    value === "member" ||
+    value === "match-form" ||
+    value === "ranking" ||
+    value === "how-it-works"
+  );
 }
 
 export function RankingUIProvider({
