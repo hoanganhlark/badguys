@@ -206,7 +206,7 @@ export async function saveRankingMembers(members: RankingMember[]): Promise<void
 
   const keepIds = new Set(memberIds);
   const memberIdsToDelete = (existingMembers || [])
-    .map((member: any) => Number(member.id))
+    .map((member: { id: number | string }) => Number(member.id))
     .filter((id) => Number.isFinite(id) && !keepIds.has(id));
 
   if (memberIdsToDelete.length > 0) {
