@@ -17,6 +17,11 @@ type StoredSimulationConfig = {
   isRankingBySet: boolean;
 };
 
+const DEFAULT_SIMULATION_CONFIG: StoredSimulationConfig = {
+  realtimeMode: false,
+  isRankingBySet: false,
+};
+
 const RANKING_SIMULATION_CONFIG_STORAGE_KEY = "rankingSimulationConfig";
 
 function getSimulationConfigStorageKey(scopeKey?: string): string {
@@ -28,7 +33,7 @@ function loadStoredSimulationConfig(scopeKey?: string): StoredSimulationConfig {
   try {
     const key = getSimulationConfigStorageKey(scopeKey);
     const raw = localStorage.getItem(key);
-    if (!raw) return { realtimeMode: false, isRankingBySet: false };
+    if (!raw) return DEFAULT_SIMULATION_CONFIG;
 
     const parsed = JSON.parse(raw) as Partial<StoredSimulationConfig>;
     return {
@@ -38,7 +43,7 @@ function loadStoredSimulationConfig(scopeKey?: string): StoredSimulationConfig {
         typeof parsed.isRankingBySet === "boolean" ? parsed.isRankingBySet : false,
     };
   } catch {
-    return { realtimeMode: false, isRankingBySet: false };
+    return DEFAULT_SIMULATION_CONFIG;
   }
 }
 

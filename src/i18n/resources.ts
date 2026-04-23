@@ -263,9 +263,6 @@ export const resources = {
         realtimeActive: "Hiển thị điểm mô phỏng từ trận đấu hôm nay",
         realtimeInactive: "Hiển thị điểm mô phỏng từ trận đấu hôm nay",
       },
-      rankingSidebar: {
-        rankBySet: "Rank by set",
-      },
       matchForm: {
         doubles: "Đánh đôi",
         singles: "Đánh đơn",
@@ -361,6 +358,9 @@ export const resources = {
         home: "Home",
         ranking: "Ranking",
         viewRanking: "View ranking",
+      },
+      rankingSidebar: {
+        rankBySet: "Rank by set",
       },
       rankingPanel: {
         expandHistory: "Expand history",

@@ -293,7 +293,7 @@ export function calculateRankingStats(
     isRankingBySet:
       typeof settings?.isRankingBySet === "boolean"
         ? settings.isRankingBySet
-        : false,
+        : DEFAULT_RANKING_CONFIG.isRankingBySet,
   };
 
   const ranking = new Glicko2({
@@ -544,7 +544,7 @@ export function simulateRatings(
     isRankingBySet:
       typeof settings?.isRankingBySet === "boolean"
         ? settings.isRankingBySet
-        : false,
+        : DEFAULT_RANKING_CONFIG.isRankingBySet,
   };
 
   // Create temp Glicko2 engine

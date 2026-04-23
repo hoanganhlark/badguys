@@ -14,7 +14,7 @@ import {
   Typography,
   type TableColumnsType,
 } from "antd";
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useRankingUIContext } from "../../features/ranking/context";
 import type { RankingCategory } from "../../types";
