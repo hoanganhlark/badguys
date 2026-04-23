@@ -137,6 +137,55 @@ describe("calculateRankingStats", () => {
     expect(p1Doubles).toBeDefined();
     expect(p1Doubles?.rating).toBeGreaterThan(1500); // should have improved from win
   });
+
+  it("supports ranking-by-set mode with immediate per-set updates", () => {
+    const members: Member[] = [
+      { id: 1, name: "An", level: "Lo" },
+      { id: 2, name: "Binh", level: "Lo" },
+      { id: 3, name: "Cuong", level: "Lo" },
+    ];
+
+    const matches: Match[] = [
+      createMatch({
+        id: "m1",
+        team1: ["An"],
+        team2: ["Binh"],
+        sets: ["21-18@20"],
+        playedAt: "2026-03-03T08:00:00.000Z",
+      }),
+      createMatch({
+        id: "m2",
+        team1: ["Binh"],
+        team2: ["Cuong"],
+        sets: ["21-18@20"],
+        playedAt: "2026-03-03T09:00:00.000Z",
+      }),
+      createMatch({
+        id: "m3",
+        team1: ["Cuong"],
+        team2: ["An"],
+        sets: ["21-18@20"],
+        playedAt: "2026-03-03T10:00:00.000Z",
+      }),
+    ];
+
+    const daily = calculateRankingStats(members, matches, {
+      tau: 0.6,
+      isRankingBySet: false,
+    });
+    const bySet = calculateRankingStats(members, matches, {
+      tau: 0.6,
+      isRankingBySet: true,
+    });
+
+    const dailyAn = daily.find((item) => item.name === "An");
+    const bySetAn = bySet.find((item) => item.name === "An");
+    expect(dailyAn).toBeDefined();
+    expect(bySetAn).toBeDefined();
+    expect(bySetAn?.rating).not.toBe(dailyAn?.rating);
+    expect(bySetAn?.wins).toBe(dailyAn?.wins);
+    expect(bySetAn?.totalMatches).toBe(dailyAn?.totalMatches);
+  });
 });
 
 describe("simulateRatings", () => {
@@ -221,5 +270,49 @@ describe("simulateRatings", () => {
 
     // Simulated should have same ratings as current (no change)
     expect(simulated[1].rating).toBeCloseTo(currentStats[0].rating, 1);
+  });
+
+  it("supports ranking-by-set simulation mode", () => {
+    const members: Member[] = [
+      { id: 1, name: "An", level: "Lo" },
+      { id: 2, name: "Binh", level: "Lo" },
+      { id: 3, name: "Cuong", level: "Lo" },
+    ];
+
+    const currentStats = calculateRankingStats(members, [], { tau: 0.6 });
+    const todaysMatches: Match[] = [
+      createMatch({
+        id: "m1",
+        team1: ["An"],
+        team2: ["Binh"],
+        sets: ["21-18@20"],
+        playedAt: "2026-03-03T08:00:00.000Z",
+      }),
+      createMatch({
+        id: "m2",
+        team1: ["Binh"],
+        team2: ["Cuong"],
+        sets: ["21-18@20"],
+        playedAt: "2026-03-03T09:00:00.000Z",
+      }),
+      createMatch({
+        id: "m3",
+        team1: ["Cuong"],
+        team2: ["An"],
+        sets: ["21-18@20"],
+        playedAt: "2026-03-03T10:00:00.000Z",
+      }),
+    ];
+
+    const dailySimulation = simulateRatings(currentStats, todaysMatches, {
+      tau: 0.6,
+      isRankingBySet: false,
+    });
+    const setSimulation = simulateRatings(currentStats, todaysMatches, {
+      tau: 0.6,
+      isRankingBySet: true,
+    });
+
+    expect(setSimulation[1].rating).not.toBe(dailySimulation[1].rating);
   });
 });

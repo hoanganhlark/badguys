@@ -1,5 +1,6 @@
 import { useMemo, useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
+import { useRankingUIContext } from "../context";
 import { useRankingMatches, useMatchForm } from "../hooks";
 import {
   getLatestRankingSnapshot,
@@ -50,6 +51,7 @@ export function RankingMatchesContainer({
   view,
 }: RankingMatchesContainerProps) {
   const { isAdmin, currentUser } = useAuth();
+  const { isRankingBySet } = useRankingUIContext();
   const currentUserId = currentUser?.userId || "";
   const currentUsername = currentUser?.username || "";
 
@@ -150,15 +152,17 @@ export function RankingMatchesContainer({
     const yesterdaysMatches = matches.filter((m) => !todaysMatches.includes(m));
     return calculateRankingStats(members, yesterdaysMatches, {
       tau: DEFAULT_RANKING_CONFIG.tau,
+      isRankingBySet,
     });
-  }, [members, matches, todaysMatches]);
+  }, [members, matches, todaysMatches, isRankingBySet]);
 
   // Calculate simulated rankings (include today's matches)
   const simulatedRankings = useMemo(() => {
     return calculateRankingStats(members, matches, {
       tau: DEFAULT_RANKING_CONFIG.tau,
+      isRankingBySet,
     });
-  }, [members, matches]);
+  }, [members, matches, isRankingBySet]);
 
   // Use official or simulated based on context
   const rankings = officialRankings;

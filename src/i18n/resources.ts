@@ -170,6 +170,7 @@ export const resources = {
         auditLogs: "Nhật ký audit",
         categories: "Quản lý hạng",
         home: "Trang chủ",
+        rankBySet: "Xếp hạng theo set",
       },
       auditPage: {
         menu: "Mở menu bảng điều khiển",
@@ -261,6 +262,9 @@ export const resources = {
         realtimeDisabled: "Thêm trận đấu hôm nay để bật chế độ mô phỏng",
         realtimeActive: "Hiển thị điểm mô phỏng từ trận đấu hôm nay",
         realtimeInactive: "Hiển thị điểm mô phỏng từ trận đấu hôm nay",
+      },
+      rankingSidebar: {
+        rankBySet: "Rank by set",
       },
       matchForm: {
         doubles: "Đánh đôi",

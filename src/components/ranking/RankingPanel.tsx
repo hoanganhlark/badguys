@@ -14,40 +14,13 @@ import {
   Typography,
   type TableColumnsType,
 } from "antd";
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useRankingUIContext } from "../../features/ranking/context";
 import type { RankingCategory } from "../../types";
 import DashboardTableSkeleton from "../dashboard/DashboardTableSkeleton";
 import RankingHistorySection from "./RankingHistorySection";
 import type { AdvancedStats, Match } from "./types";
-
-type StoredSimulationConfig = {
-  realtimeMode: boolean;
-};
-
-const RANKING_SIMULATION_CONFIG_STORAGE_KEY = "rankingSimulationConfig";
-
-function getSimulationConfigStorageKey(scopeKey?: string): string {
-  const normalizedScope = String(scopeKey || "").trim() || "guest";
-  return `${RANKING_SIMULATION_CONFIG_STORAGE_KEY}:${normalizedScope}`;
-}
-
-function loadStoredSimulationConfig(scopeKey?: string): StoredSimulationConfig {
-  try {
-    const key = getSimulationConfigStorageKey(scopeKey);
-    const raw = localStorage.getItem(key);
-    if (!raw) return { realtimeMode: false };
-
-    const parsed = JSON.parse(raw) as Partial<StoredSimulationConfig>;
-    return {
-      realtimeMode:
-        typeof parsed.realtimeMode === "boolean" ? parsed.realtimeMode : false,
-    };
-  } catch {
-    return { realtimeMode: false };
-  }
-}
 
 interface RankingPanelProps {
   officialRankings: AdvancedStats[];
@@ -119,14 +92,13 @@ function RankingPanel({
 }: RankingPanelProps) {
   const { t } = useTranslation();
   const screens = Grid.useBreakpoint();
-  const [realtimeMode, setRealtimeMode] = useState(
-    () => loadStoredSimulationConfig(currentUserId).realtimeMode,
-  );
 
   const {
     selectedCategoryId,
     setSelectedCategoryId: onSelectCategory,
     setSelectedPlayer: onSelectPlayer,
+    realtimeMode,
+    setRealtimeMode,
   } = useRankingUIContext();
 
   const isMatchesLoading = isLoading;
@@ -164,11 +136,6 @@ function RankingPanel({
       onSelectCategory(sortedCategories[0].id);
     }
   }, [onSelectCategory, selectedCategoryId, sortedCategories]);
-
-  useEffect(() => {
-    const key = getSimulationConfigStorageKey(currentUserId);
-    localStorage.setItem(key, JSON.stringify({ realtimeMode }));
-  }, [currentUserId, realtimeMode]);
 
   // Select rankings and trends based on realtime mode
   const displayRankings =
