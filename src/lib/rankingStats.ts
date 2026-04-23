@@ -19,6 +19,7 @@ export interface RankingConfig {
   pMaxDefault: number;
   minSetsForPercentile: number;
   maxSetsInWindow: number;
+  conservativeK: number;
   isRankingBySet: boolean;
 }
 
@@ -34,6 +35,7 @@ export const DEFAULT_RANKING_CONFIG: RankingConfig = {
   pMaxDefault: 14,
   minSetsForPercentile: 30,
   maxSetsInWindow: 50,
+  conservativeK: 2,
   isRankingBySet: false,
 };
 
@@ -62,6 +64,14 @@ type PlayerStatsAccumulator = {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
+}
+
+export function getConservativeRating(
+  rating: number,
+  rd: number,
+  k: number,
+): number {
+  return rating - k * rd;
 }
 
 function toDayKey(date: Date): string {
@@ -490,8 +500,9 @@ export function calculateRankingStats(
     const acc = accumulatorByName.get(normalizedName);
     if (!player || !acc) continue;
 
-    const rating = Number(player.getRating());
+    const rawRating = Number(player.getRating());
     const rd = Number(player.getRd());
+    const rating = getConservativeRating(rawRating, rd, config.conservativeK);
     const vol = Number(player.getVol());
     const winRate = acc.totalMatches > 0 ? acc.wins / acc.totalMatches : 0;
 
