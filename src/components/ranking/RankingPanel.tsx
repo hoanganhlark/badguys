@@ -171,7 +171,7 @@ function RankingPanel({
         .reduce<RankingRow[]>(
           (acc, player, index) => {
             const rating = Math.round(player.rating);
-            const prev = acc[index - 1];
+            const prev = acc[acc.length - 1];
             const rank = prev && prev.rating === rating ? prev.rank : index + 1;
 
             acc.push({

@@ -198,18 +198,23 @@ export async function saveRankingMembers(members: RankingMember[]): Promise<void
     )
   );
 
-  if (memberIds.length > 0) {
+  // Keep DB rows in sync with provided payload by deleting stale members first.
+  const { data: existingMembers, error: existingMembersError } = await context.client
+    .from("ranking_members")
+    .select("id");
+  if (existingMembersError) throw existingMembersError;
+
+  const keepIds = new Set(memberIds);
+  const memberIdsToDelete = (existingMembers || [])
+    .map((member: any) => Number(member.id))
+    .filter((id) => Number.isFinite(id) && !keepIds.has(id));
+
+  if (memberIdsToDelete.length > 0) {
     const { error: deleteError } = await context.client
       .from("ranking_members")
       .delete()
-      .not("id", "in", `(${memberIds.join(",")})`);
+      .in("id", memberIdsToDelete);
     if (deleteError) throw deleteError;
-  } else {
-    const { error: deleteAllError } = await context.client
-      .from("ranking_members")
-      .delete()
-      .not("id", "is", null);
-    if (deleteAllError) throw deleteAllError;
   }
 
   if (rows.length === 0) return;
