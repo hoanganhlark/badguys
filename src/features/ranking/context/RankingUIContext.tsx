@@ -288,3 +288,7 @@ export function useRankingUIContext(): RankingUIContextValue {
   }
   return context;
 }
+
+export function useOptionalRankingUIContext(): RankingUIContextValue | null {
+  return useContext(RankingUIContext) ?? null;
+}

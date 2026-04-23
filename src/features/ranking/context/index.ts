@@ -1,5 +1,6 @@
 export {
   RankingUIProvider,
+  useOptionalRankingUIContext,
   useRankingUIContext,
 } from "./RankingUIContext";
 export {
