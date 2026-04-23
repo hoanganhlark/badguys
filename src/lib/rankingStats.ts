@@ -677,14 +677,19 @@ export function simulateRatings(
     const clonedPlayer = clones.get(stat.id);
     if (!clonedPlayer) continue;
 
-    const simulatedRating = Number(clonedPlayer.getRating());
+    const rawRating = Number(clonedPlayer.getRating());
     const simulatedRd = Number(clonedPlayer.getRd());
+    const conservativeRating = getConservativeRating(
+      rawRating,
+      simulatedRd,
+      config.conservativeK,
+    );
     const originalRating = originalRatings.get(stat.id) || stat.rating;
 
     result[stat.id] = {
-      rating: Number(simulatedRating.toFixed(2)),
+      rating: Number(conservativeRating.toFixed(2)),
       rd: Number(simulatedRd.toFixed(2)),
-      delta: Number((simulatedRating - originalRating).toFixed(2)),
+      delta: Number((rawRating - originalRating).toFixed(2)),
     };
   }
 
