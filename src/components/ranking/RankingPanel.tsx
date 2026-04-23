@@ -169,10 +169,14 @@ function RankingPanel({
           return a.name.localeCompare(b.name, "vi");
         })
         .reduce<RankingRow[]>(
-          (acc, player, index) => {
+          (acc, player) => {
             const rating = Math.round(player.rating);
             const prev = acc[acc.length - 1];
-            const rank = prev && prev.rating === rating ? prev.rank : index + 1;
+            const rank = prev
+              ? prev.rating === rating
+                ? prev.rank
+                : prev.rank + 1
+              : 1;
 
             acc.push({
               key: player.id,
