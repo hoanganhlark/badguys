@@ -58,7 +58,7 @@ function formatMatchWeekday(dateText: string): string {
 
 function formatSet(setText: string): string {
   const [score, minutes] = String(setText || "").split("@");
-  const normalizedMinutes = Number.parseInt(String(minutes || ""), 5);
+  const normalizedMinutes = Number.parseInt(String(minutes || ""), 10);
   if (!Number.isFinite(normalizedMinutes) || normalizedMinutes <= 0) {
     return score;
   }
