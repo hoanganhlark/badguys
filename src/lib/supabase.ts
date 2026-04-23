@@ -190,6 +190,30 @@ export async function saveRankingMembers(members: RankingMember[]): Promise<void
     };
   });
 
+  const memberIds = Array.from(
+    new Set(
+      rows
+        .map((row) => Number(row.id))
+        .filter((id) => Number.isFinite(id))
+    )
+  );
+
+  if (memberIds.length > 0) {
+    const { error: deleteError } = await context.client
+      .from("ranking_members")
+      .delete()
+      .not("id", "in", `(${memberIds.join(",")})`);
+    if (deleteError) throw deleteError;
+  } else {
+    const { error: deleteAllError } = await context.client
+      .from("ranking_members")
+      .delete()
+      .not("id", "is", null);
+    if (deleteAllError) throw deleteAllError;
+  }
+
+  if (rows.length === 0) return;
+
   const { error } = await context.client
     .from("ranking_members")
     .upsert(rows, { onConflict: "id" });
@@ -997,4 +1021,3 @@ export async function getRecentAuditEvents(maxItems = 200): Promise<AuditEventRe
     .map((row) => mapAuditEventRecord(row))
     .filter((audit) => !!audit.eventName);
 }
-

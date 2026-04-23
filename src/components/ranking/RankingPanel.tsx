@@ -153,17 +153,37 @@ function RankingPanel({
     );
   }, [memberLevelById, displayRankings, selectedCategory]);
 
+  type RankingRow = {
+    key: number;
+    rank: number;
+    rating: number;
+    player: AdvancedStats;
+  };
+
   const rankingRows = useMemo(
     () =>
       [...filteredRankings]
-        .sort(
-          (a, b) => b.rating - a.rating || a.name.localeCompare(b.name, "vi"),
-        )
-        .map((player, index) => ({
-          key: player.id,
-          rank: index + 1,
-          player,
-        })),
+        .sort((a, b) => {
+          const roundedDiff = Math.round(b.rating) - Math.round(a.rating);
+          if (roundedDiff !== 0) return roundedDiff;
+          return a.name.localeCompare(b.name, "vi");
+        })
+        .reduce<RankingRow[]>(
+          (acc, player, index) => {
+            const rating = Math.round(player.rating);
+            const prev = acc[index - 1];
+            const rank = prev && prev.rating === rating ? prev.rank : index + 1;
+
+            acc.push({
+              key: player.id,
+              rank,
+              rating,
+              player,
+            });
+            return acc;
+          },
+          [],
+        ),
     [filteredRankings],
   );
 
@@ -255,7 +275,7 @@ function RankingPanel({
       align: "right",
       render: (_, row) => (
         <Typography.Text strong className="text-slate-700">
-          {Math.round(row.player.rating)}
+          {row.rating}
         </Typography.Text>
       ),
     },
