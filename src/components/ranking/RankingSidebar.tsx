@@ -18,7 +18,7 @@ import {
 } from "antd";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useRankingUIContext } from "../../features/ranking/context";
+import { useOptionalRankingUIContext } from "../../features/ranking/context";
 
 interface RankingSidebarProps {
   isAdmin: boolean;
@@ -36,7 +36,7 @@ export default function RankingSidebar({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { isRankingBySet, setIsRankingBySet } = useRankingUIContext();
+  const rankingUIContext = useOptionalRankingUIContext();
 
   // Determine selected key from current route
   const pathname = location.pathname;
@@ -149,13 +149,15 @@ export default function RankingSidebar({
             items={menuItems}
             onClick={handleMenuSelect}
           />
-          <div className="flex items-center justify-between px-1">
-            <Typography.Text>{t("rankingSidebar.rankBySet")}</Typography.Text>
-            <Switch
-              checked={isRankingBySet}
-              onChange={(checked) => setIsRankingBySet(checked)}
-            />
-          </div>
+          {rankingUIContext ? (
+            <div className="flex items-center justify-between px-1">
+              <Typography.Text>{t("rankingSidebar.rankBySet")}</Typography.Text>
+              <Switch
+                checked={rankingUIContext.isRankingBySet}
+                onChange={(checked) => rankingUIContext.setIsRankingBySet(checked)}
+              />
+            </div>
+          ) : null}
         </Space>
       </Drawer>
 
@@ -191,13 +193,15 @@ export default function RankingSidebar({
             items={menuItems}
             onClick={handleMenuSelect}
           />
-          <div className="flex items-center justify-between px-1">
-            <Typography.Text>{t("rankingSidebar.rankBySet")}</Typography.Text>
-            <Switch
-              checked={isRankingBySet}
-              onChange={(checked) => setIsRankingBySet(checked)}
-            />
-          </div>
+          {rankingUIContext ? (
+            <div className="flex items-center justify-between px-1">
+              <Typography.Text>{t("rankingSidebar.rankBySet")}</Typography.Text>
+              <Switch
+                checked={rankingUIContext.isRankingBySet}
+                onChange={(checked) => rankingUIContext.setIsRankingBySet(checked)}
+              />
+            </div>
+          ) : null}
         </Space>
       </Layout.Sider>
       <div
