@@ -2,7 +2,6 @@ import {
   AppstoreOutlined,
   HomeOutlined,
   PlusCircleOutlined,
-  QuestionCircleOutlined,
   SettingOutlined,
   TeamOutlined,
   TrophyOutlined,
@@ -50,8 +49,6 @@ export default function RankingSidebar({
     selectedKey = "member";
   } else if (pathname.includes("/match-form")) {
     selectedKey = "match-form";
-  } else if (pathname.includes("/how-it-works")) {
-    selectedKey = "how-it-works";
   }
 
   const menuItems: MenuProps["items"] = [
@@ -73,11 +70,6 @@ export default function RankingSidebar({
       key: "ranking",
       icon: <TrophyOutlined />,
       label: t("rankingSidebar.ranking"),
-    },
-    {
-      key: "how-it-works",
-      icon: <QuestionCircleOutlined />,
-      label: t("rankingSidebar.howItWorks"),
     },
     ...(isAdmin
       ? [
@@ -116,7 +108,6 @@ export default function RankingSidebar({
       case "member":
       case "match-form":
       case "ranking":
-      case "how-it-works":
         navigate(`${baseRoute}/${key}`);
         break;
       case "users":

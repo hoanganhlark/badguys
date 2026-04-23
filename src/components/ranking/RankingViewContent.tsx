@@ -1,4 +1,4 @@
-import { Award, BarChart2, Settings, HelpCircle } from "react-feather";
+import { Award, BarChart2, Settings } from "react-feather";
 import { ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -12,7 +12,6 @@ import {
   useUsers,
 } from "../../hooks/queries";
 import DashboardSectionHeader from "../dashboard/DashboardSectionHeader";
-import HowItWorksPanel from "./HowItWorksPanel";
 import type { RankingView } from "./types";
 
 interface ViewConfig {
@@ -55,11 +54,6 @@ export default function RankingViewContent() {
           view="match-form"
         />
       ),
-    },
-    "how-it-works": {
-      icon: <HelpCircle className="h-6 w-6 text-sky-600 md:h-8 md:w-8" />,
-      titleKey: "rankingPage.howItWorks",
-      render: () => <HowItWorksPanel />,
     },
     ranking: {
       icon: <Award className="h-6 w-6 text-sky-600 md:h-8 md:w-8" />,
