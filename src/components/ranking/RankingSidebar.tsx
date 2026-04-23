@@ -12,11 +12,13 @@ import {
   Layout,
   Menu,
   Space,
+  Switch,
   Typography,
   type MenuProps,
 } from "antd";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useRankingUIContext } from "../../features/ranking/context";
 
 interface RankingSidebarProps {
   isAdmin: boolean;
@@ -34,6 +36,7 @@ export default function RankingSidebar({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+  const { isRankingBySet, setIsRankingBySet } = useRankingUIContext();
 
   // Determine selected key from current route
   const pathname = location.pathname;
@@ -139,12 +142,21 @@ export default function RankingSidebar({
         }
         className="md:hidden"
       >
-        <Menu
-          mode="inline"
-          selectedKeys={[selectedKey]}
-          items={menuItems}
-          onClick={handleMenuSelect}
-        />
+        <Space direction="vertical" size={12} style={{ width: "100%" }}>
+          <Menu
+            mode="inline"
+            selectedKeys={[selectedKey]}
+            items={menuItems}
+            onClick={handleMenuSelect}
+          />
+          <div className="flex items-center justify-between px-1">
+            <Typography.Text>{t("rankingSidebar.rankBySet")}</Typography.Text>
+            <Switch
+              checked={isRankingBySet}
+              onChange={(checked) => setIsRankingBySet(checked)}
+            />
+          </div>
+        </Space>
       </Drawer>
 
       <Layout.Sider
@@ -179,6 +191,13 @@ export default function RankingSidebar({
             items={menuItems}
             onClick={handleMenuSelect}
           />
+          <div className="flex items-center justify-between px-1">
+            <Typography.Text>{t("rankingSidebar.rankBySet")}</Typography.Text>
+            <Switch
+              checked={isRankingBySet}
+              onChange={(checked) => setIsRankingBySet(checked)}
+            />
+          </div>
         </Space>
       </Layout.Sider>
       <div

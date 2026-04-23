@@ -9,7 +9,43 @@ import {
   useState,
 } from "react";
 import { useLocation, useNavigate, matchPath } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext";
 import type { AdvancedStats, RankingView } from "../../../components/ranking/types";
+
+type StoredSimulationConfig = {
+  realtimeMode: boolean;
+  isRankingBySet: boolean;
+};
+
+const DEFAULT_SIMULATION_CONFIG: StoredSimulationConfig = {
+  realtimeMode: false,
+  isRankingBySet: false,
+};
+
+const RANKING_SIMULATION_CONFIG_STORAGE_KEY = "rankingSimulationConfig";
+
+function getSimulationConfigStorageKey(scopeKey?: string): string {
+  const normalizedScope = String(scopeKey || "").trim() || "guest";
+  return `${RANKING_SIMULATION_CONFIG_STORAGE_KEY}:${normalizedScope}`;
+}
+
+function loadStoredSimulationConfig(scopeKey?: string): StoredSimulationConfig {
+  try {
+    const key = getSimulationConfigStorageKey(scopeKey);
+    const raw = localStorage.getItem(key);
+    if (!raw) return DEFAULT_SIMULATION_CONFIG;
+
+    const parsed = JSON.parse(raw) as Partial<StoredSimulationConfig>;
+    return {
+      realtimeMode:
+        typeof parsed.realtimeMode === "boolean" ? parsed.realtimeMode : false,
+      isRankingBySet:
+        typeof parsed.isRankingBySet === "boolean" ? parsed.isRankingBySet : false,
+    };
+  } catch {
+    return DEFAULT_SIMULATION_CONFIG;
+  }
+}
 
 type RankingUIContextValue = {
   view: RankingView;
@@ -17,10 +53,14 @@ type RankingUIContextValue = {
   selectedPlayer: AdvancedStats | null;
   mobileSidebarOpen: boolean;
   usernamesById: Record<string, string>;
+  realtimeMode: boolean;
+  isRankingBySet: boolean;
   setViewWithRoute: (view: RankingView, mode?: "push" | "replace") => void;
   setSelectedCategoryId: (id: string) => void;
   setSelectedPlayer: (player: AdvancedStats | null) => void;
   setMobileSidebarOpen: (open: boolean) => void;
+  setRealtimeMode: (enabled: boolean) => void;
+  setIsRankingBySet: (enabled: boolean) => void;
   isPublicRankingRoute: boolean;
   mainContentRef: React.RefObject<HTMLElement | null>;
 };
@@ -50,9 +90,11 @@ export function RankingUIProvider({
   isPublicRankingRoute,
   children,
 }: RankingUIProviderProps) {
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const mainContentRef = useRef<HTMLElement | null>(null);
+  const currentUserId = currentUser?.userId || "";
 
   // Determine current route
   const routeBase = isPublicRankingRoute ? "/ranking" : "/dashboard";
@@ -71,6 +113,23 @@ export function RankingUIProvider({
   const [usernamesById] = useState<Record<string, string>>({});
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
+  const [realtimeMode, setRealtimeMode] = useState(
+    () => loadStoredSimulationConfig(currentUserId).realtimeMode,
+  );
+  const [isRankingBySet, setIsRankingBySet] = useState(
+    () => loadStoredSimulationConfig(currentUserId).isRankingBySet,
+  );
+
+  useEffect(() => {
+    const stored = loadStoredSimulationConfig(currentUserId);
+    setRealtimeMode(stored.realtimeMode);
+    setIsRankingBySet(stored.isRankingBySet);
+  }, [currentUserId]);
+
+  useEffect(() => {
+    const key = getSimulationConfigStorageKey(currentUserId);
+    localStorage.setItem(key, JSON.stringify({ realtimeMode, isRankingBySet }));
+  }, [currentUserId, realtimeMode, isRankingBySet]);
 
   // Handler for setting view with route
   const setViewWithRoute = useCallback(
@@ -189,10 +248,14 @@ export function RankingUIProvider({
       selectedPlayer,
       mobileSidebarOpen,
       usernamesById,
+      realtimeMode,
+      isRankingBySet,
       setViewWithRoute,
       setSelectedCategoryId,
       setSelectedPlayer,
       setMobileSidebarOpen,
+      setRealtimeMode,
+      setIsRankingBySet,
       isPublicRankingRoute,
       mainContentRef,
     }),
@@ -202,6 +265,8 @@ export function RankingUIProvider({
       selectedPlayer,
       mobileSidebarOpen,
       usernamesById,
+      realtimeMode,
+      isRankingBySet,
       setViewWithRoute,
       isPublicRankingRoute,
     ],

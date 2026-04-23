@@ -16,6 +16,7 @@ import {
   calculateRankingStats,
   DEFAULT_RANKING_CONFIG,
 } from "../../../lib/rankingStats";
+import { useRankingUIContext } from "./RankingUIContext";
 import type {
   AdvancedStats,
   Match,
@@ -95,6 +96,7 @@ export function RankingMatchesProvider({
   usernamesById,
   children,
 }: RankingMatchesProviderProps) {
+  const { isRankingBySet } = useRankingUIContext();
   const {
     matches,
     isLoading,
@@ -161,8 +163,9 @@ export function RankingMatchesProvider({
   const rankings = useMemo(() => {
     return calculateRankingStats(members, matches, {
       tau: DEFAULT_RANKING_CONFIG.tau,
+      isRankingBySet,
     });
-  }, [members, matches]);
+  }, [members, matches, isRankingBySet]);
 
   // Build historyMatchesForDisplay with usernames
   const historyMatchesForDisplay = useMemo(

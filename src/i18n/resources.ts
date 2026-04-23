@@ -170,6 +170,7 @@ export const resources = {
         auditLogs: "Nhật ký audit",
         categories: "Quản lý hạng",
         home: "Trang chủ",
+        rankBySet: "Xếp hạng theo set",
       },
       auditPage: {
         menu: "Mở menu bảng điều khiển",
@@ -357,6 +358,9 @@ export const resources = {
         home: "Home",
         ranking: "Ranking",
         viewRanking: "View ranking",
+      },
+      rankingSidebar: {
+        rankBySet: "Rank by set",
       },
       rankingPanel: {
         expandHistory: "Expand history",

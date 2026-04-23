@@ -19,6 +19,7 @@ export interface RankingConfig {
   pMaxDefault: number;
   minSetsForPercentile: number;
   maxSetsInWindow: number;
+  isRankingBySet: boolean;
 }
 
 export const DEFAULT_RANKING_CONFIG: RankingConfig = {
@@ -33,6 +34,7 @@ export const DEFAULT_RANKING_CONFIG: RankingConfig = {
   pMaxDefault: 14,
   minSetsForPercentile: 30,
   maxSetsInWindow: 50,
+  isRankingBySet: false,
 };
 
 type ParsedSet = {
@@ -43,10 +45,12 @@ type ParsedSet = {
 
 export type RankingComputationSettings = {
   tau?: number;
+  isRankingBySet?: boolean;
 };
 
 export type SimulationSettings = {
   tau?: number;
+  isRankingBySet?: boolean;
 };
 
 type PlayerStatsAccumulator = {
@@ -286,6 +290,10 @@ export function calculateRankingStats(
     tau: Number.isFinite(settings?.tau)
       ? clamp(Number(settings?.tau), 0.3, 1.2)
       : DEFAULT_RANKING_CONFIG.tau,
+    isRankingBySet:
+      typeof settings?.isRankingBySet === "boolean"
+        ? settings.isRankingBySet
+        : DEFAULT_RANKING_CONFIG.isRankingBySet,
   };
 
   const ranking = new Glicko2({
@@ -317,16 +325,6 @@ export function calculateRankingStats(
   const sortedMatches = [...matches].sort(
     (a, b) => parsePlayedAt(a).getTime() - parsePlayedAt(b).getTime(),
   );
-  const periodKeys = buildDailyPeriods(sortedMatches);
-  const periodMatches = new Map<string, Match[]>();
-
-  for (const match of sortedMatches) {
-    const key = toDayKey(parsePlayedAt(match));
-    const current = periodMatches.get(key) || [];
-    current.push(match);
-    periodMatches.set(key, current);
-  }
-
   // Collect all parsed sets across entire history for percentile computation
   const allParsedSets: ParsedSet[][] = [];
   for (const match of sortedMatches) {
@@ -336,23 +334,12 @@ export function calculateRankingStats(
     allParsedSets.push(parsedSets);
   }
 
-  for (const periodKey of periodKeys) {
-    const matchesInPeriod = periodMatches.get(periodKey) || [];
+  // Compute time percentiles once from all recent sets (unchanged logic)
+  const recentMinutes = collectRecentSetMinutes(allParsedSets, config);
+  const { P_MIN, P_MAX } = computeTimePercentiles(recentMinutes, config);
 
-    // Compute time percentiles once per period from all recent sets
-    const recentMinutes = collectRecentSetMinutes(allParsedSets, config);
-    const { P_MIN, P_MAX } = computeTimePercentiles(recentMinutes, config);
-
-    const ratingMatches: Array<
-      [
-        ReturnType<Glicko2["makePlayer"]>,
-        ReturnType<Glicko2["makePlayer"]>,
-        number,
-        number,
-      ]
-    > = [];
-
-    for (const match of matchesInPeriod) {
+  if (config.isRankingBySet) {
+    for (const match of sortedMatches) {
       const parsedSets = match.sets
         .map(parseSet)
         .filter((item): item is ParsedSet => !!item);
@@ -375,18 +362,15 @@ export function calculateRankingStats(
 
       if (team1Players.length === 0 || team2Players.length === 0) continue;
 
-      // Process each set individually
       for (const set of parsedSets) {
         if (set.score1 === 0 && set.score2 === 0) continue;
 
-        // Update match count for all players in the match
         for (const playerName of [...team1Names, ...team2Names]) {
           const acc = accumulatorByName.get(playerName);
           if (!acc) continue;
           acc.totalMatches += 1;
         }
 
-        // Update wins based on set result
         if (set.score1 > set.score2) {
           for (const playerName of team1Names) {
             const acc = accumulatorByName.get(playerName);
@@ -399,7 +383,6 @@ export function calculateRankingStats(
           }
         }
 
-        // Build rating entries with virtual opponent and multiplier
         const entries = buildRatingEntriesForSet(
           set,
           team1Players,
@@ -409,11 +392,92 @@ export function calculateRankingStats(
           ranking,
           config,
         );
-        ratingMatches.push(...entries);
+        if (entries.length > 0) {
+          ranking.updateRatings(entries as never);
+        }
       }
     }
+  } else {
+    const periodKeys = buildDailyPeriods(sortedMatches);
+    const periodMatches = new Map<string, Match[]>();
 
-    ranking.updateRatings(ratingMatches as never);
+    for (const match of sortedMatches) {
+      const key = toDayKey(parsePlayedAt(match));
+      const current = periodMatches.get(key) || [];
+      current.push(match);
+      periodMatches.set(key, current);
+    }
+
+    for (const periodKey of periodKeys) {
+      const matchesInPeriod = periodMatches.get(periodKey) || [];
+      const ratingMatches: Array<
+        [
+          ReturnType<Glicko2["makePlayer"]>,
+          ReturnType<Glicko2["makePlayer"]>,
+          number,
+          number,
+        ]
+      > = [];
+
+      for (const match of matchesInPeriod) {
+        const parsedSets = match.sets
+          .map(parseSet)
+          .filter((item): item is ParsedSet => !!item);
+
+        if (parsedSets.length === 0) continue;
+
+        const team1Names = match.team1
+          .map((name) => String(name || "").trim())
+          .filter(Boolean);
+        const team2Names = match.team2
+          .map((name) => String(name || "").trim())
+          .filter(Boolean);
+
+        const team1Players = team1Names
+          .map((name) => playersByName.get(name))
+          .filter((p): p is GlickoPlayer => !!p);
+        const team2Players = team2Names
+          .map((name) => playersByName.get(name))
+          .filter((p): p is GlickoPlayer => !!p);
+
+        if (team1Players.length === 0 || team2Players.length === 0) continue;
+
+        for (const set of parsedSets) {
+          if (set.score1 === 0 && set.score2 === 0) continue;
+
+          for (const playerName of [...team1Names, ...team2Names]) {
+            const acc = accumulatorByName.get(playerName);
+            if (!acc) continue;
+            acc.totalMatches += 1;
+          }
+
+          if (set.score1 > set.score2) {
+            for (const playerName of team1Names) {
+              const acc = accumulatorByName.get(playerName);
+              if (acc) acc.wins += 1;
+            }
+          } else if (set.score2 > set.score1) {
+            for (const playerName of team2Names) {
+              const acc = accumulatorByName.get(playerName);
+              if (acc) acc.wins += 1;
+            }
+          }
+
+          const entries = buildRatingEntriesForSet(
+            set,
+            team1Players,
+            team2Players,
+            P_MIN,
+            P_MAX,
+            ranking,
+            config,
+          );
+          ratingMatches.push(...entries);
+        }
+      }
+
+      ranking.updateRatings(ratingMatches as never);
+    }
   }
 
   const results: AdvancedStats[] = [];
@@ -477,6 +541,10 @@ export function simulateRatings(
     tau: Number.isFinite(settings?.tau)
       ? clamp(Number(settings?.tau), 0.3, 1.2)
       : DEFAULT_RANKING_CONFIG.tau,
+    isRankingBySet:
+      typeof settings?.isRankingBySet === "boolean"
+        ? settings.isRankingBySet
+        : DEFAULT_RANKING_CONFIG.isRankingBySet,
   };
 
   // Create temp Glicko2 engine
@@ -510,9 +578,13 @@ export function simulateRatings(
     return result;
   }
 
+  const sortedMatches = [...todaysMatches].sort(
+    (a, b) => parsePlayedAt(a).getTime() - parsePlayedAt(b).getTime(),
+  );
+
   // Collect recent set times from all matches for percentile
   const allParsedSets: ParsedSet[][] = [];
-  for (const match of todaysMatches) {
+  for (const match of sortedMatches) {
     const parsedSets = match.sets
       .map(parseSet)
       .filter((item): item is ParsedSet => !!item);
@@ -537,7 +609,7 @@ export function simulateRatings(
     playersByName.set(String(stat.name || "").trim(), clones.get(stat.id)!);
   }
 
-  for (const match of todaysMatches) {
+  for (const match of sortedMatches) {
     const parsedSets = match.sets
       .map(parseSet)
       .filter((item): item is ParsedSet => !!item);
@@ -573,12 +645,18 @@ export function simulateRatings(
         tempRanking,
         config,
       );
-      ratingMatches.push(...entries);
+      if (config.isRankingBySet) {
+        if (entries.length > 0) {
+          tempRanking.updateRatings(entries as never);
+        }
+      } else {
+        ratingMatches.push(...entries);
+      }
     }
   }
 
   // Update simulated ratings
-  if (ratingMatches.length > 0) {
+  if (!config.isRankingBySet && ratingMatches.length > 0) {
     tempRanking.updateRatings(ratingMatches as never);
   }
 
